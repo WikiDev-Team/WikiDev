@@ -1,6 +1,6 @@
 # Como Contribuir com o WikiDev
 
-Obrigado por fazer parte do projeto! Esse guia explica como o time deve trabalhar com o repositório.
+Esse guia explica como o time deve trabalhar com o repositório.
 
 ---
 
@@ -99,7 +99,6 @@ O GitHub vai exibir um botão **"Compare & pull request"** — clique nele e pre
 
 **Regras:**
 - Todo PR precisa de pelo menos **1 aprovação** antes de mergear
-- O CI precisa estar passando
 - Nunca faça merge do seu próprio PR sem revisão
 
 ---
@@ -111,8 +110,6 @@ Na aba **"Files changed"** do PR, clique no **"+"** ao lado de qualquer linha pa
 - Use **Approve** se estiver tudo certo ✅
 - Use **Request changes** se precisar de correções 🔴
 - Use o prefixo `nit:` para sugestões pequenas que não bloqueiam o merge
-
-Seja respeitoso nos comentários — critique o código, nunca a pessoa.
 
 ---
 
