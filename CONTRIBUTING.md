@@ -12,12 +12,6 @@ git clone https://github.com/seu-usuario/wikidev.git
 cd wikidev
 ```
 
-**Configure as variáveis de ambiente:**
-```bash
-cp .env.example .env
-```
-Abra o `.env` e preencha com os valores corretos. Nunca commite esse arquivo.
-
 **Instale as dependências do backend:**
 ```bash
 python -m venv .venv
