@@ -97,9 +97,11 @@ O GitHub vai exibir um botão **"Compare & pull request"** — clique nele e pre
 
 ---
 
-## 5. Revisando um PR
+## 5. Revisão de PR
 
 Na aba **"Files changed"** do PR, clique no **"+"** ao lado de qualquer linha para comentar.
+
+O Tech Lead é responsável por aprovar os PRs, salvo alguma possível futura excessão. Para aprovar um PR faça:
 
 - Use **Approve** se estiver tudo certo ✅
 - Use **Request changes** se precisar de correções 🔴
