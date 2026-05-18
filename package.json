@@ -4,7 +4,8 @@
   "description": "Plataforma colaborativa de documentação",
   "scripts": {
     "commit": "cz",
-    "lint": "eslint . --ext .js"
+    "lint": "eslint . --ext .js",
+    "test": "echo \"Nenhum teste configurado\" && exit 0"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",
