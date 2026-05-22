@@ -1,0 +1,11 @@
+services:
+  wikidev:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: sqlite:///./wikidev.db
+    volumes:
+      - ./:/app
