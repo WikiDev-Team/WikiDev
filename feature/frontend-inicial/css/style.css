@@ -1,0 +1,178 @@
+:root {
+    --bg-main: #0d1117;        
+    --bg-panel: #161b22;       
+    --text-primary: #c9d1d9;   
+    --text-secondary: #8b949e; 
+    --accent-blue: #58a6ff;    
+    --border-color: #30363d;   
+}
+
+/* Variáveis para o Tema Claro */
+body.light-theme {
+    --bg-main: #ffffff;        
+    --bg-panel: #f6f8fa;       
+    --text-primary: #24292f;   
+    --text-secondary: #57606a; 
+    --accent-blue: #0969da;    
+    --border-color: #d0d7de;   
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Adiciona uma transição suave ao trocar de cor */
+    transition: background-color 0.3s ease, color 0.3s ease; 
+}
+
+/* Header / Navegação Superior */
+.topbar {
+    background-color: var(--bg-panel);
+    border-bottom: 1px solid var(--border-color);
+    padding: 25px 40px; 
+    display: flex;
+    justify-content: space-between; 
+    align-items: flex-end;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.topbar-left {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; 
+}
+
+.user-tag {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.user-tag strong {
+    color: var(--text-primary);
+}
+
+.main-nav {
+    display: flex;
+    gap: 40px;
+}
+
+.main-nav a {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 1.2rem;
+    padding-bottom: 5px;
+    font-weight: 500;
+}
+
+.main-nav a.active {
+    border-bottom: 3px solid var(--accent-blue);
+}
+
+.main-nav a:hover:not(.active) {
+    color: var(--accent-blue);
+}
+
+/* Container para agrupar o botão de tema e o menu hambúrguer */
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding-bottom: 5px;
+}
+
+/* Botão de Tema (Sol/Lua) */
+.theme-toggle {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
+}
+
+.theme-toggle:hover {
+    color: var(--text-primary);
+}
+
+/* Tres tracihos /  menu hamburger*/
+.menu-hamburger {
+    font-size: 2rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    user-select: none;
+    line-height: 1;
+}
+
+.menu-hamburger:hover {
+    color: var(--text-primary);
+}
+
+/* Layout Principal */
+.layout-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.main-content {
+    flex: 1;
+    padding: 40px;
+    overflow-y: auto;
+}
+
+/* Barra Lateral (Com animação de abrir/fechar) */
+.sidebar {
+    width: 300px;
+    background-color: var(--bg-panel);
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease, background-color 0.3s ease, border-color 0.3s ease; 
+    overflow-x: hidden; 
+    white-space: nowrap; 
+}
+
+/* Recolher aba -> <- */
+.sidebar.collapsed {
+    width: 0;
+    border-left: none;
+}
+
+.file-tree {
+    padding: 20px;
+    overflow-y: auto;
+    list-style: none;
+    font-size: 1.1rem;
+}
+
+.folder-item {
+    padding: 12px 10px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    border-radius: 6px;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.folder-item:hover {
+    background-color: rgba(139, 148, 158, 0.1);
+    color: var(--text-primary);
+}
+
+/*icone para os arquicvos*/
+.folder-item::before {
+    content: "📄"; 
+    font-size: 1rem;
+}
