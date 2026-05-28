@@ -1,0 +1,84 @@
+erDiagram
+    USER ||--o{ PAGE : authors
+    USER ||--o{ COMMENT : writes
+    USER ||--o{ CODE_EXAMPLE : creates
+    LANGUAGE ||--o{ PAGE : contains
+    PAGE ||--o{ COMMENT : has
+    PAGE ||--o{ CODE_EXAMPLE : has
+    PAGE ||--o{ PAGE : parent_of
+    PAGE ||--o{ PAGE_TAG : links
+    TAG ||--o{ PAGE_TAG : links
+
+    USER {
+        int id PK
+        string username
+        string email
+        string display_name
+        string bio
+        string avatar_url
+        datetime created_at
+        datetime updated_at
+    }
+
+    LANGUAGE {
+        int id PK
+        string name
+        string slug
+        string description
+        string official_url
+        string logo_url
+        datetime created_at
+        datetime updated_at
+    }
+
+    TAG {
+        int id PK
+        string name
+        string slug
+        datetime created_at
+        datetime updated_at
+    }
+
+    PAGE {
+        int id PK
+        string title
+        string slug
+        string page_type
+        string status
+        string summary
+        string content
+        int language_id FK
+        int author_id FK
+        int parent_page_id FK
+        datetime created_at
+        datetime updated_at
+    }
+
+    COMMENT {
+        int id PK
+        int page_id FK
+        int author_id FK
+        int parent_comment_id FK
+        string body
+        bool is_deleted
+        datetime created_at
+        datetime updated_at
+    }
+
+    CODE_EXAMPLE {
+        int id PK
+        int page_id FK
+        int author_id FK
+        string title
+        string code
+        string explanation
+        string language_hint
+        bool is_public
+        datetime created_at
+        datetime updated_at
+    }
+
+    PAGE_TAG {
+        int page_id PK, FK
+        int tag_id PK, FK
+    }

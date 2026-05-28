@@ -16,6 +16,12 @@ build/
 .ruff_cache/
 
 # ===========================
+# Banco de dados local
+# ===========================
+*.db
+app/database/*.db
+
+# ===========================
 # Variáveis de ambiente
 # ===========================
 .env
@@ -37,8 +43,8 @@ yarn-error.log*
 .idea/
 *.swp
 *.swo
-.DS_Store      
-Thumbs.db      
+.DS_Store
+Thumbs.db
 
 # ===========================
 # Logs
