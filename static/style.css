@@ -176,3 +176,94 @@ body {
     content: "📄"; 
     font-size: 1rem;
 }
+
+.add-page-button {
+    background-color: var(--accent-blue);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.page-editor {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.editor-top {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.page-title {
+    flex: 1;
+    background: transparent;
+    color: var(--text-primary);
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 2rem;
+    padding: 10px 0;
+    outline: none;
+}
+
+.settings-button,
+.save-page-button {
+    background-color: var(--accent-blue);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+}
+
+.page-settings {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.page-settings.hidden {
+    display: none;
+}
+
+.page-settings input,
+.page-settings select {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.page-content {
+    width: 100%;
+    min-height: 55vh;
+    background-color: var(--bg-panel);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    resize: vertical;
+    outline: none;
+}
+
+.save-page-button {
+    margin-top: 16px;
+}
+
+.sidebar-actions {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-actions .add-page-button {
+    width: 100%;
+}

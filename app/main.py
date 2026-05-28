@@ -1,5 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
 
 from .db import init_db, engine
@@ -12,6 +15,9 @@ from .routers.comments import router as comments_router
 from .routers.examples import router as examples_router
 
 app = FastAPI(title="WikiDev API", version="1.0.0")
+templates = Jinja2Templates(directory="templates")
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -58,3 +64,11 @@ def dashboard():
             "tags": session.exec(select(Tag)).all().__len__(),
             "pages": session.exec(select(Page)).all().__len__(),
         }
+
+@app.get("/home", response_class=HTMLResponse)
+def pages_ui(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="main.html",
+        context={}
+    )

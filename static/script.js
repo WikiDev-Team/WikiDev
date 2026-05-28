@@ -33,3 +33,12 @@ window.onload = function() {
         themeBtn.textContent = '🌙';
     }
 }
+
+function showPageEditor() {
+    document.getElementById("welcome-panel").classList.add("hidden");
+    document.getElementById("page-editor").classList.remove("hidden");
+}
+
+function togglePageSettings() {
+    document.getElementById("page-settings").classList.toggle("hidden");
+}

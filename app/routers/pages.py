@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, HTTPException, Query, Form
 #from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
@@ -34,6 +35,41 @@ def list_pages(
 @router.post("/", response_model=PageRead, status_code=201)
 def add_page(payload: PageCreate, session: Session = Depends(get_session)):
     return create_page(session, payload)
+
+@router.post("/htmx", response_class=HTMLResponse)
+def add_page_htmx(
+    title: str = Form(...),
+    summary: str = Form(""),
+    content: str = Form(""),
+    page_type: str = Form("personal"),
+    status: str = Form("draft"),
+    tag_ids: str = Form(""),
+    session: Session = Depends(get_session),
+):
+    parsed_tag_ids = [
+        int(tag_id.strip())
+        for tag_id in tag_ids.split(",")
+        if tag_id.strip()
+    ]
+
+    payload = PageCreate(
+        title=title,
+        summary=summary,
+        content=content,
+        page_type=page_type,
+        status=status,
+        tag_ids=parsed_tag_ids,
+    )
+
+    page = create_page(session, payload)
+
+    return f"""
+    <li>
+        <div class="folder-item">
+            {page.title}
+        </div>
+    </li>
+    """
 
 
 @router.get("/{page_id}", response_model=PageRead)
