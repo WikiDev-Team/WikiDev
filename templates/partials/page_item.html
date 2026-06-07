@@ -1,0 +1,10 @@
+<li>
+    <div
+        class="folder-item"
+        hx-get="/pages/{{ page.id }}"
+        hx-target="#page-editor"
+        hx-swap="outerHTML"
+    >
+        {{ page.title }}
+    </div>
+</li>

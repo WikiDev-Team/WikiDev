@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +9,8 @@
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <title>Wikidev</title>
 </head>
-<body>
 
+<body>
     <header class="topbar">
         <div class="topbar-left">
             <div class="user-tag"><strong>usuario_dev</strong></div>
@@ -37,68 +38,21 @@
             <p style="color: var(--text-secondary)">Selecione um tópico na barra lateral para começar a ler ou editar.</p>
         </section>
 
-        <form
-            id="page-editor"
-            class="page-editor hidden"
-            hx-post="/pages/htmx"
-            hx-target="#pages-list"
-            hx-swap="afterbegin"
-        >
-            <div class="editor-top">
-                <input
-                    class="page-title"
-                    name="title"
-                    placeholder="Título da página"
-                    required
-                >
-
-                <button type="button" class="settings-button" onclick="togglePageSettings()">
-                    Configurações
-                </button>
-            </div>
-
-            <div id="page-settings" class="page-settings hidden">
-                <input name="summary" placeholder="Resumo">
-
-                <select name="page_type">
-                    <option value="personal">Personal</option>
-                    <option value="official">Official</option>
-                    <option value="question">Question</option>
-                    <option value="example">Example</option>
-                    <option value="note">Note</option>
-                </select>
-
-                <select name="status">
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                    <option value="archived">Archived</option>
-                </select>
-
-                <input name="tag_ids" placeholder="Tags: 1,2,3">
-            </div>
-
-            <textarea
-                class="page-content"
-                name="content"
-                placeholder="Escreva sua página aqui..."
-            ></textarea>
-
-            <button type="submit" class="save-page-button">Salvar página</button>
-        </form>
+        <div id="page-editor"></div>
 
     </main>
 
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-actions">
-            <button class="add-page-button" onclick="showPageEditor()"> + Adicionar página </button>
+            <button
+                class="add-page-button"
+                hx-get="/pages/new"
+                hx-target="#page-editor"
+                hx-swap="outerHTML"
+            > + Adicionar página </button>
         </div>
 
-        <ul class="file-tree" id="pages-list">
-            <li><div class="folder-item">Pasta_1</div></li>
-            <li><div class="folder-item">Pasta_2</div></li>
-            <li><div class="folder-item">Pasta_3</div></li>
-            <li><div class="folder-item">Pasta_4</div></li>
-        </ul>
+        <ul class="file-tree" id="pages-list"></ul>
     </aside>
 
     </div>

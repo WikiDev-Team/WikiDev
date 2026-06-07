@@ -234,6 +234,10 @@ body {
     display: none;
 }
 
+.hidden {
+    display: none;
+}
+
 .page-settings input,
 .page-settings select {
     background-color: var(--bg-main);

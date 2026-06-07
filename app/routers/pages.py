@@ -1,7 +1,8 @@
 from fastapi.responses import HTMLResponse
-from fastapi import APIRouter, Depends, HTTPException, Query, Form
+from fastapi import APIRouter, Depends, HTTPException, Query, Form, Request
 #from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
+from fastapi.templating import Jinja2Templates
 
 from ..db import get_session
 from ..models import Page, PageCreate, PageRead, PageUpdate
@@ -9,6 +10,7 @@ from ..crud import create_page, update_page
 
 router = APIRouter(prefix="/pages", tags=["pages"])
 
+templates = Jinja2Templates(directory="templates")
 
 @router.get("/", response_model=list[PageRead])
 def list_pages(
@@ -31,13 +33,14 @@ def list_pages(
 
     return session.exec(stmt).unique().all()
 
+# JSON
+# @router.post("/", response_model=PageRead, status_code=201)
+# def add_page(payload: PageCreate, session: Session = Depends(get_session)):
+#     return create_page(session, payload)
 
-@router.post("/", response_model=PageRead, status_code=201)
-def add_page(payload: PageCreate, session: Session = Depends(get_session)):
-    return create_page(session, payload)
-
-@router.post("/htmx", response_class=HTMLResponse)
+@router.post("/", response_class=HTMLResponse)
 def add_page_htmx(
+    request: Request,
     title: str = Form(...),
     summary: str = Form(""),
     content: str = Form(""),
@@ -63,30 +66,28 @@ def add_page_htmx(
 
     page = create_page(session, payload)
 
-    return f"""
-    <li>
-        <div class="folder-item">
-            {page.title}
-        </div>
-    </li>
-    """
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/page_item.html",
+        context={"page": page},
+    )
 
+#JSON
+# @router.get("/{page_id}", response_model=PageRead)
+# def get_page(page_id: int, session: Session = Depends(get_session)):
+#     stmt = select(Page).where(Page.id == page_id)
+#     obj = session.exec(stmt).unique().first()
+#     if obj is None:
+#         raise HTTPException(status_code=404, detail="Página não encontrada")
+#     return obj
 
-@router.get("/{page_id}", response_model=PageRead)
-def get_page(page_id: int, session: Session = Depends(get_session)):
-    stmt = select(Page).where(Page.id == page_id)
-    obj = session.exec(stmt).unique().first()
-    if obj is None:
-        raise HTTPException(status_code=404, detail="Página não encontrada")
-    return obj
-
-
-@router.patch("/{page_id}", response_model=PageRead)
-def edit_page(page_id: int, payload: PageUpdate, session: Session = Depends(get_session)):
-    obj = session.get(Page, page_id)
-    if obj is None:
-        raise HTTPException(status_code=404, detail="Página não encontrada")
-    return update_page(session, obj, payload)
+#JSON
+# @router.patch("/{page_id}", response_model=PageRead)
+# def edit_page(page_id: int, payload: PageUpdate, session: Session = Depends(get_session)):
+#   obj = session.get(Page, page_id)
+#       if obj is None:
+#       raise HTTPException(status_code=404, detail="Página não encontrada")
+#   return update_page(session, obj, payload)
 
 
 @router.delete("/{page_id}", status_code=204)
@@ -96,3 +97,60 @@ def remove_page(page_id: int, session: Session = Depends(get_session)):
         raise HTTPException(status_code=404, detail="Página não encontrada")
     session.delete(obj)
     session.commit()
+
+@router.get("/new", response_class=HTMLResponse)
+def new_page_form(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/page_create.html",
+        context={},
+    )
+
+@router.get("/{page_id}", response_class=HTMLResponse)
+def get_page(
+    request: Request,
+    page_id: int,
+    session: Session = Depends(get_session),
+):
+    page = session.get(Page, page_id)
+
+    if page is None:
+        raise HTTPException(status_code=404, detail="Página não encontrada")
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/page_editor.html",
+        context={"page": page},
+    )
+
+@router.patch("/{page_id}", response_class=HTMLResponse)
+def edit_page(
+    request: Request,
+    page_id: int,
+    title: str = Form(...),
+    summary: str = Form(""),
+    content: str = Form(""),
+    page_type: str = Form("personal"),
+    status: str = Form("draft"),
+    session: Session = Depends(get_session),
+):
+    page = session.get(Page, page_id)
+
+    if page is None:
+        raise HTTPException(status_code=404, detail="Página não encontrada")
+
+    payload = PageUpdate(
+        title=title,
+        summary=summary,
+        content=content,
+        page_type=page_type,
+        status=status,
+    )
+
+    page = update_page(session, page, payload)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/page_editor.html",
+        context={"page": page},
+    )
