@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from datetime import datetime
 from enum import Enum
 import re
@@ -7,7 +5,7 @@ import unicodedata
 from typing import Optional, List
 
 from sqlalchemy import Column, DateTime
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, Relationship
 
 
 def now_utc() -> datetime:
@@ -47,12 +45,14 @@ class UserBase(SQLModel):
 
 class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    hashed_password: str = Field(default="")                        ### SENHA APÓS HASH
+    token: Optional[str] = Field(default=None, index=True)          ### ALTERAÇÃO DO BD
     created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
     updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
 
-   # pages: List["Page"] = Relationship(back_populates="author")
-   # comments: List["Comment"] = Relationship(back_populates="author")
-   # examples: List["CodeExample"] = Relationship(back_populates="author")
+    pages: List["Page"] = Relationship(back_populates="author")
+    comments: List["Comment"] = Relationship(back_populates="author")
+    examples: List["CodeExample"] = Relationship(back_populates="author")
 
 
 class UserCreate(UserBase):
@@ -86,7 +86,7 @@ class Language(LanguageBase, table=True):
     created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
     updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
 
-  #  pages: List["Page"] = Relationship(back_populates="language")
+    pages: List["Page"] = Relationship(back_populates="language")
 
 
 class LanguageCreate(LanguageBase):
@@ -122,7 +122,7 @@ class Tag(TagBase, table=True):
     created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
     updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
 
- #   pages: List["Page"] = Relationship(back_populates="tags", link_model=PageTagLink)
+    pages: List["Page"] = Relationship(back_populates="tags", link_model=PageTagLink)
 
 
 class TagCreate(TagBase):
@@ -157,11 +157,11 @@ class Page(PageBase, table=True):
     created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
     updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
 
- #   language: Optional[Language] = Relationship(back_populates="pages")
-  #  author: Optional[User] = Relationship(back_populates="pages")
-   # tags: List[Tag] = Relationship(back_populates="pages", link_model=PageTagLink)
-   # comments: List["Comment"] = Relationship(back_populates="page")
-#    examples: List["CodeExample"] = Relationship(back_populates="page")
+    language: Optional[Language]  = Relationship(back_populates="pages")
+    author: Optional[User]        = Relationship(back_populates="pages")
+    tags: List[Tag]               = Relationship(back_populates="pages", link_model=PageTagLink)
+    comments: List["Comment"]     = Relationship(back_populates="page")
+    examples: List["CodeExample"] = Relationship(back_populates="page")
 
 
 class PageCreate(PageBase):
@@ -203,8 +203,8 @@ class Comment(CommentBase, table=True):
     created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
     updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
 
-   # page: Optional[Page] = Relationship(back_populates="comments")
-  #  author: Optional[User] = Relationship(back_populates="comments")
+    page:   Optional[Page] = Relationship(back_populates="comments")
+    author: Optional[User] = Relationship(back_populates="comments")
 
 
 class CommentCreate(CommentBase):
@@ -238,8 +238,8 @@ class CodeExample(CodeExampleBase, table=True):
     created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
     updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
 
- #   page: Optional[Page] = Relationship(back_populates="examples")
-#    author: Optional[User] = Relationship(back_populates="examples")
+    page: Optional[Page] = Relationship(back_populates="examples")
+    author: Optional[User] = Relationship(back_populates="examples")
 
 
 class CodeExampleCreate(CodeExampleBase):
@@ -259,3 +259,8 @@ class CodeExampleUpdate(SQLModel):
     explanation: Optional[str] = None
     language_hint: Optional[str] = Field(default=None, max_length=50)
     is_public: Optional[bool] = None
+
+User.model_rebuild()
+Page.model_rebuild()
+Comment.model_rebuild()
+CodeExample.model_rebuild()
