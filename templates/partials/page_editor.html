@@ -1,0 +1,44 @@
+<form
+    id="page-editor"
+    class="page-editor"
+    hx-patch="/pages/{{ page.id }}"
+    hx-target="#page-editor"
+    hx-swap="outerHTML"
+>
+    <div class="editor-top">
+        <input
+            class="page-title"
+            name="title"
+            value="{{ page.title }}"
+            required
+        >
+
+        <button type="button" class="settings-button" onclick="togglePageSettings()">
+            Configurações
+        </button>
+    </div>
+
+    <div id="page-settings" class="page-settings hidden">
+        <input name="summary" value="{{ page.summary }}">
+
+        <select name="page_type">
+            <option value="personal" {% if page.page_type.value == "personal" %}selected{% endif %}>Personal</option>
+            <option value="official" {% if page.page_type.value == "official" %}selected{% endif %}>Official</option>
+            <option value="question" {% if page.page_type.value == "question" %}selected{% endif %}>Question</option>
+            <option value="example" {% if page.page_type.value == "example" %}selected{% endif %}>Example</option>
+            <option value="note" {% if page.page_type.value == "note" %}selected{% endif %}>Note</option>
+        </select>
+
+        <select name="status">
+            <option value="draft" {% if page.status.value == "draft" %}selected{% endif %}>Draft</option>
+            <option value="published" {% if page.status.value == "published" %}selected{% endif %}>Published</option>
+            <option value="archived" {% if page.status.value == "archived" %}selected{% endif %}>Archived</option>
+        </select>
+    </div>
+
+    <textarea class="page-content" name="content">{{ page.content }}</textarea>
+
+    <button type="submit" class="save-page-button">
+        Salvar alterações
+    </button>
+</form>
