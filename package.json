@@ -1,0 +1,23 @@
+{
+  "name": "wikidev",
+  "version": "1.0.0",
+  "description": "Plataforma colaborativa de documentação",
+  "scripts": {
+    "commit": "cz",
+    "lint": "eslint . --ext .js",
+    "test": "echo \"Nenhum teste configurado\" && exit 0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "commitizen": "^4.3.0",
+    "cz-conventional-changelog": "^3.3.0",
+    "eslint": "^8.0.0",
+    "husky": "^9.0.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  }
+}

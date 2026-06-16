@@ -26,7 +26,7 @@ def login(
 
     session.add(user)
     session.commit()
-    
+
     resposta = HTMLResponse(content="")
 
     # define o cookie
@@ -35,8 +35,10 @@ def login(
         value=token,
         httponly=True,  
         secure=False,   # mudar para True em produção (HTTPS)
-        samesite="lax"
+        samesite="lax",
+        path="/"
     )
     
-    resposta.headers["HX-Redirect"] = "/dashboard"
+    resposta.headers["HX-Redirect"] = "/"
+
     return resposta

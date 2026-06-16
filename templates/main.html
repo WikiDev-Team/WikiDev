@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/script.js" defer></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <title>Wikidev</title>
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="topbar-left">
+            <div class="user-tag"><strong>usuario_dev</strong></div>
+            
+            <nav class="main-nav">
+                <a href="#" class="active">Home</a>
+                <a href="#">Forum</a>
+                <a href="#">Manpages</a>
+            </nav>
+        </div>
+
+        <div class="topbar-right">
+            <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" title="Alternar Tema">☀️</button>
+            
+            <div class="menu-hamburger" onclick="toggleSidebar()" title="Recolher/Expandir Menu">≡</div>
+        </div>
+    </header>
+
+    <div class="layout-container">
+        
+    <main class="main-content">
+        <section id="welcome-panel">
+            <h2>Bem-vindo ao Wikidev</h2>
+            <br>
+            <p style="color: var(--text-secondary)">Selecione um tópico na barra lateral para começar a ler ou editar.</p>
+        </section>
+
+        <div id="page-editor"></div>
+
+    </main>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-actions">
+            <button
+                class="add-page-button"
+                hx-get="/pages/new"
+                hx-target="#page-editor"
+                hx-swap="outerHTML"
+            > + Adicionar página </button>
+        </div>
+
+        <ul class="file-tree" id="pages-list"></ul>
+    </aside>
+
+    </div>
+
+</body>
+</html>

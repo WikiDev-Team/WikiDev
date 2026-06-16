@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -66,7 +67,7 @@ def health():
 async def tela_login(request: Request):
     return templates.TemplateResponse(
         request=request, 
-        name="login_teste.html", 
+        name="login.html", 
         context={"project": "WikiDev"}
     )
 
