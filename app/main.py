@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from fastapi.templating import Jinja2Templates
@@ -7,6 +7,8 @@ from fastapi.exceptions import RequestValidationError
 
 from .db import init_db, engine
 from .models import Language, Page, Tag, User
+from .dependencies import get_current_user
+
 from .routers.users import router as users_router
 from .routers.languages import router as languages_router
 from .routers.tags import router as tags_router
@@ -55,26 +57,28 @@ def on_startup() -> None:
     init_db()
 
 
-@app.get("/", response_class=HTMLResponse)
-async def root(request: Request):
-    return templates.TemplateResponse(
-        request=request, 
-        name="index.html", 
-        context={"project": "WikiDev"}
-    )
-
-
 @app.get("/health")
 def health():
     return {"status": "healthy"}
 
 
-@app.get("/dashboard")
-def dashboard():
-    with Session(engine) as session:
-        return {
-            "users": session.exec(select(User)).all().__len__(),
-            "languages": session.exec(select(Language)).all().__len__(),
-            "tags": session.exec(select(Tag)).all().__len__(),
-            "pages": session.exec(select(Page)).all().__len__(),
+@app.get("/login", response_class=HTMLResponse)
+async def tela_login(request: Request):
+    return templates.TemplateResponse(
+        request=request, 
+        name="login_teste.html", 
+        context={"project": "WikiDev"}
+    )
+
+
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request, current_user: User = Depends(get_current_user)):
+    return templates.TemplateResponse(
+        request=request, 
+        name="main.html", 
+        context={
+            "project": "WikiDev",
+            "usuario": current_user
         }
+    )
+
