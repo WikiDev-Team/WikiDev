@@ -23,6 +23,8 @@ app = FastAPI(title="WikiDev API", version="1.0.0")
 
 templates = Jinja2Templates(directory="templates")
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
