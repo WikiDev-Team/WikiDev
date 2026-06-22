@@ -42,3 +42,26 @@ def login(
     resposta.headers["HX-Redirect"] = "/"
 
     return resposta
+
+@router.get("/dev-login")
+def dev_login(session: Session = Depends(get_session)):
+    user = session.exec(select(User)).first()
+    
+    if not user:
+        from ..crud import create_user
+        from ..models import UserCreate
+        user = create_user(session, UserCreate(
+            username="dev",
+            email="dev@dev.com",
+            password="dev123"
+        ))
+    
+    token = generate_session_token()
+    user.token = token
+    session.add(user)
+    session.commit()
+
+    resposta = HTMLResponse(content="")
+    resposta.set_cookie(key="session_token", value=token, httponly=True)
+    resposta.headers["HX-Redirect"] = "/dashboard"
+    return resposta
