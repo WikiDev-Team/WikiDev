@@ -1,20 +1,19 @@
 :root {
-    --bg-main: #0d1117;        
-    --bg-panel: #161b22;       
-    --text-primary: #c9d1d9;   
-    --text-secondary: #8b949e; 
-    --accent-blue: #58a6ff;    
-    --border-color: #30363d;   
+    --bg-main: #0d1117;
+    --bg-panel: #161b22;
+    --text-primary: #c9d1d9;
+    --text-secondary: #8b949e;
+    --accent-blue: #58a6ff;
+    --border-color: #30363d;
 }
 
-/* Variáveis para o Tema Claro */
 body.light-theme {
-    --bg-main: #ffffff;        
-    --bg-panel: #f6f8fa;       
-    --text-primary: #24292f;   
-    --text-secondary: #57606a; 
-    --accent-blue: #0969da;    
-    --border-color: #d0d7de;   
+    --bg-main: #ffffff;
+    --bg-panel: #f6f8fa;
+    --text-primary: #24292f;
+    --text-secondary: #57606a;
+    --accent-blue: #0969da;
+    --border-color: #d0d7de;
 }
 
 * {
@@ -24,57 +23,100 @@ body.light-theme {
 }
 
 body {
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--bg-main);
     color: var(--text-primary);
     height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* Adiciona uma transição suave ao trocar de cor */
-    transition: background-color 0.3s ease, color 0.3s ease; 
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Header / Navegação Superior */
+/* Evita conflito com as telas de login/cadastro/perfil */
+body.auth-page {
+    height: auto;
+    min-height: 100vh;
+    display: block;
+    overflow-y: auto;
+}
+
+/* ===== Topbar ===== */
+
 .topbar {
+    height: 104px;
+    min-height: 104px;
     background-color: var(--bg-panel);
     border-bottom: 1px solid var(--border-color);
-    padding: 25px 40px; 
+    padding: 16px 38px;
     display: flex;
-    justify-content: space-between; 
-    align-items: flex-end;
+    justify-content: space-between;
+    align-items: center;
     transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .topbar-left {
     display: flex;
     flex-direction: column;
-    gap: 15px; 
+    justify-content: center;
+    align-items: flex-start;
+    gap: 12px;
 }
 
-.user-tag {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
 }
 
-.user-tag strong {
+/* ===== Botão do usuário ===== */
+
+.botao-user {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
     color: var(--text-primary);
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 0.95rem;
+    line-height: 1;
+    font-weight: 700;
+    text-decoration: none;
+    transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
 }
+
+.botao-user:hover {
+    color: var(--accent-blue);
+    border-color: var(--accent-blue);
+    background-color: rgba(88, 166, 255, 0.08);
+}
+
+/* ===== Navegação ===== */
 
 .main-nav {
     display: flex;
-    gap: 40px;
+    align-items: center;
+    gap: 34px;
+    height: 32px;
 }
 
 .main-nav a {
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
     color: var(--text-primary);
     text-decoration: none;
-    font-size: 1.2rem;
+    font-size: 1.08rem;
+    line-height: 1;
     padding-bottom: 5px;
     font-weight: 500;
 }
 
 .main-nav a.active {
+    color: var(--text-primary);
     border-bottom: 3px solid var(--accent-blue);
 }
 
@@ -82,45 +124,71 @@ body {
     color: var(--accent-blue);
 }
 
-/* Container para agrupar o botão de tema e o menu hambúrguer */
-.topbar-right {
-    display: flex;
+/* ===== Logo no topo ===== */
+
+.topbar-logo-link {
+    display: inline-flex;
     align-items: center;
-    gap: 20px;
-    padding-bottom: 5px;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    overflow: hidden;
+    text-decoration: none;
 }
 
-/* Botão de Tema (Sol/Lua) */
+.topbar-logo {
+    width: 54px !important;
+    height: 54px !important;
+    max-width: 54px !important;
+    max-height: 54px !important;
+    object-fit: contain;
+    display: block;
+}
+
+/* ===== Botão de tema ===== */
+
 .theme-toggle {
     background: none;
     border: none;
-    font-size: 1.5rem;
+    font-size: 1.45rem;
     cursor: pointer;
     color: var(--text-secondary);
-    transition: color 0.3s ease;
+    transition: color 0.3s ease, transform 0.2s ease;
 }
 
 .theme-toggle:hover {
     color: var(--text-primary);
+    transform: scale(1.05);
 }
 
-/* Tres tracihos /  menu hamburger*/
+/* ===== Menu hamburger ===== */
+
 .menu-hamburger {
-    font-size: 2rem;
-    cursor: pointer;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background-color: transparent;
     color: var(--text-secondary);
-    user-select: none;
+    font-size: 1.6rem;
+    cursor: pointer;
     line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .menu-hamburger:hover {
     color: var(--text-primary);
+    border-color: var(--accent-blue);
 }
 
-/* Layout Principal */
+/* ===== Layout principal ===== */
+
 .layout-container {
     display: flex;
     flex: 1;
+    min-height: 0;
     overflow: hidden;
 }
 
@@ -130,29 +198,61 @@ body {
     overflow-y: auto;
 }
 
-/* Barra Lateral (Com animação de abrir/fechar) */
+.welcome-section {
+    margin-bottom: 28px;
+}
+
+.welcome-section h1 {
+    font-size: 1.7rem;
+    margin-bottom: 18px;
+    color: var(--text-primary);
+}
+
+.welcome-section p {
+    color: var(--text-secondary);
+}
+
+/* ===== Sidebar ===== */
+
 .sidebar {
     width: 300px;
+    min-width: 300px;
     background-color: var(--bg-panel);
     border-left: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    transition: width 0.3s ease, background-color 0.3s ease, border-color 0.3s ease; 
-    overflow-x: hidden; 
-    white-space: nowrap; 
+    transition: width 0.25s ease, min-width 0.25s ease, border-color 0.25s ease;
+    overflow-x: hidden;
+    white-space: nowrap;
 }
 
-/* Recolher aba -> <- */
 .sidebar.collapsed {
     width: 0;
+    min-width: 0;
     border-left: none;
+}
+
+.sidebar-actions {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.add-page-button {
+    width: 100%;
+    background-color: var(--accent-blue);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-weight: 700;
 }
 
 .file-tree {
     padding: 20px;
     overflow-y: auto;
     list-style: none;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
 }
 
 .folder-item {
@@ -171,21 +271,7 @@ body {
     color: var(--text-primary);
 }
 
-/*icone para os arquicvos*/
-.folder-item::before {
-    content: "📄"; 
-    font-size: 1rem;
-}
-
-.add-page-button {
-    background-color: var(--accent-blue);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 12px;
-    cursor: pointer;
-    font-weight: 600;
-}
+/* ===== Editor ===== */
 
 .page-editor {
     max-width: 900px;
@@ -230,10 +316,7 @@ body {
     gap: 12px;
 }
 
-.page-settings.hidden {
-    display: none;
-}
-
+.page-settings.hidden,
 .hidden {
     display: none;
 }
@@ -263,11 +346,118 @@ body {
     margin-top: 16px;
 }
 
-.sidebar-actions {
-    padding: 20px;
+/* ===== Perfil ===== */
+
+.profile-details {
+    width: 100%;
+    margin: 18px 0 24px;
+    padding: 16px 0;
+    border-top: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    text-align: center;
 }
 
-.sidebar-actions .add-page-button {
+.profile-logout-form {
     width: 100%;
+    margin-top: 12px;
+}
+
+.logout-button {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 18px;
+    background-color: var(--accent-blue);
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.logout-button:hover {
+    filter: brightness(1.08);
+}
+
+.profile-back-link {
+    display: inline-block;
+    margin-top: 18px;
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.profile-back-link:hover {
+    text-decoration: underline;
+}
+
+/* ===== Mensagens HTMX ===== */
+
+.error-message {
+    margin-top: 14px;
+    color: #ff7b72;
+    text-align: center;
+}
+
+.success-message {
+    margin-bottom: 18px;
+    color: #3fb950;
+    background-color: rgba(63, 185, 80, 0.12);
+    border: 1px solid rgba(63, 185, 80, 0.35);
+    border-radius: 12px;
+    padding: 10px 12px;
+}
+
+/* ===== Responsividade ===== */
+
+@media (max-width: 800px) {
+    .topbar {
+        height: auto;
+        min-height: auto;
+        padding: 18px 22px;
+        align-items: center;
+    }
+
+    .topbar-left {
+        gap: 10px;
+    }
+
+    .main-nav {
+        gap: 20px;
+    }
+
+    .main-nav a {
+        font-size: 1rem;
+    }
+
+    .topbar-logo-link,
+    .topbar-logo {
+        width: 44px !important;
+        height: 44px !important;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 96px;
+        right: 0;
+        bottom: 0;
+        z-index: 20;
+    }
+
+    .sidebar.collapsed {
+        width: 0;
+        min-width: 0;
+    }
+
+    .main-content {
+        padding: 28px 22px;
+    }
+
+    .editor-top {
+        flex-direction: column;
+    }
+
+    .page-settings {
+        grid-template-columns: 1fr;
+    }
 }

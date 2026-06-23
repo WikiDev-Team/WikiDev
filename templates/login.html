@@ -2,37 +2,65 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>{{ project }}</title>
+    <title>Entrar - WikiDev</title>
+    <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script defer src="/static/theme.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/auth.css">
+
 </head>
-<body>
-    <h1>Bem-vindo ao WikiDev</h1>
+<body class="auth-page">
+    <button type="button" class="theme-toggle auth-theme-toggle">☀️</button>
 
-    {% if registered %}
-        <script>
-            alert("Conta criada com sucesso! Agora faça login.");
-        </script>
-    {% endif %}
-    
-    <div id="conteudo-principal">
-        <form
-            method="post"
-            action="/login"
-            hx-post="/login"
-            hx-target="#login-message"
-            hx-swap="innerHTML"
-        >
-            <input type="text" name="username" placeholder="Usuário" required>
-            <input type="password" name="password" placeholder="Senha" required>
-            <button type="submit">Entrar</button>
-        </form>
+    <main class="auth-shell">
+        <section class="auth-card">
+            <img
+                src="/static/wikidev_logo.png"
+                alt=""
+                class="auth-logo"
+                onerror="this.style.display='none'"
+            >
 
-        <div id="login-message"></div>
+            <h1>Bem-vindo ao WikiDev!</h1>
+            <p class="auth-subtitle">
+                Entre para organizar e consultar suas anotações de programação.
+            </p>
 
-        <p>
-            Ainda não tem conta?
-            <a href="/register">Criar conta</a>
-        </p>
-    </div>
+            {% if registered %}
+                <div class="success-message">
+                    Conta criada com sucesso! Agora faça login.
+                </div>
+            {% endif %}
+
+            <form
+                method="post"
+                action="/login"
+                hx-post="/login"
+                hx-target="#login-message"
+                hx-swap="innerHTML"
+                class="auth-form"
+            >
+                <label>
+                    <span>Usuário</span>
+                    <input type="text" name="username" placeholder="Digite seu usuário" required>
+                </label>
+
+                <label>
+                    <span>Senha</span>
+                    <input type="password" name="password" placeholder="Digite sua senha" required>
+                </label>
+
+                <button type="submit" class="primary-button">Entrar</button>
+            </form>
+
+            <div id="login-message"></div>
+        </section>
+
+        <section class="auth-secondary-card">
+            <p>Ainda não tem conta?</p>
+            <a href="/register" class="secondary-link">Criar conta</a>
+        </section>
+    </main>
 </body>
 </html>

@@ -1,71 +1,132 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WikiDev</title>
+
+    <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
+
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script defer src="/static/theme.js"></script>
+
     <link rel="stylesheet" href="/static/style.css">
-    <script src="/static/script.js" defer></script>
-    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-    <title>Wikidev</title>
 </head>
 
 <body>
-
-    <form
-        method="post"
-        action="/logout"
-        hx-post="/logout"
-    >
-        <button type="submit">Sair</button>
-    </form>
-
-
     <header class="topbar">
         <div class="topbar-left">
-            <div class="user-tag"><strong>usuario_dev</strong></div>
-            
+            <a href="/profile" class="botao-user">
+                {{ usuario.display_name or usuario.username }}
+            </a>
+
             <nav class="main-nav">
-                <a href="#" class="active">Home</a>
+                <a href="/dashboard" class="active">Home</a>
                 <a href="#">Forum</a>
                 <a href="#">Manpages</a>
             </nav>
         </div>
 
         <div class="topbar-right">
-            <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn" title="Alternar Tema">☀️</button>
-            
-            <div class="menu-hamburger" onclick="toggleSidebar()" title="Recolher/Expandir Menu">≡</div>
+            <a href="/dashboard" class="topbar-logo-link" aria-label="Página inicial do WikiDev">
+                <img
+                    src="/static/wikidev_logo.png"
+                    alt="Logo do WikiDev"
+                    class="topbar-logo"
+                >
+            </a>
+
+            <button type="button" class="theme-toggle" aria-label="Alternar tema">
+                ☀️
+            </button>
+
+            <button
+                type="button"
+                class="menu-hamburger"
+                aria-label="Abrir ou fechar barra lateral"
+                onclick="toggleSidebar()"
+            >
+                ≡
+            </button>
         </div>
     </header>
 
     <div class="layout-container">
-        
-    <main class="main-content">
-        <section id="welcome-panel">
-            <h2>Bem-vindo ao Wikidev</h2>
-            <br>
-            <p style="color: var(--text-secondary)">Selecione um tópico na barra lateral para começar a ler ou editar.</p>
-        </section>
+        <main class="main-content">
+            <section class="welcome-section">
+                <h1>Bem-vindo ao Wikidev</h1>
+                <p>Selecione um tópico na barra lateral para começar a ler ou editar.</p>
+            </section>
 
-        <div id="page-editor"></div>
+            <section class="page-editor">
+                <div class="editor-top">
+                    <input
+                        class="page-title"
+                        type="text"
+                        placeholder="Título da página"
+                    >
 
-    </main>
+                    <button type="button" class="settings-button">
+                        Configurações
+                    </button>
+                </div>
 
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-actions">
-            <button
-                class="add-page-button"
-                hx-get="/pages/new"
-                hx-target="#page-editor"
-                hx-swap="outerHTML"
-            > + Adicionar página </button>
-        </div>
+                <div class="page-settings hidden">
+                    <input type="text" placeholder="Linguagem">
+                    <input type="text" placeholder="Tags">
+                    <select>
+                        <option value="personal">Pessoal</option>
+                        <option value="official">Oficial</option>
+                        <option value="question">Pergunta</option>
+                        <option value="example">Exemplo</option>
+                        <option value="note">Nota</option>
+                    </select>
+                    <select>
+                        <option value="draft">Rascunho</option>
+                        <option value="published">Publicado</option>
+                        <option value="archived">Arquivado</option>
+                    </select>
+                </div>
 
-        <ul class="file-tree" id="pages-list"></ul>
-    </aside>
+                <textarea
+                    class="page-content"
+                    placeholder="Escreva sua página aqui..."
+                ></textarea>
 
+                <button type="button" class="save-page-button">
+                    Salvar página
+                </button>
+            </section>
+        </main>
+
+        <aside class="sidebar">
+            <div class="sidebar-actions">
+                <button type="button" class="add-page-button">
+                    + Adicionar página
+                </button>
+            </div>
+
+            <ul class="file-tree">
+            </ul>
+        </aside>
     </div>
 
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.querySelector(".sidebar");
+
+            if (sidebar) {
+                sidebar.classList.toggle("collapsed");
+            }
+        }
+
+        const settingsButton = document.querySelector(".settings-button");
+        const pageSettings = document.querySelector(".page-settings");
+
+        if (settingsButton && pageSettings) {
+            settingsButton.addEventListener("click", () => {
+                pageSettings.classList.toggle("hidden");
+            });
+        }
+    </script>
 </body>
 </html>

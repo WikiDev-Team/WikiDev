@@ -93,3 +93,14 @@ async def dashboard(request: Request, current_user: User = Depends(get_current_u
             "usuario": current_user
         }
     )
+
+@app.get("/profile", response_class=HTMLResponse)
+async def profile(request: Request, current_user: User = Depends(get_current_user)):
+    return templates.TemplateResponse(
+        request=request,
+        name="user_profile.html",
+        context={
+            "project": "WikiDev",
+            "usuario": current_user
+        }
+    )
