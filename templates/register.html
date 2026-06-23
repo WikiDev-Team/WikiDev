@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Criar conta - {{ project }}</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <main class="auth-container">
+        <h1>Criar conta no {{ project }}</h1>
+
+        <form
+            method="post"
+            action="/register"
+            hx-post="/register"
+            hx-target="#register-message"
+            hx-swap="innerHTML"
+            class="auth-form"
+        >
+            <input
+                type="text"
+                name="username"
+                placeholder="Nome de usuário"
+                required
+            >
+
+            <input
+                type="email"
+                name="email"
+                placeholder="E-mail"
+                required
+            >
+
+            <input
+                type="text"
+                name="display_name"
+                placeholder="Nome de exibição"
+            >
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Senha"
+                minlength="6"
+                required
+            >
+
+            <input
+                type="password"
+                name="password_confirm"
+                placeholder="Confirme a senha"
+                minlength="6"
+                required
+            >
+
+            <button type="submit">Cadastrar</button>
+        </form>
+
+        <div id="register-message"></div>
+
+        <p>
+            Já tem conta?
+            <a href="/login">Entrar</a>
+        </p>
+    </main>
+</body>
+</html>

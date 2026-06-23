@@ -54,10 +54,9 @@ class User(UserBase, table=True):
     comments: List["Comment"] = Relationship(back_populates="author")
     examples: List["CodeExample"] = Relationship(back_populates="author")
 
-
+#modifiquei pq p criar o user o front/back recebe o texto pura, mas essa senha n eh salva no bd diretamente
 class UserCreate(UserBase):
-    pass
-
+    password: str = Field(min_length=6, max_length=128)
 
 class UserRead(UserBase):
     id: int

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.exceptions import RequestValidationError
 
 from .db import init_db, engine
@@ -46,13 +46,13 @@ async def htmx_validation_exception_handler(request: Request, exc: RequestValida
         content={"detail": exc.errors()},
     )
 
+app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(languages_router)
 app.include_router(tags_router)
 app.include_router(pages_router)
 app.include_router(comments_router)
 app.include_router(examples_router)
-app.include_router(auth_router)
 
 
 @app.on_event("startup")
@@ -67,21 +67,29 @@ def health():
 
 @app.get("/login", response_class=HTMLResponse)
 async def tela_login(request: Request):
+    registered = request.query_params.get("registered") == "1"
+
     return templates.TemplateResponse(
-        request=request, 
-        name="login.html", 
-        context={"project": "WikiDev"}
+        request=request,
+        name="login.html",
+        context={
+            "project": "WikiDev",
+            "registered": registered
+        }
     )
 
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/login")
 
-@app.get("/", response_class=HTMLResponse)
-async def root(request: Request, current_user: User = Depends(get_current_user)):
+
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard(request: Request, current_user: User = Depends(get_current_user)):
     return templates.TemplateResponse(
-        request=request, 
-        name="main.html", 
+        request=request,
+        name="main.html",
         context={
             "project": "WikiDev",
             "usuario": current_user
         }
     )
-
