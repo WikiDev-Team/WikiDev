@@ -6,14 +6,33 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body>
-    <h1>Bem-vindo ao {{ project }}</h1>
+    <h1>Bem-vindo ao WikiDev</h1>
+
+    {% if registered %}
+        <script>
+            alert("Conta criada com sucesso! Agora faça login.");
+        </script>
+    {% endif %}
     
     <div id="conteudo-principal">
-        <form hx-post="/login" hx-swap="afterend">
-            <input type="text" name="username" placeholder="Usuário">
-            <input type="password" name="password" placeholder="Senha">
+        <form
+            method="post"
+            action="/login"
+            hx-post="/login"
+            hx-target="#login-message"
+            hx-swap="innerHTML"
+        >
+            <input type="text" name="username" placeholder="Usuário" required>
+            <input type="password" name="password" placeholder="Senha" required>
             <button type="submit">Entrar</button>
         </form>
+
+        <div id="login-message"></div>
+
+        <p>
+            Ainda não tem conta?
+            <a href="/register">Criar conta</a>
+        </p>
     </div>
 </body>
 </html>

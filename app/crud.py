@@ -2,7 +2,7 @@ from __future__ import annotations
 from sqlmodel import Session, select
 from sqlalchemy import delete
 from typing import Iterable, Optional, TypeVar, Type, Any
-
+from .security import get_password_hash #para rodar a funcao trocada
 from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
 
@@ -37,14 +37,19 @@ def _touch_update(obj):
     from datetime import datetime
     obj.updated_at = datetime.utcnow()
 
-
+#funcao modificada para pegar username, email ,..., mas remove a password
 def create_user(session: Session, data: UserCreate) -> User:
-    obj = User.model_validate(data)
+    payload = data.model_dump(exclude={"password"})
+
+    obj = User(
+        **payload,
+        hashed_password=get_password_hash(data.password)
+    )
+
     session.add(obj)
     session.commit()
     session.refresh(obj)
     return obj
-
 
 def update_user(session: Session, obj: User, data: UserUpdate) -> User:
     payload = data.model_dump(exclude_unset=True)
