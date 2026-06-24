@@ -52,81 +52,31 @@
 
     <div class="layout-container">
         <main class="main-content">
-            <section class="welcome-section">
+            <section id="welcome-panel" class="welcome-section">
                 <h1>Bem-vindo ao Wikidev</h1>
                 <p>Selecione um tópico na barra lateral para começar a ler ou editar.</p>
             </section>
 
-            <section class="page-editor">
-                <div class="editor-top">
-                    <input
-                        class="page-title"
-                        type="text"
-                        placeholder="Título da página"
-                    >
-
-                    <button type="button" class="settings-button">
-                        Configurações
-                    </button>
-                </div>
-
-                <div class="page-settings hidden">
-                    <input type="text" placeholder="Linguagem">
-                    <input type="text" placeholder="Tags">
-                    <select>
-                        <option value="personal">Pessoal</option>
-                        <option value="official">Oficial</option>
-                        <option value="question">Pergunta</option>
-                        <option value="example">Exemplo</option>
-                        <option value="note">Nota</option>
-                    </select>
-                    <select>
-                        <option value="draft">Rascunho</option>
-                        <option value="published">Publicado</option>
-                        <option value="archived">Arquivado</option>
-                    </select>
-                </div>
-
-                <textarea
-                    class="page-content"
-                    placeholder="Escreva sua página aqui..."
-                ></textarea>
-
-                <button type="button" class="save-page-button">
-                    Salvar página
-                </button>
-            </section>
+            <div id="page-editor-container"></div>
         </main>
 
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-actions">
-                <button type="button" class="add-page-button">
+                <button
+                    type="button"
+                    class="add-page-button"
+                    onclick="showPageEditor()"
+                    hx-get="/pages/new"
+                    hx-target="#page-editor-container"
+                    hx-swap="innerHTML"
+                >
                     + Adicionar página
                 </button>
             </div>
 
-            <ul class="file-tree">
-            </ul>
+            <ul class="file-tree" id="pages-list"></ul>
         </aside>
     </div>
 
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.querySelector(".sidebar");
-
-            if (sidebar) {
-                sidebar.classList.toggle("collapsed");
-            }
-        }
-
-        const settingsButton = document.querySelector(".settings-button");
-        const pageSettings = document.querySelector(".page-settings");
-
-        if (settingsButton && pageSettings) {
-            settingsButton.addEventListener("click", () => {
-                pageSettings.classList.toggle("hidden");
-            });
-        }
-    </script>
 </body>
 </html>
