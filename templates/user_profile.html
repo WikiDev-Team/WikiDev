@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Perfil - WikiDev</title>
+    <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
+
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script defer src="/static/theme.js"></script>
+
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/auth.css">
+</head>
+
+<body class="auth-page">
+    <button type="button" class="theme-toggle auth-theme-toggle" aria-label="Alternar tema">
+        ☀️
+    </button>
+
+    <main class="auth-shell">
+        <section class="auth-card profile-auth-card">
+            <img
+                src="/static/wikidev_logo.png"
+                alt=""
+                class="auth-logo"
+                onerror="this.style.display='none'"
+            >
+
+            <h1>{{ usuario.display_name or usuario.username }}</h1>
+
+            <p class="auth-subtitle profile-username">
+                @{{ usuario.username }}
+            </p>
+
+            <div class="profile-details">
+                <p>
+                    <strong>E-mail:</strong>
+                    {{ usuario.email }}
+                </p>
+            </div>
+
+    <form
+        method="post"
+        action="/logout"
+        hx-post="/logout"
+        class="profile-logout-form"
+    >
+        <button type="submit" class="logout-button">
+            Sair
+        </button>
+</form>
+
+            <a href="/dashboard" class="profile-back-link">
+                Voltar para a tela principal
+            </a>
+        </section>
+    </main>
+</body>
+</html>

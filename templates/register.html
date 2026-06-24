@@ -2,67 +2,73 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Criar conta - {{ project }}</title>
+    <title>Criar conta - WikiDev</title>
+    <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script defer src="/static/theme.js"></script>
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/auth.css">
 </head>
-<body>
-    <main class="auth-container">
-        <h1>Criar conta no {{ project }}</h1>
+<body class="auth-page">
+    <button type="button" class="theme-toggle auth-theme-toggle">☀️</button>
 
-        <form
-            method="post"
-            action="/register"
-            hx-post="/register"
-            hx-target="#register-message"
-            hx-swap="innerHTML"
-            class="auth-form"
-        >
-            <input
-                type="text"
-                name="username"
-                placeholder="Nome de usuário"
-                required
+    <main class="auth-shell">
+        <section class="auth-card auth-card-large">
+            <img
+                src="/static/wikidev_logo.png"
+                alt=""
+                class="auth-logo"
+                onerror="this.style.display='none'"
             >
 
-            <input
-                type="email"
-                name="email"
-                placeholder="E-mail"
-                required
+            <h1>Criar conta</h1>
+            <p class="auth-subtitle">
+                Comece a montar sua wiki pessoal de programação.
+            </p>
+
+            <form
+                method="post"
+                action="/register"
+                hx-post="/register"
+                hx-target="#register-message"
+                hx-swap="innerHTML"
+                class="auth-form"
             >
+                <label>
+                    <span>Nome de usuário</span>
+                    <input type="text" name="username" placeholder="Ex: exodus02" required>
+                </label>
 
-            <input
-                type="text"
-                name="display_name"
-                placeholder="Nome de exibição"
-            >
+                <label>
+                    <span>E-mail</span>
+                    <input type="email" name="email" placeholder="seuemail@exemplo.com" required>
+                </label>
 
-            <input
-                type="password"
-                name="password"
-                placeholder="Senha"
-                minlength="6"
-                required
-            >
+                <label>
+                    <span>Nome de exibição</span>
+                    <input type="text" name="display_name" placeholder="Ex: exodus">
+                </label>
 
-            <input
-                type="password"
-                name="password_confirm"
-                placeholder="Confirme a senha"
-                minlength="6"
-                required
-            >
+                <label>
+                    <span>Senha</span>
+                    <input type="password" name="password" placeholder="Mínimo 6 caracteres" minlength="6" required>
+                </label>
 
-            <button type="submit">Cadastrar</button>
-        </form>
+                <label>
+                    <span>Confirme a senha</span>
+                    <input type="password" name="password_confirm" placeholder="Repita sua senha" minlength="6" required>
+                </label>
 
-        <div id="register-message"></div>
+                <button type="submit" class="primary-button">Cadastrar</button>
+            </form>
 
-        <p>
-            Já tem conta?
-            <a href="/login">Entrar</a>
-        </p>
+            <div id="register-message"></div>
+
+            <p class="auth-inline-link">
+                Já tem conta?
+                <a href="/login">Entrar</a>
+            </p>
+        </section>
     </main>
 </body>
 </html>
