@@ -3,10 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 
 from .db import init_db, engine
-from .models import Language, Page, Tag, User
+from .models import Folder, Language, Page, Tag, User
 from .routers.users import router as users_router
 from .routers.languages import router as languages_router
 from .routers.tags import router as tags_router
+from .routers.folders import router as folders_router
 from .routers.pages import router as pages_router
 from .routers.comments import router as comments_router
 from .routers.examples import router as examples_router
@@ -24,6 +25,7 @@ app.add_middleware(
 app.include_router(users_router)
 app.include_router(languages_router)
 app.include_router(tags_router)
+app.include_router(folders_router)
 app.include_router(pages_router)
 app.include_router(comments_router)
 app.include_router(examples_router)
@@ -39,7 +41,7 @@ def root():
     return {
         "project": "WikiDev",
         "status": "ok",
-        "description": "API para linguagens, páginas, comentários, tags e exemplos de código.",
+        "description": "API para linguagens, páginas, pastas, comentários, tags e exemplos de código.",
         "docs": "/docs",
     }
 
@@ -53,8 +55,9 @@ def health():
 def dashboard():
     with Session(engine) as session:
         return {
-            "users": session.exec(select(User)).all().__len__(),
-            "languages": session.exec(select(Language)).all().__len__(),
-            "tags": session.exec(select(Tag)).all().__len__(),
-            "pages": session.exec(select(Page)).all().__len__(),
+            "users": len(session.exec(select(User)).all()),
+            "languages": len(session.exec(select(Language)).all()),
+            "tags": len(session.exec(select(Tag)).all()),
+            "folders": len(session.exec(select(Folder)).all()),
+            "pages": len(session.exec(select(Page)).all()),
         }
