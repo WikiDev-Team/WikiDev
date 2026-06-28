@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 
 from ..db import get_session
-from ..models import Page, PageCreate, PageRead, PageUpdate
+from ..models import Page, PageCreate, PageRead, PageUpdate, PageTagLink
 from ..crud import create_page, update_page
 
 router = APIRouter(prefix="/pages", tags=["pages"])
@@ -16,6 +16,7 @@ def list_pages(
     page_type: str | None = None,
     status: str | None = None,
     q: str | None = None,
+    tag_id: int | None = None,
 ):
     stmt = select(Page).order_by(Page.created_at.desc())
 
@@ -27,6 +28,9 @@ def list_pages(
         stmt = stmt.where(Page.status == status)
     if q:
         stmt = stmt.where(Page.title.ilike(f"%{q}%"))
+        
+    if tag_id is not None:
+        stmt = stmt.join(PageTagLink).where(PageTagLink.tag_id == tag_id)
 
     return session.exec(stmt).unique().all()
 
