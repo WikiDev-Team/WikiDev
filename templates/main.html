@@ -78,5 +78,41 @@
         </aside>
     </div>
 
+        <!-- O container principal precisa ter 'position: relative' -->
+    <div id="search-container" style="position: relative; width: 100%; max-width: 400px;">
+        
+        <!-- Input do HTMX -->
+        <input 
+            type="search" 
+            name="q" 
+            placeholder="Buscar usuários ou páginas..."
+            autocomplete="off"
+            style="width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px;"
+            hx-get="/busca" 
+            hx-trigger="input changed delay:500ms, search" 
+            hx-target="#search-results" 
+        >
+
+        <!-- Dropdown Flutuante de Resultados -->
+        <!-- Ele inicia vazio. A classe pseudo-seletora (se usar Tailwind) ou CSS fará ele sumir quando vazio -->
+        <div 
+            id="search-results" 
+            style="position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: white; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 50;"
+        ></div>
+    </div>
+
+    <script>
+        // Fecha os resultados da busca ao clicar fora do componente
+        document.addEventListener('click', function(event) {
+            const container = document.getElementById('search-container');
+            const results = document.getElementById('search-results');
+            
+            // Se o clique não foi dentro do container de busca, esvaziamos a div de resultados
+            if (container && !container.contains(event.target)) {
+                results.innerHTML = '';
+            }
+        });
+    </script>
+
 </body>
 </html>

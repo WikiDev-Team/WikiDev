@@ -1,0 +1,45 @@
+<!-- Se não houver nada digitado, retornamos vazio para o dropdown sumir -->
+{% if termo|length >= 2 %}
+    <div style="padding: 12px; max-height: 400px; overflow-y: auto;">
+        
+        <!-- Usuários -->
+        <div style="margin-bottom: 12px;">
+            <h4 style="font-size: 12px; color: #666; text-transform: uppercase; border-bottom: 1px solid #eee; margin-bottom: 8px;">Usuários</h4>
+            {% if usuarios %}
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    {% for u in usuarios %}
+                        <li style="margin-bottom: 4px;">
+                            <!-- O clique no resultado redireciona a página -->
+                            <a href="/profile/{{ u.id }}" style="text-decoration: none; color: #0056b3; font-weight: 500;">
+                                @{{ u.username }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <span style="font-size: 14px; color: #999;">Nenhum usuário.</span>
+            {% endif %}
+        </div>
+
+        <!-- Páginas -->
+        <div>
+            <h4 style="font-size: 12px; color: #666; text-transform: uppercase; border-bottom: 1px solid #eee; margin-bottom: 8px;">Páginas</h4>
+            {% if paginas %}
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    {% for p in paginas %}
+                        <li style="margin-bottom: 4px;">
+                            <a href="/pages/{{ p.id }}" style="text-decoration: none; color: #0056b3; font-weight: 500;">
+                                {{ p.title }}
+                            </a>
+                            {% if p.author_id == usuario_atual.id and p.status != 'published' %}
+                                <span style="font-size: 11px; background: #fff3cd; color: #856404; padding: 2px 4px; border-radius: 3px;">Privado</span>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <span style="font-size: 14px; color: #999;">Nenhuma página.</span>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
