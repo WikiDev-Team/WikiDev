@@ -74,5 +74,8 @@ def remove_folder(folder_id: int, session: Session = Depends(get_session)):
     for page in session.exec(select(Page).where(Page.folder_id == folder_id)).all():
         page.folder_id = None
         session.add(page)
+    for subfolder in session.exec(select(Folder).where(Folder.parent_folder_id == folder_id)).all():
+        subfolder.parent_folder_id = None
+        session.add(subfolder)
     session.delete(obj)
     session.commit()
