@@ -74,7 +74,7 @@ class UserUpdate(SQLModel):
 
 class LanguageBase(SQLModel):
     name: str = Field(index=True, max_length=80)
-    slug: str = Field(default="", index=True, max_length=90)
+    slug: str = Field(default="", index=True, max_length=90, unique=True)
     description: str = Field(default="")
     official_url: str = Field(default="")
     logo_url: str = Field(default="")
@@ -108,7 +108,7 @@ class LanguageUpdate(SQLModel):
 
 class TagBase(SQLModel):
     name: str = Field(index=True, max_length=50)
-    slug: str = Field(default="", index=True, max_length=60)
+    slug: str = Field(default="", index=True, max_length=60, unique=True)
 
 
 class PageTagLink(SQLModel, table=True):
@@ -141,7 +141,7 @@ class TagUpdate(SQLModel):
 
 class FolderBase(SQLModel):
     name: str = Field(index=True, max_length=150)
-    slug: str = Field(default="", index=True, max_length=170)
+    slug: str = Field(default="", index=True, max_length=170, unique=True)
     description: str = Field(default="")
     author_id: Optional[int] = Field(default=None, foreign_key="user.id")
     parent_folder_id: Optional[int] = Field(default=None, foreign_key="folder.id")
