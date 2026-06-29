@@ -30,7 +30,7 @@ def buscar_global_htmx(
             User.username.ilike(termo),
             User.display_name.ilike(termo)
         )
-    ).limit(10)
+    ).order_by(User.display_name).limit(10)
     usuarios = session.exec(stmt_users).all()
 
     # 2. Busca de Páginas (Públicas ou do próprio autor)
@@ -41,7 +41,7 @@ def buscar_global_htmx(
             Page.status == PageStatus.PUBLISHED,
             Page.author_id == current_user.id
         )
-    ).limit(20)
+    ).order_by(Page.title).limit(20)
     paginas = session.exec(stmt_pages).all()
 
     return templates.TemplateResponse(
