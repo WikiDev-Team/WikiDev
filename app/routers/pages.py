@@ -5,8 +5,9 @@ from sqlmodel import Session, select
 from fastapi.templating import Jinja2Templates
 
 from ..db import get_session
-from ..models import Page, PageCreate, PageRead, PageUpdate
+from ..models import Page, PageCreate, PageRead, PageUpdate, User
 from ..crud import create_page, update_page
+from ..dependencies import get_current_user
 
 router = APIRouter(prefix="/pages", tags=["pages"])
 
@@ -48,6 +49,7 @@ def add_page_htmx(
     status: str = Form("draft"),
     tag_ids: str = Form(""),
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
     parsed_tag_ids = [
         int(tag_id.strip())
@@ -61,6 +63,7 @@ def add_page_htmx(
         content=content,
         page_type=page_type,
         status=status,
+        author_id=current_user.id,
         tag_ids=parsed_tag_ids,
     )
 
@@ -133,11 +136,15 @@ def edit_page(
     page_type: str = Form("personal"),
     status: str = Form("draft"),
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
     page = session.get(Page, page_id)
 
     if page is None:
         raise HTTPException(status_code=404, detail="Página não encontrada")
+
+    if page.author_id is None:
+        page.author_id = current_user.id
 
     payload = PageUpdate(
         title=title,
