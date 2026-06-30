@@ -26,10 +26,11 @@ body {
     font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--bg-main);
     color: var(--text-primary);
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -189,7 +190,7 @@ body.auth-page {
     display: flex;
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .main-content {
