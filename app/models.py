@@ -34,6 +34,7 @@ class PageStatus(str, Enum):
     ARCHIVED = "archived"
 
 
+# ── User ─────────────────────────────────────────────────────────────────────
 
 class UserBase(SQLModel):
     username: str = Field(index=True, max_length=50)
@@ -72,9 +73,11 @@ class UserUpdate(SQLModel):
     avatar_url: Optional[str] = None
 
 
+# ── Language ─────────────────────────────────────────────────────────────────
+
 class LanguageBase(SQLModel):
     name: str = Field(index=True, max_length=80)
-    slug: str = Field(default="", index=True, max_length=90)
+    slug: str = Field(default="", index=True, max_length=90, unique=True)
     description: str = Field(default="")
     official_url: str = Field(default="")
     logo_url: str = Field(default="")
@@ -106,9 +109,11 @@ class LanguageUpdate(SQLModel):
     logo_url: Optional[str] = None
 
 
+# ── Tag ──────────────────────────────────────────────────────────────────────
+
 class TagBase(SQLModel):
     name: str = Field(index=True, max_length=50)
-    slug: str = Field(default="", index=True, max_length=60)
+    slug: str = Field(default="", index=True, max_length=60, unique=True)
 
 
 class PageTagLink(SQLModel, table=True):
@@ -139,6 +144,43 @@ class TagUpdate(SQLModel):
     slug: Optional[str] = Field(default=None, max_length=60)
 
 
+# ── Folder ───────────────────────────────────────────────────────────────────
+
+class FolderBase(SQLModel):
+    name: str = Field(index=True, max_length=150)
+    slug: str = Field(default="", index=True, max_length=170, unique=True)
+    description: str = Field(default="")
+    author_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    parent_folder_id: Optional[int] = Field(default=None, foreign_key="folder.id")
+
+
+class Folder(FolderBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
+    updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
+
+
+class FolderCreate(FolderBase):
+    pass
+
+
+class FolderRead(FolderBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    author: Optional[UserRead] = None
+
+
+class FolderUpdate(SQLModel):
+    name: Optional[str] = Field(default=None, max_length=150)
+    slug: Optional[str] = Field(default=None, max_length=170)
+    description: Optional[str] = None
+    author_id: Optional[int] = None
+    parent_folder_id: Optional[int] = None
+
+
+# ── Page ─────────────────────────────────────────────────────────────────────
+
 class PageBase(SQLModel):
     title: str = Field(index=True, max_length=200)
     slug: str = Field(default="", index=True, max_length=220)
@@ -149,6 +191,7 @@ class PageBase(SQLModel):
     language_id: Optional[int] = Field(default=None, foreign_key="language.id")
     author_id: Optional[int] = Field(default=None, foreign_key="user.id")
     parent_page_id: Optional[int] = Field(default=None, foreign_key="page.id")
+    folder_id: Optional[int] = Field(default=None, foreign_key="folder.id")
 
 
 class Page(PageBase, table=True):
@@ -177,6 +220,7 @@ class PageUpdate(SQLModel):
     language_id: Optional[int] = None
     author_id: Optional[int] = None
     parent_page_id: Optional[int] = None
+    folder_id: Optional[int] = None
     tag_ids: Optional[List[int]] = None
 
 
@@ -187,7 +231,10 @@ class PageRead(PageBase):
     language: Optional[LanguageRead] = None
     author: Optional[UserRead] = None
     tags: List[TagRead] = Field(default_factory=list)
+    folder: Optional[FolderRead] = None
 
+
+# ── Comment ───────────────────────────────────────────────────────────────────
 
 class CommentBase(SQLModel):
     page_id: int = Field(foreign_key="page.id")
@@ -221,6 +268,8 @@ class CommentUpdate(SQLModel):
     body: Optional[str] = None
     is_deleted: Optional[bool] = None
 
+
+# ── CodeExample ───────────────────────────────────────────────────────────────
 
 class CodeExampleBase(SQLModel):
     page_id: int = Field(foreign_key="page.id")

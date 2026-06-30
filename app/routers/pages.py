@@ -5,7 +5,7 @@ from sqlmodel import Session, select
 from fastapi.templating import Jinja2Templates
 
 from ..db import get_session
-from ..models import Page, PageCreate, PageRead, PageUpdate, User
+from ..models import Page, PageCreate, PageRead, PageUpdate, User, PageTagLink
 from ..crud import create_page, update_page
 from ..dependencies import get_current_user
 
@@ -19,19 +19,24 @@ def list_pages(
     language_id: int | None = None,
     page_type: str | None = None,
     status: str | None = None,
+    folder_id: int | None = None,
+    tag_id: int | None = None,
     q: str | None = None,
 ):
+    """Lista páginas com filtros opcionais por linguagem, tipo, status, pasta, tag e busca."""
     stmt = select(Page).order_by(Page.created_at.desc())
-
     if language_id is not None:
         stmt = stmt.where(Page.language_id == language_id)
     if page_type is not None:
         stmt = stmt.where(Page.page_type == page_type)
     if status is not None:
         stmt = stmt.where(Page.status == status)
+    if folder_id is not None:
+        stmt = stmt.where(Page.folder_id == folder_id)
+    if tag_id is not None:
+        stmt = stmt.join(PageTagLink).where(PageTagLink.tag_id == tag_id)
     if q:
         stmt = stmt.where(Page.title.ilike(f"%{q}%"))
-
     return session.exec(stmt).unique().all()
 
 # JSON
@@ -95,6 +100,7 @@ def add_page_htmx(
 
 @router.delete("/{page_id}", status_code=204)
 def remove_page(page_id: int, session: Session = Depends(get_session)):
+    """Deleta uma página."""
     obj = session.get(Page, page_id)
     if obj is None:
         raise HTTPException(status_code=404, detail="Página não encontrada")

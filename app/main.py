@@ -7,12 +7,13 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.exceptions import RequestValidationError
 
 from .db import init_db, engine
-from .models import Language, Page, Tag, User
+from .models import Folder, Language, Page, Tag, User
 from .dependencies import get_current_user
 
 from .routers.users import router as users_router
 from .routers.languages import router as languages_router
 from .routers.tags import router as tags_router
+from .routers.folders import router as folders_router
 from .routers.pages import router as pages_router
 from .routers.comments import router as comments_router
 from .routers.examples import router as examples_router
@@ -50,6 +51,7 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(languages_router)
 app.include_router(tags_router)
+app.include_router(folders_router)
 app.include_router(pages_router)
 app.include_router(comments_router)
 app.include_router(examples_router)
@@ -58,6 +60,16 @@ app.include_router(search_router)
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
+
+
+@app.get("/")
+def root():
+    return {
+        "project": "WikiDev",
+        "status": "ok",
+        "description": "API para linguagens, páginas, pastas, comentários, tags e exemplos de código.",
+        "docs": "/docs",
+    }
 
 
 @app.get("/health")
