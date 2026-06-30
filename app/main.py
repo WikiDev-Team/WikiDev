@@ -85,13 +85,19 @@ async def root():
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, current_user: User = Depends(get_current_user)):
+    with Session(engine) as session:
+        pages = session.exec(
+            select(Page).order_by(Page.created_at.desc())
+        ).all()
+
     return templates.TemplateResponse(
         request=request,
         name="main.html",
         context={
             "project": "WikiDev",
-            "usuario": current_user
-        }
+            "usuario": current_user,
+            "pages": pages,
+        },
     )
 
 @app.get("/profile", response_class=HTMLResponse)

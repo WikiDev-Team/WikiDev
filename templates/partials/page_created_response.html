@@ -1,0 +1,7 @@
+{% include "partials/page_editor.html" %}
+
+<ul class="file-tree" id="pages-list" hx-swap-oob="outerHTML">
+  {% for page in pages %}
+    {% include "partials/page_item.html" %}
+  {% endfor %}
+</ul>

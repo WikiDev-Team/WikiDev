@@ -1,0 +1,13 @@
+{% include "partials/page_editor.html" %}
+
+<li id="page-item-{{ page.id }}" hx-swap-oob="outerHTML">
+  <div
+    class="folder-item"
+    hx-get="/pages/{{ page.id }}"
+    hx-target="#page-editor-container"
+    hx-swap="innerHTML"
+    onclick="showPageEditor()"
+  >
+    {{ page.title }}
+  </div>
+</li>

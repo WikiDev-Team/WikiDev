@@ -1,9 +1,10 @@
-<li>
+<li id="page-item-{{ page.id }}">
     <div
         class="folder-item"
         hx-get="/pages/{{ page.id }}"
-        hx-target="#page-editor"
-        hx-swap="outerHTML"
+        hx-target="#page-editor-container"
+        hx-swap="innerHTML"
+        onclick="showPageEditor()"
     >
         {{ page.title }}
     </div>

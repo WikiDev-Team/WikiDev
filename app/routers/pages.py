@@ -63,13 +63,19 @@ def add_page_htmx(
         status=status,
         tag_ids=parsed_tag_ids,
     )
-
     page = create_page(session, payload)
+
+    pages = session.exec(
+        select(Page).order_by(Page.created_at.desc())
+    ).all()
 
     return templates.TemplateResponse(
         request=request,
-        name="partials/page_item.html",
-        context={"page": page},
+        name="partials/page_created_response.html",
+        context={
+            "page": page,
+            "pages": pages,
+        },
     )
 
 #JSON
@@ -149,8 +155,13 @@ def edit_page(
 
     page = update_page(session, page, payload)
 
+    pages = session.exec(select(Page).order_by(Page.created_at.desc())).all()
+
     return templates.TemplateResponse(
         request=request,
-        name="partials/page_editor.html",
-        context={"page": page},
+        name="partials/page_updated_response.html",
+        context={
+            "page": page,
+            "pages": pages,
+        },
     )

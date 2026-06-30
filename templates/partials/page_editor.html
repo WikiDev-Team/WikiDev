@@ -2,8 +2,8 @@
     id="page-editor"
     class="page-editor"
     hx-patch="/pages/{{ page.id }}"
-    hx-target="#page-editor"
-    hx-swap="outerHTML"
+    hx-target="#page-editor-container"
+    hx-swap="innerHTML"
 >
     <div class="editor-top">
         <input
@@ -38,7 +38,6 @@
 
     <textarea class="page-content" name="content">{{ page.content }}</textarea>
 
-    <button type="submit" class="save-page-button">
-        Salvar alterações
-    </button>
+    <button type="submit" class="save-page-button"> Salvar </button>
+    
 </form>
