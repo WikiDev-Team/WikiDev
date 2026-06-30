@@ -78,5 +78,37 @@
         </aside>
     </div>
 
+        <!-- O container principal precisa ter 'position: relative' -->
+    <div id="search-container" style="position: relative; width: min(460px, 100%); margin: 20px auto 0; padding: 0 20px; z-index: 100;">
+        <input
+            type="search"
+            name="q"
+            placeholder="Buscar usuários ou páginas..."
+            autocomplete="off"
+            style="width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; background-color: var(--bg-panel); color: var(--text-primary); box-shadow: 0 4px 14px rgba(0,0,0,0.18);"
+            hx-get="/busca"
+            hx-trigger="input changed delay:500ms, search"
+            hx-target="#search-results"
+        >
+
+        <div
+            id="search-results"
+            style="position: absolute; top: calc(100% + 8px); left: 20px; right: 20px; background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 24px rgba(0,0,0,0.25); z-index: 200; overflow: hidden;"
+        ></div>
+    </div>
+
+    <script>
+        // Fecha os resultados da busca ao clicar fora do componente
+        document.addEventListener('click', function(event) {
+            const container = document.getElementById('search-container');
+            const results = document.getElementById('search-results');
+            
+            // Se o clique não foi dentro do container de busca, esvaziamos a div de resultados
+            if (container && !container.contains(event.target)) {
+                results.innerHTML = '';
+            }
+        });
+    </script>
+
 </body>
 </html>

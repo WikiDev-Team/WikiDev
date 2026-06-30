@@ -17,7 +17,7 @@ from .routers.pages import router as pages_router
 from .routers.comments import router as comments_router
 from .routers.examples import router as examples_router
 from .routers.auth import router as auth_router
-
+from .routers.search import router as search_router
 
 app = FastAPI(title="WikiDev API", version="1.0.0")
 
@@ -53,7 +53,7 @@ app.include_router(tags_router)
 app.include_router(pages_router)
 app.include_router(comments_router)
 app.include_router(examples_router)
-
+app.include_router(search_router)
 
 @app.on_event("startup")
 def on_startup() -> None:
