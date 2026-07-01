@@ -737,3 +737,33 @@ pre.code-block code {
     font-size: 0.9rem;
     line-height: 1.5;
 }
+
+.font-size-small {
+    font-size: 0.875rem;
+}
+
+.font-size-normal {
+    font-size: 1rem;
+}
+
+.font-size-large {
+    font-size: 1.25rem;
+}
+
+.font-size-title {
+    font-size: 2.1rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+pre.code-block.font-size-small code {
+    font-size: 0.9rem;
+}
+
+pre.code-block.font-size-normal code {
+    font-size: 1rem;
+}
+
+pre.code-block.font-size-large code {
+    font-size: 1.45rem;
+}

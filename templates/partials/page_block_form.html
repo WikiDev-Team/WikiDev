@@ -14,8 +14,21 @@
 					<option value="cpp" {% if block.language == "cpp" %}selected{% endif %}>C++</option>
 					<option value="java" {% if block.language == "java" %}selected{% endif %}>Java</option>
 				</select>
+
 			</div>
 		{% else %}
+			<div class="block-form-row">
+				<label for="font_size">Tamanho da fonte</label>
+
+				<select name="font_size" id="font_size">
+					<option value="small" {% if block.font_size == "small" %}selected{% endif %}>Pequeno</option>
+					<option value="normal" {% if block.font_size == "normal" %}selected{% endif %}>Normal</option>
+					<option value="large" {% if block.font_size == "large" %}selected{% endif %}>Grande</option>
+					<option value="title" {% if block.font_size == "title" %}selected{% endif %}>Título</option>
+				</select>
+
+			</div>
+			
 			<input type="hidden" name="language" value="">
 		{% endif %}
 

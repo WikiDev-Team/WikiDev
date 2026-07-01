@@ -247,6 +247,7 @@ class PageBlockBase(SQLModel):
     block_type: PageBlockType = Field(default=PageBlockType.TEXT)
     content: str = Field(default="")
     language: str = Field(default="", max_length=50)
+    font_size: str = Field(default="normal", max_length=20)
 
 
 class PageBlock(PageBlockBase, table=True):
@@ -268,6 +269,7 @@ class PageBlockCreate(SQLModel):
     content: str = Field(default="")
     language: str = Field(default="", max_length=50)
     position: Optional[int] = None
+    font_size: str = Field(default="normal", max_length=20)
 
 
 class PageBlockRead(PageBlockBase):
@@ -281,6 +283,7 @@ class PageBlockUpdate(SQLModel):
     block_type: Optional[PageBlockType] = None
     content: Optional[str] = None
     language: Optional[str] = Field(default=None, max_length=50)
+    font_size: Optional[str] = Field(default=None, max_length=20)
 
 # ── Comment ───────────────────────────────────────────────────────────────────
 
