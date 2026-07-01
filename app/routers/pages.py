@@ -43,7 +43,6 @@ def list_pages(
 #     return create_page(session, payload)
 
 @router.post("/", response_class=HTMLResponse)
-@router.post("/", response_class=HTMLResponse)
 def add_page_htmx(
     request: Request,
     title: str = Form(...),
@@ -77,7 +76,7 @@ def add_page_htmx(
 
     return templates.TemplateResponse(
         request=request,
-        name="partials/page_created_blocks_response.html",
+        name="partials/page_response.html",
         context={
             "page": page,
             "pages": pages,
@@ -180,7 +179,7 @@ def edit_page(
 
     return templates.TemplateResponse(
         request=request,
-        name="partials/page_metadata_updated_response.html",
+        name="partials/page_response.html",
         context={
             "page": page,
             "pages": pages,
@@ -201,7 +200,7 @@ def edit_page_metadata_form(
 
     return templates.TemplateResponse(
         request=request,
-        name="partials/page_metadata_form.html",
+        name="partials/page_response.html",
         context={
             "page": page,
         },
