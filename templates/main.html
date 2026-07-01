@@ -65,16 +65,19 @@
                 <button
                     type="button"
                     class="add-page-button"
-                    onclick="showPageEditor()"
                     hx-get="/pages/new"
                     hx-target="#page-editor-container"
                     hx-swap="innerHTML"
-                >
-                    + Adicionar página
+                    onclick="document.getElementById('welcome-panel').style.display = 'none';"
+                > + Adicionar página
                 </button>
             </div>
 
-            <ul class="file-tree" id="pages-list"></ul>
+            <ul class="file-tree" id="pages-list">
+                {% for page in pages %}
+                    {% include "partials/page_item.html" %}
+                {% endfor %}
+            </ul>
         </aside>
     </div>
 

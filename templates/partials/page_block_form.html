@@ -1,0 +1,47 @@
+<article id="block-{{ block.id }}" class="page-block page-block-editing">
+	<form
+		hx-patch="/pages/blocks/{{ block.id }}"
+		hx-target="#block-{{ block.id }}"
+		hx-swap="outerHTML"
+	>
+		{% if block.block_type.value == "code" %}
+			<div class="block-form-row">
+				<label for="language-{{ block.id }}">Linguagem</label>
+
+				<select id="language-{{ block.id }}" name="language">
+					<option value="python" {% if block.language == "python" %}selected{% endif %}>Python</option>
+					<option value="c" {% if block.language == "c" %}selected{% endif %}>C</option>
+					<option value="cpp" {% if block.language == "cpp" %}selected{% endif %}>C++</option>
+					<option value="java" {% if block.language == "java" %}selected{% endif %}>Java</option>
+				</select>
+			</div>
+		{% else %}
+			<input type="hidden" name="language" value="">
+		{% endif %}
+
+		<div class="block-form-row">
+			<label for="content-{{ block.id }}">Conteúdo</label>
+
+			<textarea
+				id="content-{{ block.id }}"
+				name="content"
+				rows="{% if block.block_type.value == 'code' %}10{% else %}5{% endif %}"
+			>{{ block.content }}</textarea>
+		</div>
+
+		<div class="page-block-actions">
+			<button type="submit">
+				Salvar
+			</button>
+
+			<button
+				type="button"
+				hx-get="/pages/blocks/{{ block.id }}"
+				hx-target="#block-{{ block.id }}"
+				hx-swap="outerHTML"
+			>
+				Cancelar
+			</button>
+		</div>
+	</form>
+</article>

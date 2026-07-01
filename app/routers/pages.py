@@ -2,16 +2,14 @@ from fastapi.responses import HTMLResponse
 from fastapi import APIRouter, Depends, HTTPException, Query, Form, Request
 #from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
-from fastapi.templating import Jinja2Templates
 
 from ..db import get_session
-from ..models import Page, PageCreate, PageRead, PageUpdate, User, PageTagLink
+from ..models import Page, PageCreate, PageRead, PageUpdate, User, PageTagLink, PageBlock
 from ..crud import create_page, update_page
 from ..dependencies import get_current_user
+from ..templates import templates
 
 router = APIRouter(prefix="/pages", tags=["pages"])
-
-templates = Jinja2Templates(directory="templates")
 
 @router.get("/", response_model=list[PageRead])
 def list_pages(
@@ -45,12 +43,12 @@ def list_pages(
 #     return create_page(session, payload)
 
 @router.post("/", response_class=HTMLResponse)
+@router.post("/", response_class=HTMLResponse)
 def add_page_htmx(
     request: Request,
     title: str = Form(...),
     summary: str = Form(""),
-    content: str = Form(""),
-    page_type: str = Form("personal"),
+    page_type: str = Form("note"),
     status: str = Form("draft"),
     tag_ids: str = Form(""),
     session: Session = Depends(get_session),
@@ -65,7 +63,6 @@ def add_page_htmx(
     payload = PageCreate(
         title=title,
         summary=summary,
-        content=content,
         page_type=page_type,
         status=status,
         author_id=current_user.id,
@@ -74,10 +71,18 @@ def add_page_htmx(
 
     page = create_page(session, payload)
 
+    pages = session.exec(
+        select(Page).order_by(Page.created_at.desc())
+    ).all()
+
     return templates.TemplateResponse(
         request=request,
-        name="partials/page_item.html",
-        context={"page": page},
+        name="partials/page_created_blocks_response.html",
+        context={
+            "page": page,
+            "pages": pages,
+            "blocks": [],
+        },
     )
 
 #JSON
@@ -115,22 +120,25 @@ def new_page_form(request: Request):
         context={},
     )
 
-@router.get("/{page_id}", response_class=HTMLResponse)
-def get_page(
-    request: Request,
-    page_id: int,
-    session: Session = Depends(get_session),
-):
-    page = session.get(Page, page_id)
 
-    if page is None:
-        raise HTTPException(status_code=404, detail="Página não encontrada")
-
-    return templates.TemplateResponse(
-        request=request,
-        name="partials/page_editor.html",
-        context={"page": page},
-    )
+# Removemos quando mudamos para blocks
+#@router.get("/{page_id}", response_class=HTMLResponse)
+#def get_page(
+#    request: Request,
+#    page_id: int,
+#    session: Session = Depends(get_session),
+#):
+#    page = session.get(Page, page_id)
+#
+#    if page is None:
+#        raise HTTPException(status_code=404, detail="Página não encontrada")
+#
+#    return templates.TemplateResponse(
+#        request=request,
+#        name="partials/page_editor.html",
+#        context={"page": page},
+#    )
+#
 
 @router.patch("/{page_id}", response_class=HTMLResponse)
 def edit_page(
@@ -138,8 +146,7 @@ def edit_page(
     page_id: int,
     title: str = Form(...),
     summary: str = Form(""),
-    content: str = Form(""),
-    page_type: str = Form("personal"),
+    page_type: str = Form("note"),
     status: str = Form("draft"),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
@@ -155,15 +162,47 @@ def edit_page(
     payload = PageUpdate(
         title=title,
         summary=summary,
-        content=content,
         page_type=page_type,
         status=status,
     )
 
     page = update_page(session, page, payload)
 
+    blocks = session.exec(
+        select(PageBlock)
+        .where(PageBlock.page_id == page.id)
+        .order_by(PageBlock.position.asc(), PageBlock.id.asc())
+    ).all()
+
+    pages = session.exec(
+        select(Page).order_by(Page.created_at.desc())
+    ).all()
+
     return templates.TemplateResponse(
         request=request,
-        name="partials/page_editor.html",
-        context={"page": page},
+        name="partials/page_metadata_updated_response.html",
+        context={
+            "page": page,
+            "pages": pages,
+            "blocks": blocks,
+        },
+    )
+
+@router.get("/{page_id}/metadata/edit", response_class=HTMLResponse)
+def edit_page_metadata_form(
+    request: Request,
+    page_id: int,
+    session: Session = Depends(get_session),
+):
+    page = session.get(Page, page_id)
+
+    if page is None:
+        raise HTTPException(status_code=404, detail="Página não encontrada")
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/page_metadata_form.html",
+        context={
+            "page": page,
+        },
     )

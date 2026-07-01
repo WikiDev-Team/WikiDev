@@ -1,49 +1,48 @@
 <form
-    id="page-editor"
-    class="page-editor"
-    hx-post="/pages/"
-    hx-target="#pages-list"
-    hx-swap="afterbegin"
+	class="page-editor"
+	hx-post="/pages/"
+	hx-target="#page-editor-container"
+	hx-swap="innerHTML"
 >
-    <div class="editor-top">
-        <input
-            class="page-title"
-            name="title"
-            placeholder="Título da página"
-            required
-        >
+	<div class="editor-top">
+		<input
+			class="page-title"
+			type="text"
+			name="title"
+			placeholder="Título da página"
+			required
+		>
 
-        <button type="button" class="settings-button" onclick="togglePageSettings()">
-            Configurações
-        </button>
-    </div>
+		<button type="submit" class="save-page-button">
+			Criar página
+		</button>
+	</div>
 
-    <div id="page-settings" class="page-settings hidden">
-        <input name="summary" placeholder="Resumo">
+	<div class="page-settings">
+		<input
+			type="text"
+			name="summary"
+			placeholder="Resumo"
+		>
 
-        <select name="page_type">
-            <option value="personal">Personal</option>
-            <option value="official">Official</option>
-            <option value="question">Question</option>
-            <option value="example">Example</option>
-            <option value="note">Note</option>
-        </select>
+		<select name="page_type">
+			<option value="personal">Personal</option>
+			<option value="official">Official</option>
+			<option value="question">Question</option>
+			<option value="example">Example</option>
+			<option value="note" selected>Note</option>
+		</select>
 
-        <select name="status">
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-            <option value="archived">Archived</option>
-        </select>
+		<select name="status">
+			<option value="draft" selected>Draft</option>
+			<option value="published">Published</option>
+			<option value="archived">Archived</option>
+		</select>
 
-        <input name="tag_ids" placeholder="Tags">
-    </div>
-
-    <textarea
-        class="page-content"
-        name="content"
-        placeholder="Escreva sua página aqui..."
-    ></textarea>
-
-    <button type="submit" class="save-page-button"> Salvar página </button>            
-
+		<input
+			type="text"
+			name="tag_ids"
+			placeholder="IDs das tags separados por vírgula"
+		>
+	</div>
 </form>

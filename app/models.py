@@ -34,6 +34,11 @@ class PageStatus(str, Enum):
     ARCHIVED = "archived"
 
 
+class PageBlockType(str, Enum):
+    TEXT = "text"
+    CODE = "code"
+
+
 # ── User ─────────────────────────────────────────────────────────────────────
 
 class UserBase(SQLModel):
@@ -187,7 +192,7 @@ class PageBase(SQLModel):
     page_type: PageType = Field(default=PageType.PERSONAL)
     status: PageStatus = Field(default=PageStatus.DRAFT)
     summary: str = Field(default="")
-    content: str = Field(default="")
+    #content: str = Field(default="")
     language_id: Optional[int] = Field(default=None, foreign_key="language.id")
     author_id: Optional[int] = Field(default=None, foreign_key="user.id")
     parent_page_id: Optional[int] = Field(default=None, foreign_key="page.id")
@@ -205,6 +210,7 @@ class Page(PageBase, table=True):
     comments: List["Comment"]     = Relationship(back_populates="page")
     examples: List["CodeExample"] = Relationship(back_populates="page")
 
+    blocks: List["PageBlock"] = Relationship(back_populates="page")
 
 class PageCreate(PageBase):
     tag_ids: List[int] = Field(default_factory=list)
@@ -216,7 +222,7 @@ class PageUpdate(SQLModel):
     page_type: Optional[PageType] = None
     status: Optional[PageStatus] = None
     summary: Optional[str] = None
-    content: Optional[str] = None
+    #content: Optional[str] = None
     language_id: Optional[int] = None
     author_id: Optional[int] = None
     parent_page_id: Optional[int] = None
@@ -233,6 +239,48 @@ class PageRead(PageBase):
     tags: List[TagRead] = Field(default_factory=list)
     folder: Optional[FolderRead] = None
 
+# ── PageBlock ────────────────────────────────────────────────────────────────
+
+class PageBlockBase(SQLModel):
+    page_id: int = Field(foreign_key="page.id")
+    position: int = Field(default=0, index=True)
+    block_type: PageBlockType = Field(default=PageBlockType.TEXT)
+    content: str = Field(default="")
+    language: str = Field(default="", max_length=50)
+
+
+class PageBlock(PageBlockBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    created_at: datetime = Field(
+        default_factory=now_utc,
+        sa_column=Column(DateTime, nullable=False),
+    )
+    updated_at: datetime = Field(
+        default_factory=now_utc,
+        sa_column=Column(DateTime, nullable=False),
+    )
+
+    page: Optional[Page] = Relationship(back_populates="blocks")
+
+
+class PageBlockCreate(SQLModel):
+    block_type: PageBlockType = Field(default=PageBlockType.TEXT)
+    content: str = Field(default="")
+    language: str = Field(default="", max_length=50)
+    position: Optional[int] = None
+
+
+class PageBlockRead(PageBlockBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class PageBlockUpdate(SQLModel):
+    position: Optional[int] = None
+    block_type: Optional[PageBlockType] = None
+    content: Optional[str] = None
+    language: Optional[str] = Field(default=None, max_length=50)
 
 # ── Comment ───────────────────────────────────────────────────────────────────
 
@@ -312,3 +360,4 @@ User.model_rebuild()
 Page.model_rebuild()
 Comment.model_rebuild()
 CodeExample.model_rebuild()
+PageBlock.model_rebuild()
