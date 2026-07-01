@@ -701,3 +701,39 @@ body.auth-page {
 .page-block-code {
 	padding-right: 48px;
 }
+
+.code-block-wrapper {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #1f2937;
+    background: #0f172a;
+}
+
+.code-block-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0.45rem 0.75rem;
+    background: #111827;
+    border-bottom: 1px solid #1f2937;
+}
+
+.code-language-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #d1d5db;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+pre.code-block {
+    margin: 0;
+    padding: 1rem;
+    overflow-x: auto;
+    background: #0f172a;
+}
+
+pre.code-block code {
+    font-size: 0.9rem;
+    line-height: 1.5;
+}

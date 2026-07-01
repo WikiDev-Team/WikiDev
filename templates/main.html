@@ -10,6 +10,8 @@
     <script defer src="/static/theme.js"></script>
 
     <link rel="stylesheet" href="/static/style.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
 </head>
 
 <body>
@@ -113,5 +115,24 @@
         });
     </script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+
+    <script>
+        function highlightCodeBlocks(root = document) {
+            root.querySelectorAll("pre code").forEach((block) => {
+                if (!block.dataset.highlighted) {
+                    hljs.highlightElement(block);
+                }
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            highlightCodeBlocks();
+        });
+
+        document.body.addEventListener("htmx:afterSwap", function (event) {
+            highlightCodeBlocks(event.target);
+        });
+    </script>
 </body>
 </html>

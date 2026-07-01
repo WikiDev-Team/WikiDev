@@ -1,7 +1,11 @@
-<div class="code-block">
-	<div class="code-block-header">
-		<span>{{ block.language or "código" }}</span>
-	</div>
+{% set lang = block.language or "plaintext" %}
 
-	<pre><code>{{ block.content }}</code></pre>
+<div class="code-block-wrapper">
+    <div class="code-block-header">
+        <span class="code-language-label">
+            {{ lang }}
+        </span>
+    </div>
+
+    <pre class="code-block"><code class="language-{{ lang }}">{{ block.content }}</code></pre>
 </div>
