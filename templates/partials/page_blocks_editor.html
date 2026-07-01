@@ -18,30 +18,30 @@
 			>
 				Editar página
 			</button>
-
-			<div class="block-add-actions">
-				<button
-					type="button"
-					hx-post="/pages/{{ page.id }}/blocks"
-					hx-vals='{"block_type": "text"}'
-					hx-target="#page-blocks-list"
-					hx-swap="beforeend"
-				>
-					+ Texto
-				</button>
-
-				<button
-					type="button"
-					hx-post="/pages/{{ page.id }}/blocks"
-					hx-vals='{"block_type": "code"}'
-					hx-target="#page-blocks-list"
-					hx-swap="beforeend"
-				>
-					+ Código
-				</button>
-			</div>
 		</div>
 	</header>
 
 	{% include "partials/page_blocks_list.html" %}
+
+	<div class="block-add-actions">
+		<button
+			type="button"
+			hx-post="/pages/{{ page.id }}/blocks"
+			hx-vals='{"block_type": "text"}'
+			hx-target="#page-blocks-list"
+			hx-swap="beforeend"
+		>
+			+ Texto
+		</button>
+
+		<button
+			type="button"
+			hx-post="/pages/{{ page.id }}/blocks"
+			hx-vals='{"block_type": "code"}'
+			hx-target="#page-blocks-list"
+			hx-swap="beforeend"
+		>
+			+ Código
+		</button>
+	</div>
 </div>

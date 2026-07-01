@@ -507,6 +507,11 @@ body.auth-page {
 	gap: 8px;
 }
 
+.block-add-actions {
+	margin-top: 16px;
+	justify-content: flex-start;
+}
+
 .block-add-actions button,
 .page-block-actions button {
 	border: 1px solid var(--border-color);
