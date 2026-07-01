@@ -1,7 +1,7 @@
-<div class="text-block-content">
-	{% if block.content %}
-		<p>{{ block.content }}</p>
-	{% else %}
-		<p class="empty-block">Bloco de texto vazio.</p>
-	{% endif %}
+<div class="page-block-text font-size-{{ block.font_size or 'normal' }}">
+    {% if block.content %}
+        {{ block.content }}
+    {% else %}
+        <span class="empty-block-text">Bloco de texto vazio.</span>
+    {% endif %}
 </div>

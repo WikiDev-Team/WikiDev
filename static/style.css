@@ -706,3 +706,69 @@ body.auth-page {
 .page-block-code {
 	padding-right: 48px;
 }
+
+.code-block-wrapper {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #1f2937;
+    background: #0f172a;
+}
+
+.code-block-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0.45rem 0.75rem;
+    background: #111827;
+    border-bottom: 1px solid #1f2937;
+}
+
+.code-language-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #d1d5db;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+pre.code-block {
+    margin: 0;
+    padding: 1rem;
+    overflow-x: auto;
+    background: #0f172a;
+}
+
+pre.code-block code {
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.font-size-small {
+    font-size: 0.875rem;
+}
+
+.font-size-normal {
+    font-size: 1rem;
+}
+
+.font-size-large {
+    font-size: 1.25rem;
+}
+
+.font-size-title {
+    font-size: 2.1rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+pre.code-block.font-size-small code {
+    font-size: 0.9rem;
+}
+
+pre.code-block.font-size-normal code {
+    font-size: 1rem;
+}
+
+pre.code-block.font-size-large code {
+    font-size: 1.45rem;
+}

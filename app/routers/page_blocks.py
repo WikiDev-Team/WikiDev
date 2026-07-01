@@ -69,6 +69,7 @@ def add_block(
         block_type=block_type,
         content="",
         language="python" if block_type == PageBlockType.CODE else "",
+        font_size="normal",
     )
 
     block = create_page_block(session, page_id, payload)
@@ -122,14 +123,23 @@ def update_block(
     block_id: int,
     content: str = Form(""),
     language: str = Form(""),
+    font_size: str = Form("normal"),
     session: Session = Depends(get_session),
 ):
     block = get_block_or_404(session, block_id)
 
-    payload = PageBlockUpdate(
-        content=content,
-        language=language,
-    )
+    if block.block_type == PageBlockType.TEXT:
+        payload = PageBlockUpdate(
+            content=content,
+            language="",
+            font_size=font_size,
+        )
+        
+    else:
+        payload = PageBlockUpdate(
+            content=content,
+            language=language,
+        )
 
     block = update_page_block(session, block, payload)
 
