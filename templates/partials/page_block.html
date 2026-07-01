@@ -1,0 +1,35 @@
+<article id="block-{{ block.id }}" class="page-block page-block-{{ block.block_type.value }}">
+	<details class="block-menu">
+		<summary aria-label="Ações do bloco">
+			⋯
+		</summary>
+
+		<div class="block-menu-content">
+			<button
+				type="button"
+				hx-get="/pages/blocks/{{ block.id }}/edit"
+				hx-target="#block-{{ block.id }}"
+				hx-swap="outerHTML"
+			>
+				Editar
+			</button>
+
+			<button
+				type="button"
+				class="danger-button"
+				hx-delete="/pages/blocks/{{ block.id }}"
+				hx-target="#block-{{ block.id }}"
+				hx-swap="outerHTML"
+				hx-confirm="Excluir este bloco?"
+			>
+				Excluir
+			</button>
+		</div>
+	</details>
+
+	{% if block.block_type.value == "text" %}
+		{% include "partials/page_block_text.html" %}
+	{% elif block.block_type.value == "code" %}
+		{% include "partials/page_block_code.html" %}
+	{% endif %}
+</article>

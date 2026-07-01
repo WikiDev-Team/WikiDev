@@ -2,13 +2,13 @@ from fastapi import FastAPI, Request, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
-from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.exceptions import RequestValidationError
 
 from .db import init_db, engine
 from .models import Folder, Language, Page, Tag, User
 from .dependencies import get_current_user
+from .templates import templates
 
 from .routers.users import router as users_router
 from .routers.languages import router as languages_router
@@ -19,10 +19,9 @@ from .routers.comments import router as comments_router
 from .routers.examples import router as examples_router
 from .routers.auth import router as auth_router
 from .routers.search import router as search_router
+from .routers.page_blocks import router as page_blocks_router
 
 app = FastAPI(title="WikiDev API", version="1.0.0")
-
-templates = Jinja2Templates(directory="templates")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -56,20 +55,21 @@ app.include_router(pages_router)
 app.include_router(comments_router)
 app.include_router(examples_router)
 app.include_router(search_router)
+app.include_router(page_blocks_router)
 
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
 
 
-@app.get("/")
-def root():
-    return {
-        "project": "WikiDev",
-        "status": "ok",
-        "description": "API para linguagens, páginas, pastas, comentários, tags e exemplos de código.",
-        "docs": "/docs",
-    }
+#@app.get("/")
+#def root():
+#    return {
+#        "project": "WikiDev",
+#        "status": "ok",
+#        "description": "API para linguagens, páginas, pastas, comentários, tags e exemplos de código.",
+#        "docs": "/docs",
+#    }
 
 
 @app.get("/health")
@@ -96,14 +96,23 @@ async def root():
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request, current_user: User = Depends(get_current_user)):
+async def dashboard(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
+    with Session(engine) as session:
+        pages = session.exec(
+            select(Page).order_by(Page.created_at.desc())
+        ).all()
+
     return templates.TemplateResponse(
         request=request,
         name="main.html",
         context={
             "project": "WikiDev",
-            "usuario": current_user
-        }
+            "usuario": current_user,
+            "pages": pages,
+        },
     )
 
 @app.get("/profile", response_class=HTMLResponse)

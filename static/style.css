@@ -462,3 +462,247 @@ body.auth-page {
         grid-template-columns: 1fr;
     }
 }
+
+/* === page blocks === */
+
+.folder-item-button {
+	width: 100%;
+	border: none;
+	background: transparent;
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
+	font: inherit;
+}
+
+.page-blocks-editor {
+	width: 100%;
+	max-width: 900px;
+	margin: 0 auto;
+	padding: 24px;
+}
+
+.blocks-editor-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+.blocks-editor-header h1 {
+	margin: 0;
+	color: var(--text-primary);
+}
+
+.blocks-editor-header p {
+	margin: 8px 0 0;
+	color: var(--text-secondary);
+}
+
+.block-add-actions,
+.page-block-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.block-add-actions {
+	margin-top: 16px;
+	justify-content: flex-start;
+}
+
+.block-add-actions button,
+.page-block-actions button {
+	border: 1px solid var(--border-color);
+	background-color: var(--bg-panel);
+	color: var(--text-primary);
+	border-radius: 8px;
+	padding: 8px 12px;
+	cursor: pointer;
+}
+
+.block-add-actions button:hover,
+.page-block-actions button:hover {
+	border-color: var(--accent-blue);
+	color: var(--accent-blue);
+}
+
+.page-blocks-list {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.page-block {
+	background-color: var(--bg-panel);
+	border: 1px solid var(--border-color);
+	border-radius: 12px;
+	padding: 16px;
+}
+
+.page-block-actions {
+	justify-content: flex-end;
+	margin-bottom: 12px;
+}
+
+.text-block-content {
+	color: var(--text-primary);
+	line-height: 1.6;
+}
+
+.text-block-content p {
+	margin: 0;
+	white-space: pre-wrap;
+}
+
+.empty-block {
+	color: var(--text-secondary);
+}
+
+.code-block {
+	border: 1px solid var(--border-color);
+	border-radius: 10px;
+	overflow: hidden;
+	background-color: var(--bg-main);
+}
+
+.code-block-header {
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--border-color);
+	color: var(--text-secondary);
+	font-size: 0.9rem;
+}
+
+.code-block pre {
+	margin: 0;
+	padding: 16px;
+	overflow-x: auto;
+}
+
+.code-block code {
+	font-family: monospace;
+	color: var(--text-primary);
+	white-space: pre;
+}
+
+.block-form-row {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-bottom: 12px;
+}
+
+.block-form-row label {
+	color: var(--text-secondary);
+	font-size: 0.9rem;
+}
+
+.block-form-row textarea,
+.block-form-row select {
+	background-color: var(--bg-main);
+	color: var(--text-primary);
+	border: 1px solid var(--border-color);
+	border-radius: 8px;
+	padding: 10px;
+}
+
+.block-form-row textarea {
+	resize: vertical;
+	font-family: inherit;
+}
+
+.page-block-code .block-form-row textarea {
+	font-family: monospace;
+}
+
+.page-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.page-action-button {
+	border: 1px solid var(--border-color);
+	background-color: var(--bg-panel);
+	color: var(--text-primary);
+	border-radius: 8px;
+	padding: 8px 12px;
+	cursor: pointer;
+}
+
+.page-action-button:hover {
+	border-color: var(--accent-blue);
+	color: var(--accent-blue);
+}
+
+.page-block {
+	position: relative;
+}
+
+.block-menu {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	z-index: 5;
+}
+
+.block-menu summary {
+	list-style: none;
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	color: var(--text-secondary);
+}
+
+.block-menu summary::-webkit-details-marker {
+	display: none;
+}
+
+.block-menu summary:hover {
+	background-color: var(--bg-main);
+	color: var(--text-primary);
+}
+
+.block-menu-content {
+	position: absolute;
+	top: 36px;
+	right: 0;
+	min-width: 120px;
+	background-color: var(--bg-panel);
+	border: 1px solid var(--border-color);
+	border-radius: 10px;
+	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+	padding: 6px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.block-menu-content button {
+	width: 100%;
+	border: none;
+	background: transparent;
+	color: var(--text-primary);
+	text-align: left;
+	border-radius: 8px;
+	padding: 8px 10px;
+	cursor: pointer;
+}
+
+.block-menu-content button:hover {
+	background-color: var(--bg-main);
+}
+
+.block-menu-content .danger-button {
+	color: #ef4444;
+}
+
+.page-block-text,
+.page-block-code {
+	padding-right: 48px;
+}

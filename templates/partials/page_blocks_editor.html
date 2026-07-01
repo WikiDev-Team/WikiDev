@@ -1,0 +1,47 @@
+<div id="page-blocks-editor" class="page-blocks-editor">
+	<header class="blocks-editor-header">
+		<div>
+			<h1>{{ page.title }}</h1>
+
+			{% if page.summary %}
+				<p>{{ page.summary }}</p>
+			{% endif %}
+		</div>
+
+		<div class="page-header-actions">
+			<button
+				type="button"
+				class="page-action-button"
+				hx-get="/pages/{{ page.id }}/metadata/edit"
+				hx-target="#page-blocks-editor"
+				hx-swap="outerHTML"
+			>
+				Editar página
+			</button>
+		</div>
+	</header>
+
+	{% include "partials/page_blocks_list.html" %}
+
+	<div class="block-add-actions">
+		<button
+			type="button"
+			hx-post="/pages/{{ page.id }}/blocks"
+			hx-vals='{"block_type": "text"}'
+			hx-target="#page-blocks-list"
+			hx-swap="beforeend"
+		>
+			+ Texto
+		</button>
+
+		<button
+			type="button"
+			hx-post="/pages/{{ page.id }}/blocks"
+			hx-vals='{"block_type": "code"}'
+			hx-target="#page-blocks-list"
+			hx-swap="beforeend"
+		>
+			+ Código
+		</button>
+	</div>
+</div>

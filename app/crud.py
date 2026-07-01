@@ -15,6 +15,7 @@ from .models import (
     Tag, TagCreate, TagUpdate,
     User, UserCreate, UserUpdate,
     slugify_text,
+    PageBlock, PageBlockCreate, PageBlockUpdate,
 )
 
 ModelT = TypeVar("ModelT")
@@ -193,6 +194,70 @@ def update_page(session: Session, obj: Page, data: PageUpdate) -> Page:
     session.refresh(obj)
     return obj
 
+
+# ── PageBlock ────────────────────────────────────────────────────────────────
+
+def get_next_block_position(session: Session, page_id: int) -> int:
+    blocks = session.exec(
+        select(PageBlock)
+        .where(PageBlock.page_id == page_id)
+        .order_by(PageBlock.position.desc())
+    ).all()
+
+    if not blocks:
+        return 0
+
+    return blocks[0].position + 1
+
+
+def create_page_block(
+    session: Session,
+    page_id: int,
+    data: PageBlockCreate,
+) -> PageBlock:
+    position = data.position
+
+    if position is None:
+        position = get_next_block_position(session, page_id)
+
+    obj = PageBlock(
+        page_id=page_id,
+        position=position,
+        block_type=data.block_type,
+        content=data.content,
+        language=data.language,
+    )
+
+    session.add(obj)
+    session.commit()
+    session.refresh(obj)
+
+    return obj
+
+
+def update_page_block(
+    session: Session,
+    obj: PageBlock,
+    data: PageBlockUpdate,
+) -> PageBlock:
+    payload = data.model_dump(exclude_unset=True)
+
+    for key, value in payload.items():
+        if value is not None:
+            setattr(obj, key, value)
+
+    _touch_update(obj)
+
+    session.add(obj)
+    session.commit()
+    session.refresh(obj)
+
+    return obj
+
+
+def delete_page_block(session: Session, obj: PageBlock) -> None:
+    session.delete(obj)
+    session.commit()
 
 # ── Comment ───────────────────────────────────────────────────────────────────
 
