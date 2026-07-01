@@ -200,7 +200,7 @@ def edit_page_metadata_form(
 
     return templates.TemplateResponse(
         request=request,
-        name="partials/page_response.html",
+        name="partials/page_metadata_form.html",
         context={
             "page": page,
         },
