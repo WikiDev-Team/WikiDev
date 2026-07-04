@@ -149,18 +149,33 @@ body.auth-page {
 /* ===== Botão de tema ===== */
 
 .theme-toggle {
-    background: none;
-    border: none;
-    font-size: 1.45rem;
-    cursor: pointer;
-    color: var(--text-secondary);
-    transition: color 0.3s ease, transform 0.2s ease;
+  width: 1.45rem;
+  height: 1.45rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.3s ease, transform 0.2s ease;
 }
 
 .theme-toggle:hover {
     color: var(--text-primary);
-    transform: scale(1.05);
 }
+
+/*controla tamanho do icone*/
+.theme-icon {
+  width: 2rem;
+  height: 2rem;
+  max-width: 2rem;
+  max-height:  2rem;
+  object-fit: contain;
+  display: block;
+}
+
 
 /* ===== Menu hamburger ===== */
 
