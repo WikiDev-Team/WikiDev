@@ -1,10 +1,12 @@
-<li>
-    <div
-        class="folder-item"
-        hx-get="/pages/{{ page.id }}"
-        hx-target="#page-editor"
-        hx-swap="outerHTML"
-    >
-        {{ page.title }}
-    </div>
+<li id="page-item-{{ page.id }}" class="folder-item">
+	<button
+		type="button"
+		class="folder-item-button"
+		hx-get="/pages/{{ page.id }}/blocks-editor"
+		hx-target="#page-editor-container"
+		hx-swap="innerHTML"
+		onclick="document.getElementById('welcome-panel').style.display = 'none';"
+	>
+		{{ page.title }}
+	</button>
 </li>

@@ -1,0 +1,56 @@
+<div id="page-blocks-editor" class="page-blocks-editor">
+	<form
+		class="page-metadata-form"
+		hx-patch="/pages/{{ page.id }}"
+		hx-target="#page-blocks-editor"
+		hx-swap="outerHTML"
+	>
+		<div class="editor-top">
+			<input
+				class="page-title"
+				type="text"
+				name="title"
+				value="{{ page.title }}"
+				placeholder="Título da página"
+				required
+			>
+
+			<button type="submit" class="save-page-button">
+				Salvar
+			</button>
+
+			<button
+				type="button"
+				class="settings-button"
+				hx-get="/pages/{{ page.id }}/blocks-editor"
+				hx-target="#page-blocks-editor"
+				hx-swap="outerHTML"
+			>
+				Cancelar
+			</button>
+		</div>
+
+		<div class="page-settings">
+			<input
+				type="text"
+				name="summary"
+				value="{{ page.summary or '' }}"
+				placeholder="Resumo"
+			>
+
+			<select name="page_type">
+				<option value="personal" {% if page.page_type.value == "personal" %}selected{% endif %}>Personal</option>
+				<option value="official" {% if page.page_type.value == "official" %}selected{% endif %}>Official</option>
+				<option value="question" {% if page.page_type.value == "question" %}selected{% endif %}>Question</option>
+				<option value="example" {% if page.page_type.value == "example" %}selected{% endif %}>Example</option>
+				<option value="note" {% if page.page_type.value == "note" %}selected{% endif %}>Note</option>
+			</select>
+
+			<select name="status">
+				<option value="draft" {% if page.status.value == "draft" %}selected{% endif %}>Draft</option>
+				<option value="published" {% if page.status.value == "published" %}selected{% endif %}>Published</option>
+				<option value="archived" {% if page.status.value == "archived" %}selected{% endif %}>Archived</option>
+			</select>
+		</div>
+	</form>
+</div>

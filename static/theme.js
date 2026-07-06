@@ -1,16 +1,23 @@
 // Função para aplicar o tema claro/escuro
 function applyTheme(theme) {
-    const isLight = theme === "light";
+  const isLight = theme === "light";
 
-    document.body.classList.toggle("light-theme", isLight);
+  document.body.classList.toggle("light-theme", isLight);
 
-    document.querySelectorAll(".theme-toggle").forEach((button) => {
-        button.textContent = isLight ? "🌙" : "☀️";
-        button.setAttribute(
-            "aria-label",
-            isLight ? "Ativar modo escuro" : "Ativar modo claro"
-        );
-    });
+  document.querySelectorAll(".theme-toggle").forEach((button) => {
+    const icon = document.createElement("img");
+
+    icon.className = "theme-icon";
+    icon.alt = "";
+    icon.src = isLight ? "/static/moon_icon.png" : "/static/sun_icon.png";
+
+    button.replaceChildren(icon);
+
+    button.setAttribute(
+      "aria-label",
+      isLight ? "Ativar modo escuro" : "Ativar modo claro"
+    );
+  });
 }
 
 // Função para abrir e fechar a barra lateral
@@ -24,18 +31,15 @@ function toggleSidebar() {
 
 // Função para alternar entre claro e escuro
 function toggleTheme() {
-    const body = document.body;
-    const themeBtn = document.getElementById("theme-btn");
+  const currentTheme = document.body.classList.contains("light-theme")
+    ? "light"
+    : "dark";
 
-    body.classList.toggle("light-theme");
+  const nextTheme = currentTheme === "light" ? "dark" : "light";
 
-    if (body.classList.contains("light-theme")) {
-        if (themeBtn) themeBtn.textContent = "🌙";  // Ícone de lua (para voltar pro escuro)
-        localStorage.setItem("wikidev-theme", "light"); // Salva no navegador
-    } else {
-        if (themeBtn) themeBtn.textContent = "☀️";  // Ícone de sol (para ir pro claro)
-        localStorage.setItem("wikidev-theme", "dark");  // Salva no navegador
-    }
+  localStorage.setItem("wikidev-theme", nextTheme);
+  applyTheme(nextTheme);
+  
 }
 
 // Função para mostrar o formulário de criação de página

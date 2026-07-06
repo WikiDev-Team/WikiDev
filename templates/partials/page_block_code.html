@@ -1,0 +1,13 @@
+{% set lang = block.language or "plaintext" %}
+
+<div class="code-block-wrapper">
+    <div class="code-block-header">
+        <span class="code-language-label">
+            {{ lang }}
+        </span>
+    </div>
+
+	<pre class="code-block">
+		<code class="language-{{ lang }}">{{ block.content }}</code>
+	</pre>
+</div>
