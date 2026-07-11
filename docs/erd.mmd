@@ -1,13 +1,18 @@
 erDiagram
     USER ||--o{ PAGE : authors
+    USER ||--o{ FRIENDSHIP : requests
+    USER ||--o{ FRIENDSHIP : receives
+    USER ||--o{ PAGE_SHARE : receives
     USER ||--o{ COMMENT : writes
     USER ||--o{ CODE_EXAMPLE : creates
-    LANGUAGE ||--o{ PAGE : contains
+    LANGUAGE ||--o{ PAGE : classifies
+    FOLDER ||--o{ PAGE : contains
+    PAGE ||--o{ PAGE_SHARE : shares
+    PAGE ||--o{ PAGE_BLOCK : contains
     PAGE ||--o{ COMMENT : has
     PAGE ||--o{ CODE_EXAMPLE : has
-    PAGE ||--o{ PAGE : parent_of
-    PAGE ||--o{ PAGE_TAG : links
-    TAG ||--o{ PAGE_TAG : links
+    PAGE ||--o{ PAGE_TAG_LINK : links
+    TAG ||--o{ PAGE_TAG_LINK : links
 
     USER {
         int id PK
@@ -16,25 +21,13 @@ erDiagram
         string display_name
         string bio
         string avatar_url
-        datetime created_at
-        datetime updated_at
     }
 
-    LANGUAGE {
+    FRIENDSHIP {
         int id PK
-        string name
-        string slug
-        string description
-        string official_url
-        string logo_url
-        datetime created_at
-        datetime updated_at
-    }
-
-    TAG {
-        int id PK
-        string name
-        string slug
+        int requester_id FK
+        int addressee_id FK
+        string status
         datetime created_at
         datetime updated_at
     }
@@ -45,40 +38,59 @@ erDiagram
         string slug
         string page_type
         string status
-        string summary
-        string content
-        int language_id FK
+        string visibility
         int author_id FK
-        int parent_page_id FK
-        datetime created_at
-        datetime updated_at
+        int folder_id FK
+    }
+
+    PAGE_SHARE {
+        int page_id PK, FK
+        int user_id PK, FK
+        string permission
+    }
+
+    PAGE_BLOCK {
+        int id PK
+        int page_id FK
+        int position
+        string block_type
+        string content
+    }
+
+    LANGUAGE {
+        int id PK
+        string name
+        string slug
+    }
+
+    FOLDER {
+        int id PK
+        int author_id FK
+        int parent_folder_id FK
+        string name
+    }
+
+    TAG {
+        int id PK
+        string name
+        string slug
+    }
+
+    PAGE_TAG_LINK {
+        int page_id PK, FK
+        int tag_id PK, FK
     }
 
     COMMENT {
         int id PK
         int page_id FK
         int author_id FK
-        int parent_comment_id FK
         string body
-        bool is_deleted
-        datetime created_at
-        datetime updated_at
     }
 
     CODE_EXAMPLE {
         int id PK
         int page_id FK
         int author_id FK
-        string title
         string code
-        string explanation
-        string language_hint
-        bool is_public
-        datetime created_at
-        datetime updated_at
-    }
-
-    PAGE_TAG {
-        int page_id PK, FK
-        int tag_id PK, FK
     }

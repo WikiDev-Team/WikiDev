@@ -23,6 +23,10 @@
 
             <nav class="main-nav">
                 <a href="/dashboard" class="active">Home</a>
+                <a href="/friends" class="nav-with-badge">
+                    Amigos
+                    {% if pending_friend_requests %}<span class="nav-badge">{{ pending_friend_requests }}</span>{% endif %}
+                </a>
                 <a href="#">Forum</a>
                 <a href="#">Manpages</a>
             </nav>
@@ -60,6 +64,16 @@
             </section>
 
             <div id="page-editor-container"></div>
+            {% if open_page_id %}
+                <div
+                    hx-get="/pages/{{ open_page_id }}/blocks-editor"
+                    hx-trigger="load"
+                    hx-target="#page-editor-container"
+                    hx-swap="innerHTML"
+                    style="display: none;"
+                ></div>
+                <script>document.getElementById('welcome-panel').style.display = 'none';</script>
+            {% endif %}
         </main>
 
         <aside class="sidebar" id="sidebar">

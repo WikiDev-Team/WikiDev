@@ -226,6 +226,7 @@ def create_page_block(
         block_type=data.block_type,
         content=data.content,
         language=data.language,
+        font_size=data.font_size,
     )
 
     session.add(obj)
