@@ -120,25 +120,6 @@ def new_page_form(request: Request):
     )
 
 
-# Removemos quando mudamos para blocks
-#@router.get("/{page_id}", response_class=HTMLResponse)
-#def get_page(
-#    request: Request,
-#    page_id: int,
-#    session: Session = Depends(get_session),
-#):
-#    page = session.get(Page, page_id)
-#
-#    if page is None:
-#        raise HTTPException(status_code=404, detail="Página não encontrada")
-#
-#    return templates.TemplateResponse(
-#        request=request,
-#        name="partials/page_editor.html",
-#        context={"page": page},
-#    )
-#
-
 @router.patch("/{page_id}", response_class=HTMLResponse)
 def edit_page(
     request: Request,
@@ -151,6 +132,45 @@ def edit_page(
     current_user: User = Depends(get_current_user),
 ):
     page = session.get(Page, page_id)
+
+    if page is None:
+        raise HTTPException(status_code=404, detail="Página não encontrada")
+    
+    # Blindagem de segurança: verifica se o usuário é o dono
+    if page.author_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Não autorizado")
+
+    if page.author_id is None:
+        page.author_id = current_user.id
+
+    payload = PageUpdate(
+        title=title,
+        summary=summary,
+        page_type=page_type,
+        status=status,
+    )
+
+    page = update_page(session, page, payload)
+
+    blocks = session.exec(
+        select(PageBlock)
+        .where(PageBlock.page_id == page.id)
+        .order_by(PageBlock.position.asc(), PageBlock.id.asc())
+    ).all()
+
+    pages = session.exec(
+        select(Page).order_by(Page.created_at.desc())
+    ).all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/page_response.html",
+        context={
+            "page": page,
+            "pages": pages,
+            "blocks": blocks,
+        },
+    )
 
     if page is None:
         raise HTTPException(status_code=404, detail="Página não encontrada")
