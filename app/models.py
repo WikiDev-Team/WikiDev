@@ -4,7 +4,7 @@ import re
 import unicodedata
 from typing import Optional, List
 
-from sqlalchemy import Column, DateTime
+from sqlalchemy import CheckConstraint, Column, DateTime, UniqueConstraint
 from sqlmodel import Field, SQLModel, Relationship
 
 
@@ -39,6 +39,24 @@ class PageBlockType(str, Enum):
     CODE = "code"
 
 
+class FriendshipStatus(str, Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
+
+class PageVisibility(str, Enum):
+    PRIVATE = "private"
+    FRIENDS = "friends"
+    PUBLIC = "public"
+    CUSTOM = "custom"
+
+
+class PageSharePermission(str, Enum):
+    VIEW = "view"
+    EDIT = "edit"
+
+
 # ── User ─────────────────────────────────────────────────────────────────────
 
 class UserBase(SQLModel):
@@ -70,12 +88,46 @@ class UserRead(UserBase):
     updated_at: datetime
 
 
+class UserPublicRead(SQLModel):
+    id: int
+    username: str
+    display_name: str
+    bio: str
+    avatar_url: str
+    created_at: datetime
+
+
 class UserUpdate(SQLModel):
     username: Optional[str] = Field(default=None, max_length=50)
     email: Optional[str] = Field(default=None, max_length=255)
     display_name: Optional[str] = Field(default=None, max_length=120)
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
+
+
+# ── Friendship ───────────────────────────────────────────────────────────────
+
+class Friendship(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("requester_id", "addressee_id", name="uq_friendship_direction"),
+        CheckConstraint("requester_id != addressee_id", name="ck_friendship_distinct_users"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    requester_id: int = Field(foreign_key="user.id", index=True)
+    addressee_id: int = Field(foreign_key="user.id", index=True)
+    status: FriendshipStatus = Field(default=FriendshipStatus.PENDING, index=True)
+    created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
+    updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
+
+
+class FriendshipRead(SQLModel):
+    id: int
+    requester_id: int
+    addressee_id: int
+    status: FriendshipStatus
+    created_at: datetime
+    updated_at: datetime
 
 
 # ── Language ─────────────────────────────────────────────────────────────────
@@ -173,7 +225,7 @@ class FolderRead(FolderBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    author: Optional[UserRead] = None
+    author: Optional[UserPublicRead] = None
 
 
 class FolderUpdate(SQLModel):
@@ -191,6 +243,7 @@ class PageBase(SQLModel):
     slug: str = Field(default="", index=True, max_length=220)
     page_type: PageType = Field(default=PageType.PERSONAL)
     status: PageStatus = Field(default=PageStatus.DRAFT)
+    visibility: PageVisibility = Field(default=PageVisibility.PRIVATE, index=True)
     summary: str = Field(default="")
     #content: str = Field(default="")
     language_id: Optional[int] = Field(default=None, foreign_key="language.id")
@@ -221,6 +274,7 @@ class PageUpdate(SQLModel):
     slug: Optional[str] = Field(default=None, max_length=220)
     page_type: Optional[PageType] = None
     status: Optional[PageStatus] = None
+    visibility: Optional[PageVisibility] = None
     summary: Optional[str] = None
     #content: Optional[str] = None
     language_id: Optional[int] = None
@@ -235,9 +289,25 @@ class PageRead(PageBase):
     created_at: datetime
     updated_at: datetime
     language: Optional[LanguageRead] = None
-    author: Optional[UserRead] = None
+    author: Optional[UserPublicRead] = None
     tags: List[TagRead] = Field(default_factory=list)
     folder: Optional[FolderRead] = None
+
+
+class PageShare(SQLModel, table=True):
+    page_id: int = Field(foreign_key="page.id", primary_key=True)
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    permission: PageSharePermission = Field(default=PageSharePermission.VIEW)
+    created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
+    updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
+
+
+class PageShareRead(SQLModel):
+    page_id: int
+    user_id: int
+    permission: PageSharePermission
+    created_at: datetime
+    updated_at: datetime
 
 # ── PageBlock ────────────────────────────────────────────────────────────────
 
@@ -312,7 +382,7 @@ class CommentRead(CommentBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    author: Optional[UserRead] = None
+    author: Optional[UserPublicRead] = None
 
 
 class CommentUpdate(SQLModel):
@@ -349,7 +419,7 @@ class CodeExampleRead(CodeExampleBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    author: Optional[UserRead] = None
+    author: Optional[UserPublicRead] = None
 
 
 class CodeExampleUpdate(SQLModel):

@@ -1,47 +1,35 @@
 <div id="page-blocks-editor" class="page-blocks-editor">
-	<header class="blocks-editor-header">
-		<div>
-			<h1>{{ page.title }}</h1>
+    <header class="blocks-editor-header">
+        <div>
+            <div class="page-title-line">
+                <h1>{{ page.title }}</h1>
+                <span class="visibility-badge visibility-{{ page.visibility.value }}">
+                    {% if page.visibility.value == 'private' %}Somente eu{% elif page.visibility.value == 'friends' %}Amigos{% elif page.visibility.value == 'custom' %}Selecionados{% else %}Público{% endif %}
+                </span>
+            </div>
+            {% if page.author %}<p class="page-author">por @{{ page.author.username }}</p>{% endif %}
+            {% if page.summary %}<p>{{ page.summary }}</p>{% endif %}
+        </div>
 
-			{% if page.summary %}
-				<p>{{ page.summary }}</p>
-			{% endif %}
-		</div>
+        <div class="page-header-actions">
+            {% if can_edit %}
+                <button type="button" class="page-action-button"
+                        hx-get="/pages/{{ page.id }}/metadata/edit"
+                        hx-target="#page-blocks-editor" hx-swap="outerHTML">Editar página</button>
+            {% else %}
+                <span class="read-only-label">Somente leitura</span>
+            {% endif %}
+        </div>
+    </header>
 
-		<div class="page-header-actions">
-			<button
-				type="button"
-				class="page-action-button"
-				hx-get="/pages/{{ page.id }}/metadata/edit"
-				hx-target="#page-blocks-editor"
-				hx-swap="outerHTML"
-			>
-				Editar página
-			</button>
-		</div>
-	</header>
+    {% include "partials/page_blocks_list.html" %}
 
-	{% include "partials/page_blocks_list.html" %}
-
-	<div class="block-add-actions">
-		<button
-			type="button"
-			hx-post="/pages/{{ page.id }}/blocks"
-			hx-vals='{"block_type": "text"}'
-			hx-target="#page-blocks-list"
-			hx-swap="beforeend"
-		>
-			+ Texto
-		</button>
-
-		<button
-			type="button"
-			hx-post="/pages/{{ page.id }}/blocks"
-			hx-vals='{"block_type": "code"}'
-			hx-target="#page-blocks-list"
-			hx-swap="beforeend"
-		>
-			+ Código
-		</button>
-	</div>
+    {% if can_edit %}
+        <div class="block-add-actions">
+            <button type="button" hx-post="/pages/{{ page.id }}/blocks" hx-vals='{"block_type": "text"}'
+                    hx-target="#page-blocks-list" hx-swap="beforeend">+ Texto</button>
+            <button type="button" hx-post="/pages/{{ page.id }}/blocks" hx-vals='{"block_type": "code"}'
+                    hx-target="#page-blocks-list" hx-swap="beforeend">+ Código</button>
+        </div>
+    {% endif %}
 </div>

@@ -1,56 +1,83 @@
 <div id="page-blocks-editor" class="page-blocks-editor">
-	<form
-		class="page-metadata-form"
-		hx-patch="/pages/{{ page.id }}"
-		hx-target="#page-blocks-editor"
-		hx-swap="outerHTML"
-	>
-		<div class="editor-top">
-			<input
-				class="page-title"
-				type="text"
-				name="title"
-				value="{{ page.title }}"
-				placeholder="Título da página"
-				required
-			>
+    <form
+        class="page-metadata-form"
+        hx-patch="/pages/{{ page.id }}"
+        hx-target="#page-blocks-editor"
+        hx-swap="outerHTML"
+    >
+        <div class="editor-top">
+            <input class="page-title" type="text" name="title" value="{{ page.title }}" placeholder="Título da página" required>
+            <button type="submit" class="save-page-button">Salvar</button>
+            <button type="button" class="settings-button"
+                    hx-get="/pages/{{ page.id }}/blocks-editor"
+                    hx-target="#page-blocks-editor" hx-swap="outerHTML">Cancelar</button>
+        </div>
 
-			<button type="submit" class="save-page-button">
-				Salvar
-			</button>
+        <div class="page-settings">
+            <label>
+                Resumo
+                <input type="text" name="summary" value="{{ page.summary or '' }}" placeholder="Resumo">
+            </label>
+            <label>
+                Tipo
+                <select name="page_type">
+                    <option value="personal" {% if page.page_type.value == "personal" %}selected{% endif %}>Pessoal</option>
+                    <option value="official" {% if page.page_type.value == "official" %}selected{% endif %}>Oficial</option>
+                    <option value="question" {% if page.page_type.value == "question" %}selected{% endif %}>Pergunta</option>
+                    <option value="example" {% if page.page_type.value == "example" %}selected{% endif %}>Exemplo</option>
+                    <option value="note" {% if page.page_type.value == "note" %}selected{% endif %}>Nota</option>
+                </select>
+            </label>
+            <label>
+                Estado
+                <select name="status">
+                    <option value="draft" {% if page.status.value == "draft" %}selected{% endif %}>Rascunho</option>
+                    <option value="published" {% if page.status.value == "published" %}selected{% endif %}>Publicado</option>
+                    <option value="archived" {% if page.status.value == "archived" %}selected{% endif %}>Arquivado</option>
+                </select>
+            </label>
 
-			<button
-				type="button"
-				class="settings-button"
-				hx-get="/pages/{{ page.id }}/blocks-editor"
-				hx-target="#page-blocks-editor"
-				hx-swap="outerHTML"
-			>
-				Cancelar
-			</button>
-		</div>
+            {% if is_owner %}
+                <label>
+                    Quem pode ver
+                    <select name="visibility" class="visibility-select">
+                        <option value="private" {% if page.visibility.value == "private" %}selected{% endif %}>Somente eu</option>
+                        <option value="friends" {% if page.visibility.value == "friends" %}selected{% endif %}>Todos os meus amigos</option>
+                        <option value="public" {% if page.visibility.value == "public" %}selected{% endif %}>Todos os usuários</option>
+                        <option value="custom" {% if page.visibility.value == "custom" %}selected{% endif %}>Amigos específicos</option>
+                    </select>
+                </label>
+            {% endif %}
+        </div>
 
-		<div class="page-settings">
-			<input
-				type="text"
-				name="summary"
-				value="{{ page.summary or '' }}"
-				placeholder="Resumo"
-			>
-
-			<select name="page_type">
-				<option value="personal" {% if page.page_type.value == "personal" %}selected{% endif %}>Personal</option>
-				<option value="official" {% if page.page_type.value == "official" %}selected{% endif %}>Official</option>
-				<option value="question" {% if page.page_type.value == "question" %}selected{% endif %}>Question</option>
-				<option value="example" {% if page.page_type.value == "example" %}selected{% endif %}>Example</option>
-				<option value="note" {% if page.page_type.value == "note" %}selected{% endif %}>Note</option>
-			</select>
-
-			<select name="status">
-				<option value="draft" {% if page.status.value == "draft" %}selected{% endif %}>Draft</option>
-				<option value="published" {% if page.status.value == "published" %}selected{% endif %}>Published</option>
-				<option value="archived" {% if page.status.value == "archived" %}selected{% endif %}>Archived</option>
-			</select>
-		</div>
-	</form>
+        {% if is_owner %}
+            <fieldset class="sharing-fieldset">
+                <legend>Compartilhamento específico</legend>
+                <p>Somente amizades aceitas aparecem aqui. Selecione “Amigos específicos” acima para usar esta lista.</p>
+                {% if friends %}
+                    <div class="sharing-grid">
+                        {% for friend in friends %}
+                            <div class="sharing-row">
+                                <span><strong>{{ friend.display_name or friend.username }}</strong> @{{ friend.username }}</span>
+                                <label>
+                                    <input type="checkbox" name="shared_user_ids" value="{{ friend.id }}"
+                                           {% if friend.id in shared_user_ids %}checked{% endif %}>
+                                    Visualizar
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="editor_user_ids" value="{{ friend.id }}"
+                                           {% if friend.id in editor_user_ids %}checked{% endif %}>
+                                    Editar
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-state">Você ainda não tem amigos para compartilhar.</p>
+                {% endif %}
+            </fieldset>
+        {% else %}
+            <p class="permission-note">Você recebeu permissão para editar esta página. Somente o autor pode alterar o compartilhamento.</p>
+        {% endif %}
+    </form>
 </div>

@@ -1,12 +1,17 @@
 <li id="page-item-{{ page.id }}" class="folder-item">
-	<button
-		type="button"
-		class="folder-item-button"
-		hx-get="/pages/{{ page.id }}/blocks-editor"
-		hx-target="#page-editor-container"
-		hx-swap="innerHTML"
-		onclick="document.getElementById('welcome-panel').style.display = 'none';"
-	>
-		{{ page.title }}
-	</button>
+    <button
+        type="button"
+        class="folder-item-button"
+        hx-get="/pages/{{ page.id }}/blocks-editor"
+        hx-target="#page-editor-container"
+        hx-swap="innerHTML"
+        onclick="document.getElementById('welcome-panel').style.display = 'none';"
+    >
+        <span class="page-item-title">{{ page.title }}</span>
+        <span class="page-item-meta">
+            {% if page.author_id != usuario.id and page.author %}@{{ page.author.username }}{% endif %}
+            <span class="visibility-dot visibility-{{ page.visibility.value }}" title="{{ page.visibility.value }}"></span>
+            {% if editable_page_ids and page.id in editable_page_ids and page.author_id != usuario.id %}<span title="Pode editar">✎</span>{% endif %}
+        </span>
+    </button>
 </li>

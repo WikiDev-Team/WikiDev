@@ -2,57 +2,105 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Perfil - WikiDev</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile_user.display_name or profile_user.username }} - WikiDev</title>
     <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
-
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script defer src="/static/theme.js"></script>
-
     <link rel="stylesheet" href="/static/style.css">
-    <link rel="stylesheet" href="/static/auth.css">
 </head>
+<body>
+    <header class="topbar compact-topbar">
+        <div class="topbar-left">
+            <a href="/profile" class="botao-user">{{ usuario.display_name or usuario.username }}</a>
+            <nav class="main-nav">
+                <a href="/dashboard">Home</a>
+                <a href="/friends">Amigos</a>
+            </nav>
+        </div>
+        <div class="topbar-right">
+            <a href="/dashboard" class="topbar-logo-link" aria-label="Página inicial do WikiDev">
+                <img src="/static/wikidev_logo.png" alt="Logo do WikiDev" class="topbar-logo">
+            </a>
+            <button type="button" class="theme-toggle" aria-label="Alternar tema">
+                <img src="/static/sun_icon.png" alt="" class="theme-icon">
+            </button>
+        </div>
+    </header>
 
-<body class="auth-page">
-    <button type="button" class="theme-toggle auth-theme-toggle" aria-label="Alternar tema">
-        ☀️
-    </button>
+    <main class="profile-shell">
+        {% if message %}<div class="flash-message">{{ message }}</div>{% endif %}
 
-    <main class="auth-shell">
-        <section class="auth-card profile-auth-card">
-            <img
-                src="/static/wikidev_logo.png"
-                alt=""
-                class="auth-logo"
-                onerror="this.style.display='none'"
-            >
-
-            <h1>{{ usuario.display_name or usuario.username }}</h1>
-
-            <p class="auth-subtitle profile-username">
-                @{{ usuario.username }}
-            </p>
-
-            <div class="profile-details">
-                <p>
-                    <strong>E-mail:</strong>
-                    {{ usuario.email }}
-                </p>
+        <section class="profile-card-modern">
+            <div class="profile-avatar" aria-hidden="true">
+                {% if profile_user.avatar_url %}
+                    <img src="{{ profile_user.avatar_url }}" alt="">
+                {% else %}
+                    {{ (profile_user.display_name or profile_user.username)[0]|upper }}
+                {% endif %}
+            </div>
+            <div class="profile-main-info">
+                <h1>{{ profile_user.display_name or profile_user.username }}</h1>
+                <p class="profile-handle">@{{ profile_user.username }}</p>
+                {% if profile_user.bio %}<p class="profile-bio">{{ profile_user.bio }}</p>{% endif %}
+                {% if is_owner %}<p class="profile-email"><strong>E-mail:</strong> {{ profile_user.email }}</p>{% endif %}
             </div>
 
-    <form
-        method="post"
-        action="/logout"
-        hx-post="/logout"
-        class="profile-logout-form"
-    >
-        <button type="submit" class="logout-button">
-            Sair
-        </button>
-</form>
+            <div class="profile-actions">
+                {% if is_owner %}
+                    <a href="/friends" class="primary-action action-link">Gerenciar amizades</a>
+                    <form method="post" action="/logout">
+                        <button type="submit" class="secondary-action">Sair</button>
+                    </form>
+                {% elif friendship_state == "none" or friendship_state == "rejected" %}
+                    <form method="post" action="/friendships/request/{{ profile_user.id }}">
+                        <input type="hidden" name="return_to" value="/profile/{{ profile_user.id }}">
+                        <button type="submit" class="primary-action">Adicionar amigo</button>
+                    </form>
+                {% elif friendship_state == "outgoing_pending" %}
+                    <span class="relationship-label">Solicitação enviada</span>
+                    <form method="post" action="/friendships/{{ friendship.id }}/cancel">
+                        <input type="hidden" name="return_to" value="/profile/{{ profile_user.id }}">
+                        <button type="submit" class="secondary-action">Cancelar</button>
+                    </form>
+                {% elif friendship_state == "incoming_pending" %}
+                    <form method="post" action="/friendships/{{ friendship.id }}/accept">
+                        <input type="hidden" name="return_to" value="/profile/{{ profile_user.id }}">
+                        <button type="submit" class="primary-action">Aceitar solicitação</button>
+                    </form>
+                    <form method="post" action="/friendships/{{ friendship.id }}/reject">
+                        <input type="hidden" name="return_to" value="/profile/{{ profile_user.id }}">
+                        <button type="submit" class="secondary-action">Recusar</button>
+                    </form>
+                {% elif friendship_state == "friends" %}
+                    <span class="relationship-label success-label">Amigos</span>
+                    <form method="post" action="/friendships/{{ friendship.id }}/remove">
+                        <input type="hidden" name="return_to" value="/profile/{{ profile_user.id }}">
+                        <button type="submit" class="danger-action">Remover amizade</button>
+                    </form>
+                {% endif %}
+            </div>
+        </section>
 
-            <a href="/dashboard" class="profile-back-link">
-                Voltar para a tela principal
-            </a>
+        <section class="profile-pages-section">
+            <h2>{% if is_owner %}Minhas páginas{% else %}Páginas compartilhadas com você{% endif %}</h2>
+            {% if visible_pages %}
+                <div class="profile-page-list">
+                    {% for page in visible_pages %}
+                        <a href="/dashboard?open_page={{ page.id }}" class="profile-page-card">
+                            <span>
+                                <strong>{{ page.title }}</strong>
+                                {% if page.summary %}<small>{{ page.summary }}</small>{% endif %}
+                            </span>
+                            <span class="visibility-badge visibility-{{ page.visibility.value }}">
+                                {% if page.visibility.value == 'private' %}Somente eu{% elif page.visibility.value == 'friends' %}Amigos{% elif page.visibility.value == 'custom' %}Selecionados{% else %}Público{% endif %}
+                            </span>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="empty-state">Nenhuma página disponível para você.</p>
+            {% endif %}
         </section>
     </main>
 </body>

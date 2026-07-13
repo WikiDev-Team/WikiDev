@@ -5,9 +5,10 @@ from sqlmodel import Session, select
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.exceptions import RequestValidationError
 
-from .db import init_db, engine
-from .models import Folder, Language, Page, Tag, User
+from .db import get_session, init_db
+from .models import Friendship, FriendshipStatus, Folder, Language, Page, Tag, User
 from .dependencies import get_current_user
+from .permissions import can_edit_page, list_accessible_pages
 from .templates import templates
 
 from .routers.users import router as users_router
@@ -20,6 +21,7 @@ from .routers.examples import router as examples_router
 from .routers.auth import router as auth_router
 from .routers.search import router as search_router
 from .routers.page_blocks import router as page_blocks_router
+from .routers.friendships import router as friendships_router
 
 app = FastAPI(title="WikiDev API", version="1.0.0")
 
@@ -56,6 +58,7 @@ app.include_router(comments_router)
 app.include_router(examples_router)
 app.include_router(search_router)
 app.include_router(page_blocks_router)
+app.include_router(friendships_router)
 
 @app.on_event("startup")
 def on_startup() -> None:
@@ -98,12 +101,22 @@ async def root():
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(
     request: Request,
+    open_page: int | None = None,
+    session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    with Session(engine) as session:
-        pages = session.exec(
-            select(Page).order_by(Page.created_at.desc())
+    pages = list_accessible_pages(session, current_user.id)
+    editable_page_ids = {
+        page.id for page in pages if can_edit_page(session, page, current_user)
+    }
+    pending_friend_requests = len(
+        session.exec(
+            select(Friendship).where(
+                (Friendship.addressee_id == current_user.id)
+                & (Friendship.status == FriendshipStatus.PENDING)
+            )
         ).all()
+    )
 
     return templates.TemplateResponse(
         request=request,
@@ -112,16 +125,12 @@ async def dashboard(
             "project": "WikiDev",
             "usuario": current_user,
             "pages": pages,
+            "editable_page_ids": editable_page_ids,
+            "pending_friend_requests": pending_friend_requests,
+            "open_page_id": open_page if any(page.id == open_page for page in pages) else None,
         },
     )
 
-@app.get("/profile", response_class=HTMLResponse)
-async def profile(request: Request, current_user: User = Depends(get_current_user)):
-    return templates.TemplateResponse(
-        request=request,
-        name="user_profile.html",
-        context={
-            "project": "WikiDev",
-            "usuario": current_user
-        }
-    )
+@app.get("/profile")
+async def profile(current_user: User = Depends(get_current_user)):
+    return RedirectResponse(url=f"/profile/{current_user.id}", status_code=303)
