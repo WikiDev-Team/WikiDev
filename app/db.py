@@ -36,12 +36,12 @@ def _migrate_sqlite_page_visibility() -> None:
         connection.execute(
             text(
                 "ALTER TABLE page "
-                "ADD COLUMN visibility VARCHAR(20) NOT NULL DEFAULT 'PRIVATE'"
+                "ADD COLUMN visibility VARCHAR(20) NOT NULL DEFAULT 'private'"
             )
         )
         connection.execute(
             text(
-                "UPDATE page SET visibility = 'PUBLIC' "
+                "UPDATE page SET visibility = 'public' "
                 "WHERE status IN ('PUBLISHED', 'published')"
             )
         )
