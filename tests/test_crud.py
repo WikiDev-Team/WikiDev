@@ -7,6 +7,7 @@ from app.models import (
     PageCreate, 
     PageBlockCreate, PageBlockType
 )
+from app.main import app
 from app.crud import create_user, create_page, create_page_block
 
 # ... (Mantenha o engine, a fixture da session e o test_create_user aqui intactos) ...
@@ -27,6 +28,7 @@ def session_fixture():
     with Session(engine) as session:
         yield session  # Entrega a sessão limpa para o teste usar
         
+    app.dependency_overrides.clear()
     # Limpa as tabelas da memória para não interferir no próximo teste
     SQLModel.metadata.drop_all(engine)
 
