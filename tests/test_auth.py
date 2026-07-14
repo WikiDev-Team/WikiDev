@@ -19,15 +19,16 @@ def override_get_session():
     with Session(engine) as session:
         yield session
 
-# Mágica do FastAPI: Dizemos para a API usar o nosso banco em memória em vez do original
-app.dependency_overrides[get_session] = override_get_session
 
 @pytest.fixture(name="client")
 def client_fixture():
     # Cria as tabelas, entrega o cliente de teste, e depois limpa tudo
     SQLModel.metadata.create_all(engine)
+    # Mágica do FastAPI: Dizemos para a API usar o nosso banco em memória em vez do original
+    app.dependency_overrides[get_session] = override_get_session
     client = TestClient(app)
     yield client
+    app.dependency_overrides.clear()
     SQLModel.metadata.drop_all(engine)
 
 # ... (Mantenha todos os testes test_registro... e test_login... abaixo sem alterações)
