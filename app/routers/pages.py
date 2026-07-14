@@ -120,25 +120,6 @@ def new_page_form(request: Request):
     )
 
 
-# Removemos quando mudamos para blocks
-#@router.get("/{page_id}", response_class=HTMLResponse)
-#def get_page(
-#    request: Request,
-#    page_id: int,
-#    session: Session = Depends(get_session),
-#):
-#    page = session.get(Page, page_id)
-#
-#    if page is None:
-#        raise HTTPException(status_code=404, detail="Página não encontrada")
-#
-#    return templates.TemplateResponse(
-#        request=request,
-#        name="partials/page_editor.html",
-#        context={"page": page},
-#    )
-#
-
 @router.patch("/{page_id}", response_class=HTMLResponse)
 def edit_page(
     request: Request,
