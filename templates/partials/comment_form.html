@@ -1,7 +1,7 @@
 <form
     class="comment-form{% if parent %} comment-reply-form{% elif editing_comment %} comment-edit-form{% endif %}"
-    {% if editing_comment %}hx-patch="/comments/{{ editing_comment.id }}"{% else %}hx-post="{% if parent %}/comments/{{ parent.id }}/replies{% else %}/comments/pages/{{ page.id }}{% endif %}"{% endif %}
-    hx-target="#page-discussion-{{ page.id }}"
+    {% if editing_comment %}hx-patch="/comments/{{ editing_comment.id }}"{% else %}hx-post="{% if parent %}/comments/{{ parent.id }}/replies{% elif block %}/comments/blocks/{{ block.id }}{% else %}/comments/pages/{{ page.id }}{% endif %}"{% endif %}
+    hx-target="#{{ discussion_id }}"
     hx-swap="outerHTML"
 >
     {% if parent %}
@@ -38,7 +38,7 @@
             + Adicionar código
         </button>
         {% if parent or editing_comment %}
-            <button type="button" class="comment-link-button" onclick="this.closest('#discussion-reply-form').replaceChildren()">
+            <button type="button" class="comment-link-button" onclick="this.closest('[data-inline-comment-form]').replaceChildren()">
                 Cancelar
             </button>
         {% endif %}

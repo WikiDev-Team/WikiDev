@@ -145,7 +145,7 @@ def test_reply_form_only_appears_on_request_and_replaces_shared_target(discussio
     )
     discussion_html = _html(page_discussion(_request(), page.id, session, owner))
     assert "comment-reply-form" not in discussion_html
-    assert 'hx-target="#discussion-reply-form"' in discussion_html
+    assert f'hx-target="#page-discussion-{page.id}-inline-form"' in discussion_html
 
     form_html = _html(reply_form(_request(), parent.id, session, owner))
     assert "comment-reply-form" in form_html

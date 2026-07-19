@@ -1,6 +1,6 @@
 from __future__ import annotations
 from sqlmodel import Session, select
-from sqlalchemy import delete
+from sqlalchemy import delete, func
 from .security import get_password_hash  # para rodar a funcao trocada
 
 from .models import (
@@ -375,6 +375,22 @@ def delete_comment(session: Session, obj: Comment) -> Comment:
     session.commit()
     session.refresh(obj)
     return obj
+
+
+def count_active_comments_by_block(
+    session: Session, block_ids: list[int]
+) -> dict[int, int]:
+    if not block_ids:
+        return {}
+    rows = session.exec(
+        select(Comment.block_id, func.count(Comment.id))
+        .where(
+            Comment.block_id.in_(block_ids),
+            Comment.is_deleted.is_(False),
+        )
+        .group_by(Comment.block_id)
+    ).all()
+    return {block_id: count for block_id, count in rows if block_id is not None}
 
 
 # ── CodeExample ───────────────────────────────────────────────────────────────

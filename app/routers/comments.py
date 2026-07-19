@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 from ..crud import (
     COMMENT_LANGUAGES,
     MAX_COMMENT_REPLY_LEVELS,
+    count_active_comments_by_block,
     create_comment,
     delete_comment,
     get_comment_depth,
@@ -14,7 +15,7 @@ from ..crud import (
 )
 from ..db import get_session
 from ..dependencies import get_current_user
-from ..models import Comment, CommentCreate, CommentUpdate, Page, User
+from ..models import Comment, CommentCreate, CommentUpdate, Page, PageBlock, User
 from ..permissions import require_page_view
 from ..templates import templates
 
@@ -49,15 +50,31 @@ def _page_or_404(session: Session, page_id: int) -> Page:
 
 def _comment_or_404(session: Session, comment_id: int) -> Comment:
     comment = session.get(Comment, comment_id)
-    if comment is None or comment.block_id is not None:
+    if comment is None:
         raise HTTPException(status_code=404, detail="Comentário não encontrado")
     return comment
 
 
-def _page_comment_tree(session: Session, page_id: int) -> list[CommentNode]:
+def _block_or_404(session: Session, block_id: int) -> PageBlock:
+    block = session.get(PageBlock, block_id)
+    if block is None:
+        raise HTTPException(status_code=404, detail="Bloco não encontrado")
+    return block
+
+
+def _comment_tree(
+    session: Session,
+    page_id: int,
+    block_id: int | None,
+) -> list[CommentNode]:
+    scope_filter = (
+        Comment.block_id.is_(None)
+        if block_id is None
+        else Comment.block_id == block_id
+    )
     comments = session.exec(
         select(Comment)
-        .where(Comment.page_id == page_id, Comment.block_id.is_(None))
+        .where(Comment.page_id == page_id, scope_filter)
         .order_by(Comment.created_at.asc(), Comment.id.asc())
     ).all()
     nodes = {comment.id: CommentNode(comment=comment) for comment in comments}
@@ -84,16 +101,29 @@ def _render_discussion(
     session: Session,
     page: Page,
     current_user: User,
+    block: PageBlock | None = None,
 ):
+    discussion_id = (
+        f"block-discussion-{block.id}" if block else f"page-discussion-{page.id}"
+    )
     return templates.TemplateResponse(
         request=request,
         name="partials/page_discussion.html",
         context={
             "page": page,
-            "comment_nodes": _page_comment_tree(session, page.id),
+            "comment_nodes": _comment_tree(
+                session, page.id, block.id if block else None
+            ),
             "current_user": current_user,
             "comment_languages": COMMENT_LANGUAGE_LABELS,
             "max_reply_levels": MAX_COMMENT_REPLY_LEVELS,
+            "block": block,
+            "discussion_id": discussion_id,
+            "active_comment_count": (
+                count_active_comments_by_block(session, [block.id]).get(block.id, 0)
+                if block
+                else None
+            ),
         },
     )
 
@@ -117,6 +147,19 @@ def page_discussion(
     page = _page_or_404(session, page_id)
     require_page_view(session, page, current_user)
     return _render_discussion(request, session, page, current_user)
+
+
+@router.get("/blocks/{block_id}", response_class=HTMLResponse)
+def block_discussion(
+    request: Request,
+    block_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    block = _block_or_404(session, block_id)
+    page = _page_or_404(session, block.page_id)
+    require_page_view(session, page, current_user)
+    return _render_discussion(request, session, page, current_user, block)
 
 
 @router.post("/pages/{page_id}", response_class=HTMLResponse, status_code=201)
@@ -144,6 +187,36 @@ def add_page_comment(
     return _render_discussion(request, session, page, current_user)
 
 
+@router.post("/blocks/{block_id}", response_class=HTMLResponse, status_code=201)
+def add_block_comment(
+    request: Request,
+    block_id: int,
+    body: str = Form(...),
+    code: str = Form(""),
+    language: str = Form(""),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    block = _block_or_404(session, block_id)
+    page = _page_or_404(session, block.page_id)
+    require_page_view(session, page, current_user)
+    try:
+        create_comment(
+            session,
+            _create_payload(
+                page_id=page.id,
+                block_id=block.id,
+                body=body,
+                code=code,
+                language=language,
+            ),
+            author_id=current_user.id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return _render_discussion(request, session, page, current_user, block)
+
+
 @router.get("/{comment_id}/reply", response_class=HTMLResponse)
 def reply_form(
     request: Request,
@@ -165,6 +238,12 @@ def reply_form(
             "page": page,
             "parent": comment,
             "comment_languages": COMMENT_LANGUAGE_LABELS,
+            "block": session.get(PageBlock, comment.block_id) if comment.block_id else None,
+            "discussion_id": (
+                f"block-discussion-{comment.block_id}"
+                if comment.block_id
+                else f"page-discussion-{page.id}"
+            ),
         },
     )
 
@@ -187,6 +266,7 @@ def add_reply(
             session,
             _create_payload(
                 page_id=page.id,
+                block_id=parent.block_id,
                 parent_comment_id=parent.id,
                 body=body,
                 code=code,
@@ -196,7 +276,8 @@ def add_reply(
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return _render_discussion(request, session, page, current_user)
+    block = session.get(PageBlock, parent.block_id) if parent.block_id else None
+    return _render_discussion(request, session, page, current_user, block)
 
 
 @router.get("/{comment_id}/edit", response_class=HTMLResponse)
@@ -220,6 +301,12 @@ def edit_form(
             "page": page,
             "editing_comment": comment,
             "comment_languages": COMMENT_LANGUAGE_LABELS,
+            "block": session.get(PageBlock, comment.block_id) if comment.block_id else None,
+            "discussion_id": (
+                f"block-discussion-{comment.block_id}"
+                if comment.block_id
+                else f"page-discussion-{page.id}"
+            ),
         },
     )
 
@@ -251,7 +338,8 @@ def edit_comment(
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    return _render_discussion(request, session, page, current_user)
+    block = session.get(PageBlock, comment.block_id) if comment.block_id else None
+    return _render_discussion(request, session, page, current_user, block)
 
 
 @router.delete("/{comment_id}", response_class=HTMLResponse)
@@ -267,4 +355,5 @@ def remove_comment(
     if comment.author_id != current_user.id and page.author_id != current_user.id:
         raise HTTPException(status_code=403, detail="Você não pode remover este comentário")
     delete_comment(session, comment)
-    return _render_discussion(request, session, page, current_user)
+    block = session.get(PageBlock, comment.block_id) if comment.block_id else None
+    return _render_discussion(request, session, page, current_user, block)

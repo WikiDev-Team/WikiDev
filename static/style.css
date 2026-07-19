@@ -666,6 +666,32 @@ body.auth-page {
 	font-style: italic;
 }
 
+.block-discussion {
+	margin-top: 8px;
+}
+
+.block-discussion > summary {
+	display: inline-flex;
+	cursor: pointer;
+	color: var(--text-secondary);
+	font-size: 0.78rem;
+	list-style: none;
+}
+
+.block-discussion > summary::-webkit-details-marker {
+	display: none;
+}
+
+.block-discussion > summary:hover {
+	color: var(--accent-blue);
+}
+
+.block-discussion-content {
+	margin-top: 10px;
+	padding: 12px 0 4px;
+	border-top: 1px solid var(--border-color);
+}
+
 /* === page blocks === */
 
 .folder-item-button {

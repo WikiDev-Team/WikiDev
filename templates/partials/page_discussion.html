@@ -22,7 +22,7 @@
                         <button
                             type="button"
                             hx-get="/comments/{{ comment.id }}/edit"
-                            hx-target="#discussion-reply-form"
+                            hx-target="#{{ discussion_id }}-inline-form"
                             hx-swap="innerHTML"
                         >Editar</button>
                     {% endif %}
@@ -30,7 +30,7 @@
                         <button
                             type="button"
                             hx-get="/comments/{{ comment.id }}/reply"
-                            hx-target="#discussion-reply-form"
+                            hx-target="#{{ discussion_id }}-inline-form"
                             hx-swap="innerHTML"
                         >Responder</button>
                     {% endif %}
@@ -38,7 +38,7 @@
                         <button
                             type="button"
                             hx-delete="/comments/{{ comment.id }}"
-                            hx-target="#page-discussion-{{ page.id }}"
+                            hx-target="#{{ discussion_id }}"
                             hx-swap="outerHTML"
                             hx-confirm="Remover este comentário?"
                         >Remover</button>
@@ -54,9 +54,15 @@
     </article>
 {% endmacro %}
 
-<section id="page-discussion-{{ page.id }}" class="discussion-content">
+{% if block %}
+    <summary id="block-comment-summary-{{ block.id }}" hx-swap-oob="innerHTML">
+        {% if active_comment_count %}💬 {{ active_comment_count }}{% else %}Comentários{% endif %}
+    </summary>
+{% endif %}
+
+<section id="{{ discussion_id }}" class="discussion-content{% if block %} block-discussion-content{% endif %}">
     {% include "partials/comment_form.html" %}
-    <div id="discussion-reply-form"></div>
+    <div id="{{ discussion_id }}-inline-form" data-inline-comment-form></div>
     <div class="comment-list">
         {% for node in comment_nodes %}
             {{ render_comment(node) }}
