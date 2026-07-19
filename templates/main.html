@@ -147,6 +147,24 @@
         document.body.addEventListener("htmx:afterSwap", function (event) {
             highlightCodeBlocks(event.target);
         });
+
+        function showCommentCode(button) {
+            const form = button.closest("form");
+            const fields = form.querySelector(".comment-code-fields");
+            fields.hidden = false;
+            fields.querySelector("select").required = true;
+            button.hidden = true;
+        }
+
+        function removeCommentCode(button) {
+            const form = button.closest("form");
+            const fields = form.querySelector(".comment-code-fields");
+            fields.querySelector("select").value = "";
+            fields.querySelector("select").required = false;
+            fields.querySelector("textarea").value = "";
+            fields.hidden = true;
+            form.querySelector(".add-code-button").hidden = false;
+        }
     </script>
 </body>
 </html>

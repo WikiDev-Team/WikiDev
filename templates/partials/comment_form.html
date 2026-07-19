@@ -1,0 +1,47 @@
+<form
+    class="comment-form{% if parent %} comment-reply-form{% endif %}"
+    hx-post="{% if parent %}/comments/{{ parent.id }}/replies{% else %}/comments/pages/{{ page.id }}{% endif %}"
+    hx-target="#page-discussion-{{ page.id }}"
+    hx-swap="outerHTML"
+>
+    {% if parent %}
+        <p class="comment-reply-context">
+            Respondendo a @{{ parent.author.username if parent.author else 'usuário removido' }}
+        </p>
+    {% endif %}
+    <label class="comment-body-field">
+        <span class="sr-only">Texto do comentário</span>
+        <textarea name="body" rows="3" required placeholder="Escreva um comentário"></textarea>
+    </label>
+    <div class="comment-code-fields" hidden>
+        <label>
+            <span>Linguagem</span>
+            <select name="language">
+                <option value="">Selecione</option>
+                {% for value, label in comment_languages.items() %}
+                    <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>
+            <span>Código</span>
+            <textarea name="code" rows="6" spellcheck="false"></textarea>
+        </label>
+        <button type="button" class="comment-link-button" onclick="removeCommentCode(this)">
+            Remover código
+        </button>
+    </div>
+    <div class="comment-form-actions">
+        <button type="button" class="comment-link-button add-code-button" onclick="showCommentCode(this)">
+            + Adicionar código
+        </button>
+        {% if parent %}
+            <button type="button" class="comment-link-button" onclick="this.closest('#discussion-reply-form').replaceChildren()">
+                Cancelar
+            </button>
+        {% endif %}
+        <button type="submit" class="comment-submit-button">
+            {% if parent %}Responder{% else %}Comentar{% endif %}
+        </button>
+    </div>
+</form>
