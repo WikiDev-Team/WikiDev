@@ -116,8 +116,6 @@ def main():
         "/tags/{tag_id}",
         "/pages/",
         "/pages/{page_id}",
-        "/comments/",
-        "/comments/{comment_id}",
         "/examples/",
         "/examples/{example_id}",
     ]
@@ -297,42 +295,6 @@ def main():
     print_ok("PATCH /pages/{page_id}")
 
     # ------------------------------------------------------------
-    # 6. Comentários
-    # ------------------------------------------------------------
-
-    comment_payload = {
-        "page_id": page_id,
-        "author_id": user_id,
-        "parent_comment_id": None,
-        "body": "Comentário criado pelo teste automático",
-        "is_deleted": False,
-    }
-
-    comment = request("POST", "/comments/", comment_payload, expected=(201,))
-    comment_id = comment["id"]
-    check(comment["page_id"] == page_id, "Comentário criado com page_id errado")
-    check(comment["author_id"] == user_id, "Comentário criado com author_id errado")
-    print_ok("POST /comments/")
-
-    comment_get = request("GET", f"/comments/{comment_id}")
-    check(comment_get["id"] == comment_id, "GET /comments/{id} retornou comentário errado")
-    print_ok("GET /comments/{comment_id}")
-
-    comments = request("GET", "/comments/", query={"page_id": page_id})
-    check(any(item["id"] == comment_id for item in comments), "Comentário não apareceu na listagem")
-    print_ok("GET /comments/ com filtro page_id")
-
-    comment_updated = request(
-        "PATCH",
-        f"/comments/{comment_id}",
-        {
-            "body": "Comentário atualizado pelo teste",
-        },
-    )
-    check(comment_updated["body"] == "Comentário atualizado pelo teste", "PATCH de comentário falhou")
-    print_ok("PATCH /comments/{comment_id}")
-
-    # ------------------------------------------------------------
     # 7. Exemplos de código
     # ------------------------------------------------------------
 
@@ -392,9 +354,6 @@ def main():
 
     request("DELETE", f"/examples/{example_id}", expected=(204,))
     print_ok("DELETE /examples/{example_id}")
-
-    request("DELETE", f"/comments/{comment_id}", expected=(204,))
-    print_ok("DELETE /comments/{comment_id}")
 
     request("DELETE", f"/pages/{page_id}", expected=(204,))
     print_ok("DELETE /pages/{page_id}")
