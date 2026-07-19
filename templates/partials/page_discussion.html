@@ -18,6 +18,14 @@
                     <pre class="comment-code"><code class="language-{{ comment.language }}">{{ comment.code }}</code></pre>
                 {% endif %}
                 <div class="comment-actions">
+                    {% if comment.author_id == current_user.id %}
+                        <button
+                            type="button"
+                            hx-get="/comments/{{ comment.id }}/edit"
+                            hx-target="#discussion-reply-form"
+                            hx-swap="innerHTML"
+                        >Editar</button>
+                    {% endif %}
                     {% if node.depth < max_reply_levels %}
                         <button
                             type="button"

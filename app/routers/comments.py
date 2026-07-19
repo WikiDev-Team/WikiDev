@@ -10,10 +10,11 @@ from ..crud import (
     create_comment,
     delete_comment,
     get_comment_depth,
+    update_comment,
 )
 from ..db import get_session
 from ..dependencies import get_current_user
-from ..models import Comment, CommentCreate, Page, User
+from ..models import Comment, CommentCreate, CommentUpdate, Page, User
 from ..permissions import require_page_view
 from ..templates import templates
 
@@ -195,6 +196,61 @@ def add_reply(
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return _render_discussion(request, session, page, current_user)
+
+
+@router.get("/{comment_id}/edit", response_class=HTMLResponse)
+def edit_form(
+    request: Request,
+    comment_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    comment = _comment_or_404(session, comment_id)
+    page = _page_or_404(session, comment.page_id)
+    require_page_view(session, page, current_user)
+    if comment.author_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Você não pode editar este comentário")
+    if comment.is_deleted:
+        raise HTTPException(status_code=400, detail="Comentário removido")
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/comment_form.html",
+        context={
+            "page": page,
+            "editing_comment": comment,
+            "comment_languages": COMMENT_LANGUAGE_LABELS,
+        },
+    )
+
+
+@router.patch("/{comment_id}", response_class=HTMLResponse)
+def edit_comment(
+    request: Request,
+    comment_id: int,
+    body: str = Form(...),
+    code: str = Form(""),
+    language: str = Form(""),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    comment = _comment_or_404(session, comment_id)
+    page = _page_or_404(session, comment.page_id)
+    require_page_view(session, page, current_user)
+    if comment.author_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Você não pode editar este comentário")
+    try:
+        update_comment(
+            session,
+            comment,
+            CommentUpdate(
+                body=body,
+                code=code or None,
+                language=language or None,
+            ),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return _render_discussion(request, session, page, current_user)
 
 

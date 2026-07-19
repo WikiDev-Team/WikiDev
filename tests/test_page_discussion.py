@@ -16,6 +16,8 @@ from app.models import (
 from app.routers.comments import (
     add_page_comment,
     add_reply,
+    edit_comment,
+    edit_form,
     page_discussion,
     remove_comment,
     reply_form,
@@ -232,3 +234,117 @@ def test_block_comments_are_not_rendered_in_page_discussion(discussion):
     )
     html = _html(page_discussion(_request(), page.id, session, owner))
     assert "Somente no bloco" not in html
+
+
+def test_author_can_open_prefilled_edit_form_and_update_comment(discussion):
+    session, owner, _, page = discussion
+    comment = create_comment(
+        session,
+        CommentCreate(
+            page_id=page.id,
+            body="Texto original",
+            code="print('original')",
+            language="python",
+        ),
+        author_id=owner.id,
+    )
+    form_html = _html(edit_form(_request(), comment.id, session, owner))
+    assert 'hx-patch="/comments/' in form_html
+    assert "Texto original" in form_html
+    assert "print(&#39;original&#39;)" in form_html
+    assert 'value="python" selected' in form_html
+
+    response = edit_comment(
+        _request("PATCH", True),
+        comment.id,
+        "Texto alterado",
+        "System.out.println(\"ok\");",
+        "java",
+        session,
+        owner,
+    )
+    html = _html(response)
+    assert "Texto alterado" in html
+    assert 'class="language-java"' in html
+    assert "Texto original" not in html
+
+
+def test_edit_escapes_html_and_validates_code_language(discussion):
+    session, owner, _, page = discussion
+    comment = create_comment(
+        session,
+        CommentCreate(page_id=page.id, body="Original"),
+        author_id=owner.id,
+    )
+    response = edit_comment(
+        _request("PATCH", True),
+        comment.id,
+        "<strong>não renderizar</strong>",
+        "<script>alert(1)</script>",
+        "cpp",
+        session,
+        owner,
+    )
+    html = _html(response)
+    assert "&lt;strong&gt;não renderizar&lt;/strong&gt;" in html
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
+    assert "<strong>não renderizar</strong>" not in html
+
+    with pytest.raises(HTTPException) as error:
+        edit_comment(
+            _request("PATCH", True),
+            comment.id,
+            "Continua válido",
+            "int main() {}",
+            "",
+            session,
+            owner,
+        )
+    assert error.value.status_code == 422
+
+
+def test_only_comment_author_can_edit_even_when_user_owns_page(discussion):
+    session, owner, other, page = discussion
+    other_comment = create_comment(
+        session,
+        CommentCreate(page_id=page.id, body="Texto de outra pessoa"),
+        author_id=other.id,
+    )
+    with pytest.raises(HTTPException) as get_error:
+        edit_form(_request(), other_comment.id, session, owner)
+    assert get_error.value.status_code == 403
+    with pytest.raises(HTTPException) as patch_error:
+        edit_comment(
+            _request("PATCH", True),
+            other_comment.id,
+            "Tentativa",
+            "",
+            "",
+            session,
+            owner,
+        )
+    assert patch_error.value.status_code == 403
+
+
+def test_removed_comment_cannot_be_edited(discussion):
+    session, owner, _, page = discussion
+    comment = create_comment(
+        session,
+        CommentCreate(page_id=page.id, body="Será removido"),
+        author_id=owner.id,
+    )
+    remove_comment(_request("DELETE", True), comment.id, session, owner)
+    with pytest.raises(HTTPException) as get_error:
+        edit_form(_request(), comment.id, session, owner)
+    assert get_error.value.status_code == 400
+    with pytest.raises(HTTPException) as patch_error:
+        edit_comment(
+            _request("PATCH", True),
+            comment.id,
+            "Não pode",
+            "",
+            "",
+            session,
+            owner,
+        )
+    assert patch_error.value.status_code == 422
