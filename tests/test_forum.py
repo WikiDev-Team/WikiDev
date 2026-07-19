@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime
+from pathlib import Path
 
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
@@ -224,6 +225,14 @@ def test_forum_links_open_page_or_block_discussion():
         assert f'block-discussion-panel-{block.id}' in block_html
     finally:
         session.close()
+
+
+def test_dashboard_waits_for_htmx_settle_before_opening_discussion():
+    template = Path("templates/main.html").read_text(encoding="utf-8")
+    assert 'htmx:afterSettle' in template
+    assert 'htmx.trigger(discussion, "toggle")' in template
+    after_swap = template.split('htmx:afterSwap', 1)[1].split("});", 1)[0]
+    assert "openRequestedDiscussion" not in after_swap
 
 
 def test_empty_forum_state():

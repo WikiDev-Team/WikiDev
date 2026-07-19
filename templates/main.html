@@ -147,10 +147,11 @@
             if (!window.requestedDiscussionTarget) return;
             const discussion = document.getElementById(window.requestedDiscussionTarget);
             if (!discussion) return;
+            window.requestedDiscussionTarget = null;
             discussion.open = true;
+            htmx.trigger(discussion, "toggle");
             discussion.classList.add("discussion-highlight");
             discussion.scrollIntoView({ behavior: "smooth", block: "center" });
-            window.requestedDiscussionTarget = null;
             window.setTimeout(() => discussion.classList.remove("discussion-highlight"), 2200);
         }
 
@@ -160,6 +161,9 @@
 
         document.body.addEventListener("htmx:afterSwap", function (event) {
             highlightCodeBlocks(event.target);
+        });
+
+        document.body.addEventListener("htmx:afterSettle", function () {
             openRequestedDiscussion();
         });
 
