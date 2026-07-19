@@ -34,6 +34,7 @@
     {% endif %}
 
     <details
+        id="page-discussion-panel-{{ page.id }}"
         class="page-discussion"
         hx-get="/comments/pages/{{ page.id }}"
         hx-trigger="toggle once"

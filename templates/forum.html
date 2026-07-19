@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discussões recentes - WikiDev</title>
+    <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
+    <script defer src="/static/theme.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header class="topbar compact-topbar">
+        <div class="topbar-left">
+            <a href="/profile" class="botao-user">{{ usuario.display_name or usuario.username }}</a>
+            <nav class="main-nav">
+                <a href="/dashboard">Home</a>
+                <a href="/friends">Amigos</a>
+                <a href="/forum" class="active">Fórum</a>
+            </nav>
+        </div>
+        <div class="topbar-right">
+            <a href="/dashboard" class="topbar-logo-link" aria-label="Página inicial do WikiDev">
+                <img src="/static/wikidev_logo.png" alt="Logo do WikiDev" class="topbar-logo">
+            </a>
+            <button type="button" class="theme-toggle" aria-label="Alternar tema">
+                <img src="/static/sun_icon.png" alt="" class="theme-icon">
+            </button>
+        </div>
+    </header>
+
+    <main class="forum-shell">
+        <header class="forum-heading">
+            <h1>Discussões recentes</h1>
+            <p>Acompanhe as conversas mais recentes nas páginas e em seus blocos.</p>
+        </header>
+        <section class="forum-discussion-list" aria-label="Discussões recentes">
+            {% for discussion in discussions %}
+                <article class="forum-discussion-row">
+                    <div class="forum-discussion-main">
+                        <a href="{{ discussion.url }}" class="forum-discussion-title">
+                            {{ discussion.page.title }}
+                        </a>
+                        {% if discussion.page.summary %}
+                            <p class="forum-page-summary">{{ discussion.page.summary }}</p>
+                        {% endif %}
+                        {% if discussion.block_label %}
+                            <p class="forum-block-context">{{ discussion.block_label }}</p>
+                        {% else %}
+                            <p class="forum-block-context">Discussão geral da página</p>
+                        {% endif %}
+                    </div>
+                    <div class="forum-discussion-meta">
+                        <span>{{ discussion.comment_count }} comentário{% if discussion.comment_count != 1 %}s{% endif %}</span>
+                        {% if discussion.latest_author %}
+                            <span>por {{ discussion.latest_author.display_name or '@' ~ discussion.latest_author.username }}</span>
+                        {% endif %}
+                        <time datetime="{{ discussion.latest_activity.isoformat() }}">
+                            {{ discussion.latest_activity.strftime('%d/%m/%Y %H:%M') }}
+                        </time>
+                    </div>
+                </article>
+            {% else %}
+                <p class="forum-empty">Ainda não há discussões acessíveis.</p>
+            {% endfor %}
+        </section>
+    </main>
+</body>
+</html>

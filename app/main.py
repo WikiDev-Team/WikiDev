@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.exceptions import RequestValidationError
 
 from .db import get_session, init_db
-from .models import Friendship, FriendshipStatus, Folder, Language, Page, Tag, User
+from .models import Friendship, FriendshipStatus, PageBlock, User
 from .dependencies import get_current_user
 from .permissions import can_edit_page, list_accessible_pages
 from .templates import templates
@@ -22,6 +22,7 @@ from .routers.auth import router as auth_router
 from .routers.search import router as search_router
 from .routers.page_blocks import router as page_blocks_router
 from .routers.friendships import router as friendships_router
+from .routers.forum import router as forum_router
 
 app = FastAPI(title="WikiDev API", version="1.0.0")
 
@@ -59,6 +60,7 @@ app.include_router(examples_router)
 app.include_router(search_router)
 app.include_router(page_blocks_router)
 app.include_router(friendships_router)
+app.include_router(forum_router)
 
 @app.on_event("startup")
 def on_startup() -> None:
@@ -102,6 +104,7 @@ async def root():
 async def dashboard(
     request: Request,
     open_page: int | None = None,
+    discussion: str | None = None,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
@@ -118,6 +121,17 @@ async def dashboard(
         ).all()
     )
 
+    open_page_id = open_page if any(page.id == open_page for page in pages) else None
+    discussion_target = None
+    if open_page_id is not None and discussion == "page":
+        discussion_target = f"page-discussion-panel-{open_page_id}"
+    elif open_page_id is not None and discussion and discussion.startswith("block-"):
+        block_id_text = discussion.removeprefix("block-")
+        if block_id_text.isdigit():
+            block = session.get(PageBlock, int(block_id_text))
+            if block is not None and block.page_id == open_page_id:
+                discussion_target = f"block-discussion-panel-{block.id}"
+
     return templates.TemplateResponse(
         request=request,
         name="main.html",
@@ -127,7 +141,8 @@ async def dashboard(
             "pages": pages,
             "editable_page_ids": editable_page_ids,
             "pending_friend_requests": pending_friend_requests,
-            "open_page_id": open_page if any(page.id == open_page for page in pages) else None,
+            "open_page_id": open_page_id,
+            "discussion_target": discussion_target,
         },
     )
 

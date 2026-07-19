@@ -76,7 +76,8 @@ def test_discussion_starts_collapsed_and_loads_on_toggle(discussion):
     session, owner, _, page = discussion
     response = blocks_editor(_request(), page.id, session, owner)
     html = _html(response)
-    assert '<details\n        class="page-discussion"' in html
+    assert f'id="page-discussion-panel-{page.id}"' in html
+    assert 'class="page-discussion"' in html
     assert 'hx-trigger="toggle once"' in html
     assert f'hx-get="/comments/pages/{page.id}"' in html
     assert "comment-form" not in html

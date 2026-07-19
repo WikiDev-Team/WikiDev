@@ -27,7 +27,7 @@
                     Amigos
                     {% if pending_friend_requests %}<span class="nav-badge">{{ pending_friend_requests }}</span>{% endif %}
                 </a>
-                <a href="#">Forum</a>
+                <a href="/forum">Fórum</a>
                 <a href="#">Manpages</a>
             </nav>
         </div>
@@ -73,6 +73,9 @@
                     style="display: none;"
                 ></div>
                 <script>document.getElementById('welcome-panel').style.display = 'none';</script>
+                {% if discussion_target %}
+                    <script>window.requestedDiscussionTarget = {{ discussion_target|tojson }};</script>
+                {% endif %}
             {% endif %}
         </main>
 
@@ -140,12 +143,24 @@
             });
         }
 
+        function openRequestedDiscussion() {
+            if (!window.requestedDiscussionTarget) return;
+            const discussion = document.getElementById(window.requestedDiscussionTarget);
+            if (!discussion) return;
+            discussion.open = true;
+            discussion.classList.add("discussion-highlight");
+            discussion.scrollIntoView({ behavior: "smooth", block: "center" });
+            window.requestedDiscussionTarget = null;
+            window.setTimeout(() => discussion.classList.remove("discussion-highlight"), 2200);
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
             highlightCodeBlocks();
         });
 
         document.body.addEventListener("htmx:afterSwap", function (event) {
             highlightCodeBlocks(event.target);
+            openRequestedDiscussion();
         });
 
         function showCommentCode(button) {
