@@ -184,6 +184,25 @@
             fields.hidden = true;
             form.querySelector(".add-code-button").hidden = false;
         }
+
+        function showNewCommentForm(button) {
+            const area = button.closest(".new-comment-area");
+            button.hidden = true;
+            area.querySelector(".new-comment-form").hidden = false;
+            area.querySelector("textarea[name='body']").focus();
+        }
+
+        function hideNewCommentForm(button) {
+            const area = button.closest(".new-comment-area");
+            const form = button.closest("form");
+            form.reset();
+            const codeFields = form.querySelector(".comment-code-fields");
+            codeFields.hidden = true;
+            codeFields.querySelector("select").required = false;
+            form.querySelector(".add-code-button").hidden = false;
+            area.querySelector(".new-comment-form").hidden = true;
+            area.querySelector(".new-comment-button").hidden = false;
+        }
     </script>
 </body>
 </html>

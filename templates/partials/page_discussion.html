@@ -61,13 +61,21 @@
 {% endif %}
 
 <section id="{{ discussion_id }}" class="discussion-content{% if block %} block-discussion-content{% endif %}">
-    {% include "partials/comment_form.html" %}
-    <div id="{{ discussion_id }}-inline-form" data-inline-comment-form></div>
     <div class="comment-list">
         {% for node in comment_nodes %}
             {{ render_comment(node) }}
         {% else %}
             <p class="discussion-empty">Ainda não há comentários.</p>
         {% endfor %}
+    </div>
+    <div id="{{ discussion_id }}-inline-form" data-inline-comment-form></div>
+    <div class="new-comment-area">
+        <button type="button" class="comment-link-button new-comment-button" onclick="showNewCommentForm(this)">
+            + Adicionar comentário
+        </button>
+        <div class="new-comment-form" hidden>
+            {% set collapsible_comment_form = true %}
+            {% include "partials/comment_form.html" %}
+        </div>
     </div>
 </section>

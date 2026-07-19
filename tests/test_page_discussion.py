@@ -102,6 +102,20 @@ def test_text_comment_and_htmx_partial_escape_user_html(discussion):
     assert "comment-code-fields" in html and "hidden" in html
 
 
+def test_comments_appear_before_collapsed_new_comment_form(discussion):
+    session, owner, _, page = discussion
+    create_comment(
+        session,
+        CommentCreate(page_id=page.id, body="Comentário visível primeiro"),
+        author_id=owner.id,
+    )
+    html = _html(page_discussion(_request(), page.id, session, owner))
+    comment_position = html.index("Comentário visível primeiro")
+    action_position = html.index("+ Adicionar comentário")
+    form_position = html.index('class="new-comment-form" hidden')
+    assert comment_position < action_position < form_position
+
+
 @pytest.mark.parametrize("language", ["python", "java", "c", "cpp"])
 def test_comment_with_each_supported_language_is_highlighted_and_escaped(
     discussion, language

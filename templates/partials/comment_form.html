@@ -41,6 +41,10 @@
             <button type="button" class="comment-link-button" onclick="this.closest('[data-inline-comment-form]').replaceChildren()">
                 Cancelar
             </button>
+        {% elif collapsible_comment_form %}
+            <button type="button" class="comment-link-button" onclick="hideNewCommentForm(this)">
+                Cancelar
+            </button>
         {% endif %}
         <button type="submit" class="comment-submit-button">
             {% if parent %}Responder{% elif editing_comment %}Salvar{% else %}Comentar{% endif %}

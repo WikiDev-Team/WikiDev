@@ -609,6 +609,20 @@ body.auth-page {
 	margin-top: 18px;
 }
 
+.new-comment-area {
+	margin-top: 18px;
+	padding-top: 12px;
+	border-top: 1px solid var(--border-color);
+}
+
+.new-comment-form[hidden] {
+	display: none;
+}
+
+.new-comment-button {
+	color: var(--accent-blue);
+}
+
 .comment-thread + .comment-thread {
 	margin-top: 16px;
 }
