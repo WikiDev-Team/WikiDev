@@ -1,10 +1,9 @@
 from __future__ import annotations
 from sqlmodel import Session, select
 from sqlalchemy import delete
-from typing import Iterable, Optional, TypeVar, Type, Any
-from .security import get_password_hash #para rodar a funcao trocada
-from sqlmodel import Session, select
-from sqlalchemy.orm import selectinload
+from typing import TypeVar
+
+from .security import get_password_hash
 
 from .models import (
     CodeExample, CodeExampleCreate, CodeExampleUpdate,
@@ -58,7 +57,8 @@ def create_user(session: Session, data: UserCreate) -> User:
 def update_user(session: Session, obj: User, data: UserUpdate) -> User:
     payload = data.model_dump(exclude_unset=True)
     for key, value in payload.items():
-        setattr(obj, key, value)
+        if value is not None:
+            setattr(obj, key, value)
     _touch_update(obj)
     session.add(obj)
     session.commit()
@@ -143,7 +143,8 @@ def create_folder(session: Session, data: FolderCreate) -> Folder:
 def update_folder(session: Session, obj: Folder, data: FolderUpdate) -> Folder:
     payload = data.model_dump(exclude_unset=True)
     for key, value in payload.items():
-        setattr(obj, key, value)
+        if value is not None or key == "parent_folder_id":
+            setattr(obj, key, value)
     if "name" in payload and not payload.get("slug"):
         obj.slug = _unique_slug(session, Folder, slugify_text(obj.name), exclude_id=obj.id)
     elif payload.get("slug"):
@@ -177,7 +178,7 @@ def create_page(session: Session, data: PageCreate) -> Page:
 def update_page(session: Session, obj: Page, data: PageUpdate) -> Page:
     payload = data.model_dump(exclude_unset=True, exclude={"tag_ids"})
     for key, value in payload.items():
-        if value is not None:
+        if value is not None or key in {"folder_id", "parent_page_id", "language_id"}:
             setattr(obj, key, value)
     if "title" in payload and not payload.get("slug"):
         obj.slug = _unique_slug(session, Page, slugify_text(obj.title), exclude_id=obj.id)
@@ -193,6 +194,16 @@ def update_page(session: Session, obj: Page, data: PageUpdate) -> Page:
     session.commit()
     session.refresh(obj)
     return obj
+
+
+def delete_page(session: Session, obj: Page) -> None:
+    """Remove dependências explícitas para funcionar também com SQLite sem cascade."""
+    session.exec(delete(PageTagLink).where(PageTagLink.page_id == obj.id))
+    session.exec(delete(Comment).where(Comment.page_id == obj.id))
+    session.exec(delete(CodeExample).where(CodeExample.page_id == obj.id))
+    session.exec(delete(PageBlock).where(PageBlock.page_id == obj.id))
+    session.delete(obj)
+    session.commit()
 
 
 # ── PageBlock ────────────────────────────────────────────────────────────────
@@ -226,6 +237,7 @@ def create_page_block(
         block_type=data.block_type,
         content=data.content,
         language=data.language,
+        font_size=data.font_size,
     )
 
     session.add(obj)

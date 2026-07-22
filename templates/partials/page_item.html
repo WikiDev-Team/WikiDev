@@ -1,12 +1,6 @@
-<li id="page-item-{{ page.id }}" class="folder-item">
-	<button
-		type="button"
-		class="folder-item-button"
-		hx-get="/pages/{{ page.id }}/blocks-editor"
-		hx-target="#page-editor-container"
-		hx-swap="innerHTML"
-		onclick="document.getElementById('welcome-panel').style.display = 'none';"
-	>
-		{{ page.title }}
-	</button>
+<li id="page-item-{{ page.id }}" class="page-tree-item">
+    <button type="button" class="tree-button" hx-get="/pages/{{ page.id }}/blocks-editor" hx-target="#page-editor-container" hx-swap="innerHTML" onclick="hideWelcome()">
+        <span aria-hidden="true">📄</span><span class="tree-label">{{ page.title }}</span>
+        {% if page.status.value != 'published' %}<span class="status-dot {{ page.status.value }}" title="{{ page.status.value }}"></span>{% endif %}
+    </button>
 </li>

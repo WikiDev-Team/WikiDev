@@ -1,0 +1,18 @@
+{% macro folder_nodes(parent_id=None, depth=0) -%}
+    {% if depth < 10 %}
+        {% for folder in folders if folder.parent_folder_id == parent_id %}
+            <li class="folder-tree-item" style="padding-left: {{ depth * 14 }}px">
+                <button type="button" class="tree-button" hx-get="/folders/{{ folder.id }}/panel" hx-target="#page-editor-container" hx-swap="innerHTML" onclick="hideWelcome()">
+                    <span aria-hidden="true">📁</span>
+                    <span class="tree-label">{{ folder.name }}</span>
+                    <span class="visibility-dot {{ folder.visibility.value }}" title="{{ 'Pública' if folder.visibility.value == 'public' else 'Privada' }}"></span>
+                </button>
+                {% if folders|selectattr('parent_folder_id', 'equalto', folder.id)|list %}
+                    <ul class="folder-tree-list">{{ folder_nodes(folder.id, depth + 1) }}</ul>
+                {% endif %}
+            </li>
+        {% endfor %}
+    {% endif %}
+{%- endmacro %}
+
+{% if folders %}<ul class="folder-tree-list">{{ folder_nodes() }}</ul>{% else %}<p class="sidebar-empty">Nenhuma pasta criada.</p>{% endif %}

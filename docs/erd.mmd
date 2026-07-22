@@ -1,84 +1,77 @@
 erDiagram
+    USER ||--o{ PASSWORD_RESET_TOKEN : owns
+    USER ||--o{ FOLDER : owns
     USER ||--o{ PAGE : authors
     USER ||--o{ COMMENT : writes
     USER ||--o{ CODE_EXAMPLE : creates
-    LANGUAGE ||--o{ PAGE : contains
+    FOLDER ||--o{ FOLDER : contains
+    FOLDER ||--o{ PAGE : groups
+    LANGUAGE ||--o{ PAGE : classifies
+    PAGE ||--o{ PAGE_BLOCK : contains
     PAGE ||--o{ COMMENT : has
     PAGE ||--o{ CODE_EXAMPLE : has
     PAGE ||--o{ PAGE : parent_of
-    PAGE ||--o{ PAGE_TAG : links
-    TAG ||--o{ PAGE_TAG : links
+    PAGE ||--o{ PAGE_TAG_LINK : links
+    TAG ||--o{ PAGE_TAG_LINK : links
 
     USER {
         int id PK
-        string username
-        string email
+        string username UK
+        string email UK
+        string hashed_password
+        string token_hash
         string display_name
         string bio
         string avatar_url
         datetime created_at
         datetime updated_at
     }
-
-    LANGUAGE {
+    PASSWORD_RESET_TOKEN {
+        int id PK
+        int user_id FK
+        string token_hash UK
+        datetime expires_at
+        datetime used_at
+        datetime created_at
+    }
+    FOLDER {
         int id PK
         string name
-        string slug
+        string slug UK
         string description
-        string official_url
-        string logo_url
+        string visibility
+        int author_id FK
+        int parent_folder_id FK
         datetime created_at
         datetime updated_at
     }
-
-    TAG {
-        int id PK
-        string name
-        string slug
-        datetime created_at
-        datetime updated_at
-    }
-
     PAGE {
         int id PK
         string title
-        string slug
+        string slug UK
         string page_type
         string status
         string summary
-        string content
         int language_id FK
         int author_id FK
         int parent_page_id FK
+        int folder_id FK
         datetime created_at
         datetime updated_at
     }
-
-    COMMENT {
+    PAGE_BLOCK {
         int id PK
         int page_id FK
-        int author_id FK
-        int parent_comment_id FK
-        string body
-        bool is_deleted
+        int position
+        string block_type
+        string content
+        string language
+        string font_size
         datetime created_at
         datetime updated_at
     }
-
-    CODE_EXAMPLE {
-        int id PK
-        int page_id FK
-        int author_id FK
-        string title
-        string code
-        string explanation
-        string language_hint
-        bool is_public
-        datetime created_at
-        datetime updated_at
-    }
-
-    PAGE_TAG {
-        int page_id PK, FK
-        int tag_id PK, FK
-    }
+    LANGUAGE { int id PK string name string slug UK }
+    TAG { int id PK string name string slug UK }
+    COMMENT { int id PK int page_id FK int author_id FK int parent_comment_id FK string body bool is_deleted }
+    CODE_EXAMPLE { int id PK int page_id FK int author_id FK string title string code bool is_public }
+    PAGE_TAG_LINK { int page_id PK, FK int tag_id PK, FK }

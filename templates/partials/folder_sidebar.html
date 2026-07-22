@@ -1,0 +1,7 @@
+<div id="folders-tree" class="sidebar-section" {% if folder_sidebar_oob %}hx-swap-oob="outerHTML"{% endif %}>
+    <div class="sidebar-section-heading">
+        <span>Pastas</span>
+        <button type="button" class="icon-button" title="Nova pasta" hx-get="/folders/new" hx-target="#page-editor-container" hx-swap="innerHTML" onclick="hideWelcome()">+</button>
+    </div>
+    {% include "partials/folder_tree.html" %}
+</div>

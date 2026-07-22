@@ -2,137 +2,66 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>WikiDev</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ project }}</title>
     <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
-
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script defer src="/static/theme.js"></script>
-
-    <link rel="stylesheet" href="/static/style.css">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
-
 <body>
-    <header class="topbar">
-        <div class="topbar-left">
-            <a href="/profile" class="botao-user">
-                {{ usuario.display_name or usuario.username }}
-            </a>
-
-            <nav class="main-nav">
-                <a href="/dashboard" class="active">Home</a>
-                <a href="#">Forum</a>
-                <a href="#">Manpages</a>
-            </nav>
-        </div>
-
-        <div class="topbar-right">
-            <a href="/dashboard" class="topbar-logo-link" aria-label="Página inicial do WikiDev">
-                <img
-                    src="/static/wikidev_logo.png"
-                    alt="Logo do WikiDev"
-                    class="topbar-logo"
-                >
-            </a>
-
-            <button type="button" class="theme-toggle" aria-label="Ativar modo claro">
-            <img src="/static/sun_icon.png" alt="" class="theme-icon">
-            </button>
-
-            <button
-                type="button"
-                class="menu-hamburger"
-                aria-label="Abrir ou fechar barra lateral"
-                onclick="toggleSidebar()"
-            >
-                ≡
-            </button>
-        </div>
-    </header>
-
-    <div class="layout-container">
-        <main class="main-content">
-            <section id="welcome-panel" class="welcome-section">
-                <h1>Bem-vindo ao Wikidev</h1>
-                <p>Selecione um tópico na barra lateral para começar a ler ou editar.</p>
-            </section>
-
-            <div id="page-editor-container"></div>
-        </main>
-
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-actions">
-                <button
-                    type="button"
-                    class="add-page-button"
-                    hx-get="/pages/new"
-                    hx-target="#page-editor-container"
-                    hx-swap="innerHTML"
-                    onclick="document.getElementById('welcome-panel').style.display = 'none';"
-                > + Adicionar página
-                </button>
-            </div>
-
-            <ul class="file-tree" id="pages-list">
-                {% for page in pages %}
-                    {% include "partials/page_item.html" %}
-                {% endfor %}
-            </ul>
-        </aside>
+<header class="topbar">
+    <div class="topbar-brand">
+        <a href="/dashboard" class="topbar-logo-link" aria-label="Página inicial"><img src="/static/wikidev_logo.png" alt="WikiDev" class="topbar-logo"></a>
+        <div><strong>WikiDev</strong><small>Sua base de conhecimento colaborativa</small></div>
     </div>
-
-        <!-- O container principal precisa ter 'position: relative' -->
-    <div id="search-container" style="position: relative; width: min(460px, 100%); margin: 20px auto 0; padding: 0 20px; z-index: 100;">
-        <input
-            type="search"
-            name="q"
-            placeholder="Buscar usuários ou páginas..."
-            autocomplete="off"
-            style="width: 100%; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; background-color: var(--bg-panel); color: var(--text-primary); box-shadow: 0 4px 14px rgba(0,0,0,0.18);"
-            hx-get="/busca"
-            hx-trigger="input changed delay:500ms, search"
-            hx-target="#search-results"
-        >
-
-        <div
-            id="search-results"
-            style="position: absolute; top: calc(100% + 8px); left: 20px; right: 20px; background-color: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 24px rgba(0,0,0,0.25); z-index: 200; overflow: hidden;"
-        ></div>
+    <div id="search-container" class="topbar-search">
+        <label class="visually-hidden" for="global-search">Buscar usuários ou páginas</label>
+        <input id="global-search" type="search" name="q" placeholder="Buscar usuários ou páginas..." autocomplete="off" hx-get="/busca" hx-trigger="input changed delay:350ms, search" hx-target="#search-results">
+        <div id="search-results"></div>
     </div>
+    <div class="topbar-right">
+        <button type="button" class="theme-toggle" aria-label="Alternar tema"><img src="/static/sun_icon.png" alt="" class="theme-icon"></button>
+        <a href="/profile" class="botao-user">{{ usuario.display_name or usuario.username }}</a>
+        <button type="button" class="menu-hamburger" aria-label="Abrir ou fechar barra lateral" onclick="toggleSidebar()">≡</button>
+    </div>
+</header>
 
-    <script>
-        // Fecha os resultados da busca ao clicar fora do componente
-        document.addEventListener('click', function(event) {
-            const container = document.getElementById('search-container');
-            const results = document.getElementById('search-results');
-            
-            // Se o clique não foi dentro do container de busca, esvaziamos a div de resultados
-            if (container && !container.contains(event.target)) {
-                results.innerHTML = '';
-            }
-        });
-    </script>
+<div class="layout-container">
+    <main class="main-content">
+        <section id="welcome-panel" class="welcome-section hero-panel">
+            <span class="eyebrow">Olá, {{ usuario.display_name or usuario.username }}</span>
+            <h1>Construa conhecimento que continua útil.</h1>
+            <p>Organize páginas em pastas, publique conteúdo e encontre rapidamente o que sua equipe compartilhou.</p>
+            <div class="hero-actions"><button class="primary-action" hx-get="/pages/new" hx-target="#page-editor-container" onclick="hideWelcome()">Criar página</button><button class="secondary-action" hx-get="/folders/new" hx-target="#page-editor-container" onclick="hideWelcome()">Criar pasta</button></div>
+        </section>
+        <div id="page-editor-container" aria-live="polite"></div>
+    </main>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-actions">
+            <button type="button" class="add-page-button" hx-get="/pages/new" hx-target="#page-editor-container" hx-swap="innerHTML" onclick="hideWelcome()">+ Nova página</button>
+            <button type="button" class="add-folder-button" hx-get="/folders/new" hx-target="#page-editor-container" hx-swap="innerHTML" onclick="hideWelcome()">+ Nova pasta</button>
+        </div>
+        {% include "partials/folder_sidebar.html" %}
+        <div class="sidebar-section">
+            <div class="sidebar-section-heading"><span>Páginas acessíveis</span><span class="count-pill">{{ pages|length }}</span></div>
+            <ul class="file-tree" id="pages-list">{% for page in pages %}{% include "partials/page_item.html" %}{% endfor %}</ul>
+        </div>
+    </aside>
+</div>
 
-    <script>
-        function highlightCodeBlocks(root = document) {
-            root.querySelectorAll("pre code").forEach((block) => {
-                if (!block.dataset.highlighted) {
-                    hljs.highlightElement(block);
-                }
-            });
-        }
-
-        document.addEventListener("DOMContentLoaded", function () {
-            highlightCodeBlocks();
-        });
-
-        document.body.addEventListener("htmx:afterSwap", function (event) {
-            highlightCodeBlocks(event.target);
-        });
-    </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+<script>
+    function hideWelcome() { const panel = document.getElementById('welcome-panel'); if (panel) panel.hidden = true; }
+    function showWelcome() { const panel = document.getElementById('welcome-panel'); const editor = document.getElementById('page-editor-container'); if (panel) panel.hidden = false; if (editor) editor.innerHTML = ''; }
+    function toggleSidebar() { document.getElementById('sidebar')?.classList.toggle('collapsed'); }
+    function closeSearch() { const results = document.getElementById('search-results'); if (results) results.innerHTML = ''; }
+    function highlightCodeBlocks(root = document) { if (!window.hljs) return; root.querySelectorAll('pre code').forEach((block) => { if (!block.dataset.highlighted) hljs.highlightElement(block); }); }
+    document.addEventListener('DOMContentLoaded', () => { highlightCodeBlocks(); if (window.innerWidth <= 900) document.getElementById('sidebar')?.classList.add('collapsed'); });
+    document.body.addEventListener('htmx:afterSwap', (event) => highlightCodeBlocks(event.target));
+    document.addEventListener('click', (event) => { const container = document.getElementById('search-container'); if (container && !container.contains(event.target)) closeSearch(); });
+</script>
 </body>
 </html>

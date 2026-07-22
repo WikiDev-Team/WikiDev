@@ -3,6 +3,7 @@ from fastapi import Depends, HTTPException, Request
 from sqlmodel import Session, select
 from .db import get_session
 from .models import User
+from .security import hash_token
 
 
 def get_current_user(request: Request, session: Session = Depends(get_session)) -> User:
@@ -11,7 +12,7 @@ def get_current_user(request: Request, session: Session = Depends(get_session)) 
     if not token:
         raise HTTPException(status_code=401, detail="Não autenticado")
 
-    user = session.exec(select(User).where(User.token == token)).first()
+    user = session.exec(select(User).where(User.token == hash_token(token))).first()
 
     if not user:
         raise HTTPException(status_code=401, detail="Sessão inválida")

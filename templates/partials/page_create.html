@@ -1,48 +1,14 @@
-<form
-	class="page-editor"
-	hx-post="/pages/"
-	hx-target="#page-editor-container"
-	hx-swap="innerHTML"
->
-	<div class="editor-top">
-		<input
-			class="page-title"
-			type="text"
-			name="title"
-			placeholder="Título da página"
-			required
-		>
-
-		<button type="submit" class="save-page-button">
-			Criar página
-		</button>
-	</div>
-
-	<div class="page-settings">
-		<input
-			type="text"
-			name="summary"
-			placeholder="Resumo"
-		>
-
-		<select name="page_type">
-			<option value="personal">Personal</option>
-			<option value="official">Official</option>
-			<option value="question">Question</option>
-			<option value="example">Example</option>
-			<option value="note" selected>Note</option>
-		</select>
-
-		<select name="status">
-			<option value="draft" selected>Draft</option>
-			<option value="published">Published</option>
-			<option value="archived">Archived</option>
-		</select>
-
-		<input
-			type="text"
-			name="tag_ids"
-			placeholder="IDs das tags separados por vírgula"
-		>
-	</div>
-</form>
+<section class="workspace-card">
+    <header class="workspace-header"><div><span class="eyebrow">Conteúdo</span><h1>Nova página</h1></div></header>
+    <form class="stack-form" hx-post="/pages/" hx-target="#page-editor-container" hx-swap="innerHTML">
+        <label><span>Título</span><input type="text" name="title" placeholder="Título da página" maxlength="200" required></label>
+        <label><span>Resumo</span><textarea name="summary" rows="3" placeholder="Uma descrição curta"></textarea></label>
+        <div class="form-grid">
+            <label><span>Tipo</span><select name="page_type"><option value="personal">Pessoal</option><option value="official">Oficial</option><option value="question">Pergunta</option><option value="example">Exemplo</option><option value="note" selected>Nota</option></select></label>
+            <label><span>Status</span><select name="status"><option value="draft" selected>Rascunho</option><option value="published">Publicada</option><option value="archived">Arquivada</option></select></label>
+            <label><span>Pasta</span><select name="folder_id"><option value="">Sem pasta</option>{% for folder in owned_folders %}<option value="{{ folder.id }}" {% if selected_folder_id == folder.id %}selected{% endif %}>{{ folder.name }}</option>{% endfor %}</select></label>
+            <label><span>IDs de tags</span><input type="text" name="tag_ids" placeholder="Ex.: 1, 4, 7"></label>
+        </div>
+        <div class="form-actions"><button type="submit" class="primary-action">Criar página</button><button type="button" class="secondary-action" onclick="showWelcome()">Cancelar</button></div>
+    </form>
+</section>

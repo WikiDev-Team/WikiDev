@@ -6,6 +6,28 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: sqlite:///./wikidev.db
+      APP_ENV: ${APP_ENV:-development}
+      APP_BASE_URL: ${APP_BASE_URL:-http://127.0.0.1:8000}
+      DATABASE_URL: sqlite:////data/wikidev.db
+      SECURE_COOKIES: ${SECURE_COOKIES:-false}
+      ENABLE_DEV_LOGIN: ${ENABLE_DEV_LOGIN:-false}
+      PASSWORD_RESET_TTL_MINUTES: ${PASSWORD_RESET_TTL_MINUTES:-30}
+      MAIL_MODE: ${MAIL_MODE:-console}
+      MAIL_FROM: ${MAIL_FROM:-WikiDev <no-reply@wikidev.local>}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      SMTP_USE_SSL: ${SMTP_USE_SSL:-false}
     volumes:
-      - ./:/app
+      - wikidev_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  wikidev_data:
