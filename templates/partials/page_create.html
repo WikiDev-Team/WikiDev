@@ -13,9 +13,14 @@
 			required
 		>
 
+        {% if folder_id %}
+            <input type="hidden" name="folder_id" value="{{ folder_id }}">
+        {% endif %}
+
 		<button type="submit" class="save-page-button">
 			Criar página
 		</button>
+
 	</div>
 
 	<div class="page-settings">

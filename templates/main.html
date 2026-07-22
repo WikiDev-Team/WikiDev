@@ -75,10 +75,51 @@
                 </button>
             </div>
 
-            <ul class="file-tree" id="pages-list">
-                {% for page in pages %}
-                    {% include "partials/page_item.html" %}
+            <ul class="file-tree" id="pages-list" hx-swap-oob="true">
+                <!-- 1. Renderiza as Pastas e suas respectivas páginas -->
+                {% for folder in folders %}
+                    <li class="folder-wrapper" style="margin-bottom: 10px;">
+                        
+                        <!-- Transformamos o header em um elemento clicável -->
+                        <div class="folder-header" style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0; cursor: pointer;" onclick="toggleFolder(this)">
+                            <span class="folder-name" style="font-weight: bold; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                                <span class="folder-icon" style="font-size: 0.9em;">📂</span> 
+                                {{ folder.name }}
+                            </span>
+                            
+                            <!-- O botão "+" -->
+                            <button 
+                                type="button"
+                                style="background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 1.1em; padding: 0 5px;"
+                                hx-get="/pages/new?folder_id={{ folder.id }}" 
+                                hx-target="#page-editor-container"
+                                hx-swap="innerHTML"
+                                onclick="event.stopPropagation(); document.getElementById('welcome-panel').style.display = 'none';"
+                                title="Nova página em {{ folder.name }}"
+                            >
+                                +
+                            </button>
+                        </div>
+                        
+                        <!-- A lista de páginas agora começa visível, mas será controlada pelo JS -->
+                        <ul class="folder-pages" style="padding-left: 20px; border-left: 1px solid var(--border-color); margin-top: 5px; transition: all 0.2s ease-in-out;">
+                            {% for page in pages %}
+                                {% if page.folder_id == folder.id %}
+                                    {% include "partials/page_item.html" %}
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </li>
                 {% endfor %}
+
+                <!-- 2. Renderiza as Páginas soltas (Raiz) -->
+                <div class="root-pages" style="margin-top: 15px; border-top: 1px dashed var(--border-color); padding-top: 10px;">
+                    {% for page in pages %}
+                        {% if not page.folder_id %}
+                            {% include "partials/page_item.html" %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
             </ul>
         </aside>
     </div>
@@ -134,5 +175,23 @@
             highlightCodeBlocks(event.target);
         });
     </script>
+
+    <script>
+        function toggleFolder(headerElement) {
+            // Encontra a <ul> de páginas logo abaixo do header clicado
+            const pagesList = headerElement.nextElementSibling;
+            // Encontra o ícone da pasta
+            const icon = headerElement.querySelector('.folder-icon');
+            
+            if (pagesList.style.display === 'none') {
+                pagesList.style.display = 'block';
+                icon.textContent = '📂'; // Ícone de pasta aberta
+            } else {
+                pagesList.style.display = 'none';
+                icon.textContent = '📁'; // Ícone de pasta fechada
+            }
+        }
+    </script>
+
 </body>
 </html>

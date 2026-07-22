@@ -101,6 +101,12 @@ async def dashboard(
     current_user: User = Depends(get_current_user),
 ):
     with Session(engine) as session:
+        # Busca todas as pastas ordenadas por nome
+        folders = session.exec(
+            select(Folder).order_by(Folder.name)
+        ).all()
+        
+        # Busca todas as páginas ordenadas por data
         pages = session.exec(
             select(Page).order_by(Page.created_at.desc())
         ).all()
@@ -111,6 +117,7 @@ async def dashboard(
         context={
             "project": "WikiDev",
             "usuario": current_user,
+            "folders": folders, # Agora o HTML tem acesso às pastas!
             "pages": pages,
         },
     )

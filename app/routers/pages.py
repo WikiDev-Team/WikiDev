@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Form, Request
 from sqlmodel import Session, select
 
 from ..db import get_session
-from ..models import Page, PageCreate, PageRead, PageUpdate, User, PageTagLink, PageBlock
+from ..models import Page, PageCreate, PageRead, PageUpdate, User, PageTagLink, PageBlock, Folder
 from ..crud import create_page, update_page
 from ..dependencies import get_current_user
 from ..templates import templates
@@ -50,14 +50,26 @@ def add_page_htmx(
     page_type: str = Form("note"),
     status: str = Form("draft"),
     tag_ids: str = Form(""),
+    folder_id: int | None = Form(None), # Recebe o ID do input hidden
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    parsed_tag_ids = [
-        int(tag_id.strip())
-        for tag_id in tag_ids.split(",")
-        if tag_id.strip()
-    ]
+
+    if folder_id is not None:
+        pasta = session.get(Folder, folder_id)
+        if not pasta:
+            raise HTTPException(status_code=404, detail="Pasta de destino não encontrada.")
+        
+        # Garante que apenas o dono da pasta pode criar páginas dentro dela
+        if pasta.author_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Você não tem permissão para adicionar páginas nesta pasta.")
+
+    # Ignora textos que não são números
+    parsed_tag_ids = []
+    for tag_id in tag_ids.split(","):
+        cleaned = tag_id.strip()
+        if cleaned.isdigit(): # Só converte se for um número válido
+            parsed_tag_ids.append(int(cleaned))
 
     payload = PageCreate(
         title=title,
@@ -66,6 +78,7 @@ def add_page_htmx(
         status=status,
         author_id=current_user.id,
         tag_ids=parsed_tag_ids,
+        folder_id=folder_id # Repassa para o CRUD salvar no banco
     )
 
     page = create_page(session, payload)
@@ -74,12 +87,22 @@ def add_page_htmx(
         select(Page).order_by(Page.created_at.desc())
     ).all()
 
+    pages = session.exec(
+        select(Page).order_by(Page.created_at.desc())
+    ).all()
+
+    # NOVO: Busca as pastas para manter a árvore renderizada
+    folders = session.exec(
+        select(Folder).order_by(Folder.name)
+    ).all()
+
     return templates.TemplateResponse(
         request=request,
         name="partials/page_response.html",
         context={
             "page": page,
             "pages": pages,
+            "folders": folders, # Adicione esta linha
             "blocks": [],
         },
     )
@@ -112,11 +135,16 @@ def remove_page(page_id: int, session: Session = Depends(get_session)):
     session.commit()
 
 @router.get("/new", response_class=HTMLResponse)
-def new_page_form(request: Request):
+def new_page_form(
+    request: Request,
+    folder_id: int | None = Query(None) # Captura o ID da URL se existir
+):
     return templates.TemplateResponse(
         request=request,
         name="partials/page_create.html",
-        context={},
+        context={
+            "folder_id": folder_id # Injeta no Jinja2
+        },
     )
 
 
@@ -158,12 +186,22 @@ def edit_page(
         select(Page).order_by(Page.created_at.desc())
     ).all()
 
+    pages = session.exec(
+        select(Page).order_by(Page.created_at.desc())
+    ).all()
+
+    # NOVO: Busca as pastas para manter a árvore renderizada
+    folders = session.exec(
+        select(Folder).order_by(Folder.name)
+    ).all()
+
     return templates.TemplateResponse(
         request=request,
         name="partials/page_response.html",
         context={
             "page": page,
             "pages": pages,
+            "folders": folders, # Adicione esta linha
             "blocks": blocks,
         },
     )
