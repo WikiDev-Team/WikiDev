@@ -1,6 +1,6 @@
 from __future__ import annotations
 from sqlmodel import Session, select
-from sqlalchemy import delete
+from sqlalchemy import delete, update
 from typing import TypeVar
 
 from .security import get_password_hash
@@ -10,7 +10,7 @@ from .models import (
     Comment, CommentCreate, CommentUpdate,
     Folder, FolderCreate, FolderUpdate,
     Language, LanguageCreate, LanguageUpdate,
-    Page, PageCreate, PageUpdate, PageTagLink,
+    Page, PageCreate, PageUpdate, PageTagLink, PageShare,
     Tag, TagCreate, TagUpdate,
     User, UserCreate, UserUpdate,
     slugify_text,
@@ -199,9 +199,15 @@ def update_page(session: Session, obj: Page, data: PageUpdate) -> Page:
 def delete_page(session: Session, obj: Page) -> None:
     """Remove dependências explícitas para funcionar também com SQLite sem cascade."""
     session.exec(delete(PageTagLink).where(PageTagLink.page_id == obj.id))
+    session.exec(delete(PageShare).where(PageShare.page_id == obj.id))
     session.exec(delete(Comment).where(Comment.page_id == obj.id))
     session.exec(delete(CodeExample).where(CodeExample.page_id == obj.id))
     session.exec(delete(PageBlock).where(PageBlock.page_id == obj.id))
+    session.exec(
+        update(Page)
+        .where(Page.parent_page_id == obj.id)
+        .values(parent_page_id=None)
+    )
     session.delete(obj)
     session.commit()
 

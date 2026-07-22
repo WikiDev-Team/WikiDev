@@ -1,11 +1,12 @@
+
 from datetime import datetime
 from enum import Enum
 import re
 import unicodedata
-from typing import Optional, List
+from typing import List, Optional
 
-from sqlalchemy import Column, DateTime, UniqueConstraint
-from sqlmodel import Field, SQLModel, Relationship
+from sqlalchemy import CheckConstraint, Column, DateTime, UniqueConstraint
+from sqlmodel import Field, Relationship, SQLModel
 
 
 def now_utc() -> datetime:
@@ -39,6 +40,24 @@ class PageBlockType(str, Enum):
     CODE = "code"
 
 
+class FriendshipStatus(str, Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
+
+class PageVisibility(str, Enum):
+    PRIVATE = "private"
+    FRIENDS = "friends"
+    PUBLIC = "public"
+    CUSTOM = "custom"
+
+
+class PageSharePermission(str, Enum):
+    VIEW = "view"
+    EDIT = "edit"
+
+
 class FolderVisibility(str, Enum):
     PRIVATE = "private"
     PUBLIC = "public"
@@ -56,8 +75,9 @@ class UserBase(SQLModel):
 
 class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    hashed_password: str = Field(default="")                        ### SENHA APÓS HASH
-    token: Optional[str] = Field(default=None, index=True, max_length=64)          ### ALTERAÇÃO DO BD
+    hashed_password: str = Field(default="")
+    # Guarda apenas SHA-256 do cookie de sessão, nunca o token utilizável.
+    token: Optional[str] = Field(default=None, index=True, max_length=64)
     created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
     updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
 
@@ -66,9 +86,10 @@ class User(UserBase, table=True):
     examples: List["CodeExample"] = Relationship(back_populates="author")
     folders: List["Folder"] = Relationship(back_populates="author")
 
-#modifiquei pq p criar o user o front/back recebe o texto pura, mas essa senha n eh salva no bd diretamente
+
 class UserCreate(UserBase):
     password: str = Field(min_length=6, max_length=128)
+
 
 class UserRead(UserBase):
     id: int
@@ -94,7 +115,7 @@ class UserUpdate(SQLModel):
 
 
 class PasswordResetToken(SQLModel, table=True):
-    """Token de redefinição armazenado somente como hash e utilizável uma vez."""
+    """Token de redefinição armazenado como hash, com expiração e uso único."""
 
     __table_args__ = (UniqueConstraint("token_hash", name="uq_password_reset_token_hash"),)
 
@@ -104,6 +125,31 @@ class PasswordResetToken(SQLModel, table=True):
     expires_at: datetime = Field(sa_column=Column(DateTime, nullable=False))
     used_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime, nullable=True))
     created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
+
+
+# ── Friendship ───────────────────────────────────────────────────────────────
+
+class Friendship(SQLModel, table=True):
+    __table_args__ = (
+        UniqueConstraint("requester_id", "addressee_id", name="uq_friendship_direction"),
+        CheckConstraint("requester_id != addressee_id", name="ck_friendship_distinct_users"),
+    )
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    requester_id: int = Field(foreign_key="user.id", index=True)
+    addressee_id: int = Field(foreign_key="user.id", index=True)
+    status: FriendshipStatus = Field(default=FriendshipStatus.PENDING, index=True)
+    created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
+    updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
+
+
+class FriendshipRead(SQLModel):
+    id: int
+    requester_id: int
+    addressee_id: int
+    status: FriendshipStatus
+    created_at: datetime
+    updated_at: datetime
 
 
 # ── Language ─────────────────────────────────────────────────────────────────
@@ -135,7 +181,7 @@ class LanguageRead(LanguageBase):
 
 
 class LanguageUpdate(SQLModel):
-    name: Optional[str] = Field(default=None, max_length=80)
+    name: Optional[str] = Field(default=None, min_length=1, max_length=80)
     slug: Optional[str] = Field(default=None, max_length=90)
     description: Optional[str] = None
     official_url: Optional[str] = None
@@ -223,8 +269,8 @@ class PageBase(SQLModel):
     slug: str = Field(default="", index=True, unique=True, max_length=220)
     page_type: PageType = Field(default=PageType.PERSONAL)
     status: PageStatus = Field(default=PageStatus.DRAFT)
+    visibility: PageVisibility = Field(default=PageVisibility.PRIVATE, index=True)
     summary: str = Field(default="")
-    #content: str = Field(default="")
     language_id: Optional[int] = Field(default=None, foreign_key="language.id")
     author_id: Optional[int] = Field(default=None, foreign_key="user.id")
     parent_page_id: Optional[int] = Field(default=None, foreign_key="page.id")
@@ -236,14 +282,14 @@ class Page(PageBase, table=True):
     created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
     updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
 
-    language: Optional[Language]  = Relationship(back_populates="pages")
-    author: Optional[User]        = Relationship(back_populates="pages")
-    tags: List[Tag]               = Relationship(back_populates="pages", link_model=PageTagLink)
-    comments: List["Comment"]     = Relationship(back_populates="page")
+    language: Optional[Language] = Relationship(back_populates="pages")
+    author: Optional[User] = Relationship(back_populates="pages")
+    tags: List[Tag] = Relationship(back_populates="pages", link_model=PageTagLink)
+    comments: List["Comment"] = Relationship(back_populates="page")
     examples: List["CodeExample"] = Relationship(back_populates="page")
-
     blocks: List["PageBlock"] = Relationship(back_populates="page")
     folder: Optional[Folder] = Relationship(back_populates="pages")
+
 
 class PageCreate(PageBase):
     tag_ids: List[int] = Field(default_factory=list)
@@ -254,8 +300,8 @@ class PageUpdate(SQLModel):
     slug: Optional[str] = Field(default=None, max_length=220)
     page_type: Optional[PageType] = None
     status: Optional[PageStatus] = None
+    visibility: Optional[PageVisibility] = None
     summary: Optional[str] = None
-    #content: Optional[str] = None
     language_id: Optional[int] = None
     parent_page_id: Optional[int] = None
     folder_id: Optional[int] = None
@@ -271,6 +317,23 @@ class PageRead(PageBase):
     tags: List[TagRead] = Field(default_factory=list)
     folder: Optional[FolderRead] = None
 
+
+class PageShare(SQLModel, table=True):
+    page_id: int = Field(foreign_key="page.id", primary_key=True)
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    permission: PageSharePermission = Field(default=PageSharePermission.VIEW)
+    created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
+    updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
+
+
+class PageShareRead(SQLModel):
+    page_id: int
+    user_id: int
+    permission: PageSharePermission
+    created_at: datetime
+    updated_at: datetime
+
+
 # ── PageBlock ────────────────────────────────────────────────────────────────
 
 class PageBlockBase(SQLModel):
@@ -284,14 +347,8 @@ class PageBlockBase(SQLModel):
 
 class PageBlock(PageBlockBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(
-        default_factory=now_utc,
-        sa_column=Column(DateTime, nullable=False),
-    )
-    updated_at: datetime = Field(
-        default_factory=now_utc,
-        sa_column=Column(DateTime, nullable=False),
-    )
+    created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
+    updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
 
     page: Optional[Page] = Relationship(back_populates="blocks")
 
@@ -317,7 +374,8 @@ class PageBlockUpdate(SQLModel):
     language: Optional[str] = Field(default=None, max_length=50)
     font_size: Optional[str] = Field(default=None, max_length=20)
 
-# ── Comment ───────────────────────────────────────────────────────────────────
+
+# ── Comment ──────────────────────────────────────────────────────────────────
 
 class CommentBase(SQLModel):
     page_id: int = Field(foreign_key="page.id")
@@ -332,7 +390,7 @@ class Comment(CommentBase, table=True):
     created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
     updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
 
-    page:   Optional[Page] = Relationship(back_populates="comments")
+    page: Optional[Page] = Relationship(back_populates="comments")
     author: Optional[User] = Relationship(back_populates="comments")
 
 
@@ -352,7 +410,7 @@ class CommentUpdate(SQLModel):
     is_deleted: Optional[bool] = None
 
 
-# ── CodeExample ───────────────────────────────────────────────────────────────
+# ── CodeExample ──────────────────────────────────────────────────────────────
 
 class CodeExampleBase(SQLModel):
     page_id: int = Field(foreign_key="page.id")
@@ -390,6 +448,7 @@ class CodeExampleUpdate(SQLModel):
     explanation: Optional[str] = None
     language_hint: Optional[str] = Field(default=None, max_length=50)
     is_public: Optional[bool] = None
+
 
 User.model_rebuild()
 Folder.model_rebuild()

@@ -16,6 +16,7 @@ from ..models import (
     Page,
     PageCreate,
     PageRead,
+    PageVisibility,
     User,
 )
 from ..permissions import (
@@ -24,7 +25,7 @@ from ..permissions import (
     can_view_page,
     require_folder_edit,
     require_folder_view,
-    require_page_edit,
+    require_page_owner,
 )
 from ..templates import templates
 
@@ -43,6 +44,22 @@ def _page_or_404(session: Session, page_id: int) -> Page:
     if page is None:
         raise HTTPException(status_code=404, detail="Página não encontrada")
     return page
+
+
+def _clean_folder_name(value: str) -> str:
+    name = value.strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="O nome da pasta é obrigatório")
+    return name
+
+
+def _parse_optional_id(value: str, *, field_name: str) -> int | None:
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+    if not cleaned.isdigit():
+        raise HTTPException(status_code=422, detail=f"{field_name} inválido")
+    return int(cleaned)
 
 
 def _validate_parent(
@@ -125,12 +142,12 @@ def create_folder_ui(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    parsed_parent = int(parent_folder_id) if parent_folder_id.strip() else None
+    parsed_parent = _parse_optional_id(parent_folder_id, field_name="Pasta pai")
     _validate_parent(session, parsed_parent, current_user)
     folder = create_folder(
         session,
         FolderCreate(
-            name=name.strip(),
+            name=_clean_folder_name(name),
             description=description.strip(),
             visibility=visibility,
             author_id=current_user.id,
@@ -199,7 +216,7 @@ def update_folder_ui(
 ):
     folder = _folder_or_404(session, folder_id)
     require_folder_edit(folder, current_user)
-    parsed_parent = int(parent_folder_id) if parent_folder_id.strip() else None
+    parsed_parent = _parse_optional_id(parent_folder_id, field_name="Pasta pai")
     _validate_parent(
         session,
         parsed_parent,
@@ -210,7 +227,7 @@ def update_folder_ui(
         session,
         folder,
         FolderUpdate(
-            name=name.strip(),
+            name=_clean_folder_name(name),
             description=description.strip(),
             visibility=visibility,
             parent_folder_id=parsed_parent,
@@ -263,7 +280,7 @@ def attach_page_ui(
     folder = _folder_or_404(session, folder_id)
     page = _page_or_404(session, page_id)
     require_folder_edit(folder, current_user)
-    require_page_edit(page, current_user)
+    require_page_owner(page, current_user)
     page.folder_id = folder.id
     session.add(page)
     session.commit()
@@ -286,7 +303,7 @@ def detach_page_ui(
     folder = _folder_or_404(session, folder_id)
     page = _page_or_404(session, page_id)
     require_folder_edit(folder, current_user)
-    require_page_edit(page, current_user)
+    require_page_owner(page, current_user)
     if page.folder_id != folder.id:
         raise HTTPException(status_code=409, detail="A página não pertence a esta pasta")
     page.folder_id = None
@@ -367,9 +384,14 @@ def create_page_in_folder(
 ):
     folder = _folder_or_404(session, folder_id)
     require_folder_edit(folder, current_user)
-    safe_payload = payload.model_copy(
-        update={"folder_id": folder.id, "author_id": current_user.id}
-    )
+    updates = {"folder_id": folder.id, "author_id": current_user.id}
+    # Pela API de contexto, visibilidade omitida significa "herdar a pasta".
+    # A página fica pública, mas continua bloqueada enquanto qualquer pasta
+    # ancestral for privada. Isso permite publicar a pasta depois sem editar
+    # cada página individualmente.
+    if "visibility" not in payload.model_fields_set:
+        updates["visibility"] = PageVisibility.PUBLIC
+    safe_payload = payload.model_copy(update=updates)
     return create_page(session, safe_payload)
 
 
@@ -383,7 +405,7 @@ def add_existing_page_to_folder(
     folder = _folder_or_404(session, folder_id)
     page = _page_or_404(session, page_id)
     require_folder_edit(folder, current_user)
-    require_page_edit(page, current_user)
+    require_page_owner(page, current_user)
     page.folder_id = folder.id
     session.add(page)
     session.commit()
@@ -401,7 +423,7 @@ def remove_page_from_folder(
     folder = _folder_or_404(session, folder_id)
     page = _page_or_404(session, page_id)
     require_folder_edit(folder, current_user)
-    require_page_edit(page, current_user)
+    require_page_owner(page, current_user)
     if page.folder_id != folder.id:
         raise HTTPException(status_code=409, detail="A página não pertence a esta pasta")
     page.folder_id = None

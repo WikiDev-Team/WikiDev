@@ -2,43 +2,48 @@
 
 WikiDev é uma wiki colaborativa para organizar conhecimento de programação em páginas, blocos e pastas. O backend usa FastAPI e SQLModel; a interface é renderizada com Jinja2 e atualizada com HTMX.
 
-## O que já está disponível
+## Funcionalidades
 
 - Cadastro, login, logout e sessões por cookie `HttpOnly`.
 - Recuperação de senha por e-mail com token aleatório, armazenado somente como hash, expiração e uso único.
 - Páginas compostas por blocos de texto e código com destaque de sintaxe.
-- Pastas hierárquicas, públicas ou privadas.
-- Criação de página dentro de uma pasta e associação de página existente.
-- Autorização no backend para leitura, edição e exclusão de páginas, pastas, comentários e exemplos.
+- Pastas hierárquicas, públicas ou privadas, sem possibilidade de ciclos.
+- Criação de página dentro de pasta e associação ou remoção de páginas existentes.
+- Solicitações de amizade, perfis públicos e remoção de amizade.
+- Páginas privadas, públicas, para amigos ou compartilhadas com amigos específicos.
+- Permissões separadas de visualização e edição, com revogação dos compartilhamentos diretos ao remover uma amizade.
+- Autorização no backend para páginas, pastas, blocos, comentários e exemplos.
 - Busca global que respeita as mesmas regras de privacidade.
-- Perfis públicos sem exposição do e-mail.
+- Perfis e listagens públicas sem exposição do e-mail.
 - Testes automatizados, cobertura e workflow de integração contínua.
 - Docker, seed de demonstração e smoke test.
 
-> O fórum, os comentários por bloco e a tela de atividades estão sendo desenvolvidos no PR #35. Consulte [`docs/merge-pr35.md`](docs/merge-pr35.md) antes de combinar as branches.
+> O fórum, comentários por bloco e a tela de atividades estão sendo desenvolvidos no PR #35. Consulte [`docs/merge-pr35.md`](docs/merge-pr35.md) antes de combinar as branches.
 
 ## Arquitetura
 
 ```text
 app/
-├── main.py            # aplicação, rotas de páginas HTML e tratamento de erros
+├── main.py            # aplicação, dashboard e tratamento de erros
 ├── models.py          # tabelas e schemas SQLModel
 ├── crud.py            # persistência e geração de slugs
-├── permissions.py     # política central de leitura e edição
+├── permissions.py     # política central de acesso e compartilhamento
 ├── security.py        # hash de senha e tokens
 ├── config.py          # configuração por ambiente
-├── mailer.py          # console/SMTP
-└── routers/           # auth, páginas, pastas, blocos, busca e APIs auxiliares
+├── mailer.py          # envio por console ou SMTP
+└── routers/           # auth, páginas, pastas, amizade, busca e APIs
 
-templates/             # páginas e fragments HTMX
+templates/             # páginas e fragmentos HTMX
 static/                # CSS, tema e imagens
 tests/                 # testes funcionais, segurança e CRUD
 scripts/               # seed e smoke test
 ```
 
-### Regra de visibilidade
+### Visibilidade e estado
 
-O autor sempre pode visualizar e editar seu conteúdo. Outros usuários só podem visualizar uma página quando ela está `published`; caso a página pertença a uma pasta, a pasta também precisa ser pública. Todas as rotas consultam `app/permissions.py`, inclusive a busca.
+O estado da página (`draft`, `published` ou `archived`) é independente da visibilidade (`private`, `friends`, `public` ou `custom`). O autor sempre possui acesso. Páginas em pastas também obedecem à privacidade da pasta e de todos os seus ancestrais: uma pasta filha pública não contorna uma pasta pai privada.
+
+Para visibilidade `custom`, apenas amizades aceitas podem receber acesso direto. Uma pessoa marcada como editora também recebe visualização. Somente o autor pode excluir a página ou alterar seus compartilhamentos.
 
 ## Instalação local
 
@@ -82,7 +87,7 @@ SMTP_USE_TLS=true
 SMTP_USE_SSL=false
 ```
 
-O endpoint sempre devolve a mesma mensagem, exista ou não uma conta, evitando enumeração de e-mails. Solicitar um novo link invalida os anteriores.
+O endpoint sempre devolve a mesma mensagem, exista ou não uma conta, evitando enumeração de e-mails. Solicitar novo link invalida os anteriores.
 
 ## Testes
 
@@ -92,7 +97,7 @@ coverage run -m pytest
 coverage report
 ```
 
-Para testar uma instância já em execução:
+Para testar uma instância em execução:
 
 ```bash
 python scripts/test_backend.py
@@ -117,6 +122,7 @@ O banco SQLite é persistido no volume `wikidev_data`.
 | Recuperação | `GET/POST /forgot-password`, `GET/POST /reset-password` |
 | Páginas | `/pages/`, `/pages/{id}`, `/pages/{id}/blocks-editor` |
 | Pastas | `/folders/`, `/folders/{id}/pages`, `/folders/{id}/pages/{page_id}` |
+| Amizades | `/friends`, `/friendships/request/{user_id}`, `/friendships/{id}/...` |
 | Comentários | `/comments/`, `/comments/{id}` |
 | Exemplos | `/examples/`, `/examples/{id}` |
 | Busca | `GET /busca?q=...` |
@@ -131,15 +137,16 @@ O banco SQLite é persistido no volume `wikidev_data`.
 - Autoria definida pelo servidor: `author_id` enviado pelo cliente é ignorado.
 - E-mail ausente de schemas públicos.
 - Rota de login de desenvolvimento desativada por padrão e proibida em produção.
-- Exclusões limpam dependências ou são bloqueadas quando quebrariam referências.
+- Busca e leitura aplicam a mesma política central de permissões.
+- Exclusões limpam dependências e compartilhamentos explícitos.
 
 ## Migrações
 
-`init_db()` cria as tabelas e contém uma migração SQLite pequena e idempotente para bancos anteriores à coluna `folder.visibility`. Antes de produção ou de novas alterações de schema, o próximo passo recomendado é adotar Alembic.
+`init_db()` cria as tabelas e contém migrações SQLite idempotentes para bancos anteriores às colunas `page.visibility` e `folder.visibility`. Antes de produção ou de novas alterações de schema, o próximo passo recomendado é adotar Alembic.
 
 ## Contribuindo
 
-Leia [`CONTRIBUTING.md`](CONTRIBUTING.md). A descrição técnica desta entrega está em [`docs/contribution-report.md`](docs/contribution-report.md), e o roteiro de apresentação está em [`docs/presentation.md`](docs/presentation.md).
+Leia [`CONTRIBUTING.md`](CONTRIBUTING.md). A descrição técnica desta entrega está em [`docs/contribution-report.md`](docs/contribution-report.md), e o roteiro de apresentação em [`docs/presentation.md`](docs/presentation.md).
 
 ## Licença
 

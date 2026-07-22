@@ -1,6 +1,16 @@
 {% if termo|length >= 2 %}
 <div class="search-dropdown">
-    <section><h4>Usuários</h4>{% if usuarios %}<ul>{% for u in usuarios %}<li><a href="/users/{{ u.id }}/profile"><span class="search-avatar">{{ (u.display_name or u.username)[:1]|upper }}</span><span><strong>{{ u.display_name or u.username }}</strong><small>@{{ u.username }}</small></span></a></li>{% endfor %}</ul>{% else %}<p>Nenhum usuário.</p>{% endif %}</section>
-    <section><h4>Páginas</h4>{% if paginas %}<ul>{% for p in paginas %}<li><button type="button" hx-get="/pages/{{ p.id }}/blocks-editor" hx-target="#page-editor-container" hx-swap="innerHTML" onclick="hideWelcome(); closeSearch()"><span><strong>{{ p.title }}</strong><small>{{ p.summary or p.status.value }}</small></span>{% if p.author_id == usuario_atual.id and p.status.value != 'published' %}<span class="status-badge">{{ p.status.value }}</span>{% endif %}</button></li>{% endfor %}</ul>{% else %}<p>Nenhuma página.</p>{% endif %}</section>
+    <div class="search-group">
+        <h4>Usuários</h4>
+        {% if usuarios %}
+        <ul>{% for u in usuarios %}<li><a class="search-user" href="/profile/{{ u.id }}"><strong>{{ u.display_name or u.username }}</strong><span>@{{ u.username }}</span></a></li>{% endfor %}</ul>
+        {% else %}<span class="search-empty">Nenhum usuário.</span>{% endif %}
+    </div>
+    <div class="search-group">
+        <h4>Páginas disponíveis para você</h4>
+        {% if paginas %}
+        <ul>{% for p in paginas %}<li><a class="search-page" href="/dashboard?open_page={{ p.id }}"><span><strong>{{ p.title }}</strong>{% if p.author %}<small>@{{ p.author.username }}</small>{% endif %}</span><span class="visibility-badge visibility-{{ p.visibility.value }}">{% if p.visibility.value == 'private' %}Somente eu{% elif p.visibility.value == 'friends' %}Amigos{% elif p.visibility.value == 'custom' %}Selecionados{% else %}Público{% endif %}</span></a></li>{% endfor %}</ul>
+        {% else %}<span class="search-empty">Nenhuma página.</span>{% endif %}
+    </div>
 </div>
 {% endif %}

@@ -1,77 +1,89 @@
 erDiagram
-    USER ||--o{ PASSWORD_RESET_TOKEN : owns
+    USER ||--o{ PASSWORD_RESET_TOKEN : receives
     USER ||--o{ FOLDER : owns
     USER ||--o{ PAGE : authors
-    USER ||--o{ COMMENT : writes
-    USER ||--o{ CODE_EXAMPLE : creates
+    USER ||--o{ COMMENT : authors
+    USER ||--o{ CODE_EXAMPLE : authors
+    USER ||--o{ FRIENDSHIP : participates
+    USER ||--o{ PAGE_SHARE : receives
+
     FOLDER ||--o{ FOLDER : contains
-    FOLDER ||--o{ PAGE : groups
-    LANGUAGE ||--o{ PAGE : classifies
+    FOLDER ||--o{ PAGE : contains
+    LANGUAGE ||--o{ PAGE : categorizes
     PAGE ||--o{ PAGE_BLOCK : contains
-    PAGE ||--o{ COMMENT : has
+    PAGE ||--o{ COMMENT : receives
     PAGE ||--o{ CODE_EXAMPLE : has
-    PAGE ||--o{ PAGE : parent_of
-    PAGE ||--o{ PAGE_TAG_LINK : links
-    TAG ||--o{ PAGE_TAG_LINK : links
+    PAGE ||--o{ PAGE_SHARE : grants
+    PAGE ||--o{ PAGE_TAG_LINK : tagged
+    TAG ||--o{ PAGE_TAG_LINK : labels
 
     USER {
-        int id PK
-        string username UK
-        string email UK
-        string hashed_password
-        string token_hash
-        string display_name
-        string bio
-        string avatar_url
-        datetime created_at
-        datetime updated_at
+      int id PK
+      string username UK
+      string email UK
+      string hashed_password
+      string token
+      datetime created_at
+      datetime updated_at
     }
     PASSWORD_RESET_TOKEN {
-        int id PK
-        int user_id FK
-        string token_hash UK
-        datetime expires_at
-        datetime used_at
-        datetime created_at
+      int id PK
+      int user_id FK
+      string token_hash UK
+      datetime expires_at
+      datetime used_at
+    }
+    FRIENDSHIP {
+      int id PK
+      int requester_id FK
+      int addressee_id FK
+      string status
     }
     FOLDER {
-        int id PK
-        string name
-        string slug UK
-        string description
-        string visibility
-        int author_id FK
-        int parent_folder_id FK
-        datetime created_at
-        datetime updated_at
+      int id PK
+      string name
+      string slug UK
+      string visibility
+      int author_id FK
+      int parent_folder_id FK
     }
     PAGE {
-        int id PK
-        string title
-        string slug UK
-        string page_type
-        string status
-        string summary
-        int language_id FK
-        int author_id FK
-        int parent_page_id FK
-        int folder_id FK
-        datetime created_at
-        datetime updated_at
+      int id PK
+      string title
+      string slug UK
+      string status
+      string visibility
+      int author_id FK
+      int folder_id FK
+      int language_id FK
+    }
+    PAGE_SHARE {
+      int page_id PK,FK
+      int user_id PK,FK
+      string permission
     }
     PAGE_BLOCK {
-        int id PK
-        int page_id FK
-        int position
-        string block_type
-        string content
-        string language
-        string font_size
-        datetime created_at
-        datetime updated_at
+      int id PK
+      int page_id FK
+      int position
+      string block_type
+      string content
     }
-    LANGUAGE { int id PK string name string slug UK }
-    TAG { int id PK string name string slug UK }
-    COMMENT { int id PK int page_id FK int author_id FK int parent_comment_id FK string body bool is_deleted }
-    CODE_EXAMPLE { int id PK int page_id FK int author_id FK string title string code bool is_public }
-    PAGE_TAG_LINK { int page_id PK, FK int tag_id PK, FK }
+    COMMENT {
+      int id PK
+      int page_id FK
+      int author_id FK
+      int parent_comment_id FK
+      string body
+      boolean is_deleted
+    }
+    CODE_EXAMPLE {
+      int id PK
+      int page_id FK
+      int author_id FK
+      string code
+      boolean is_public
+    }
+    LANGUAGE { int id PK }
+    TAG { int id PK }
+    PAGE_TAG_LINK { int page_id PK,FK int tag_id PK,FK }

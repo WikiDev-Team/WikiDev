@@ -13,16 +13,31 @@
 <body>
 <header class="topbar">
     <div class="topbar-brand">
-        <a href="/dashboard" class="topbar-logo-link" aria-label="Página inicial"><img src="/static/wikidev_logo.png" alt="WikiDev" class="topbar-logo"></a>
+        <a href="/dashboard" class="topbar-logo-link" aria-label="Página inicial">
+            <img src="/static/wikidev_logo.png" alt="WikiDev" class="topbar-logo">
+        </a>
         <div><strong>WikiDev</strong><small>Sua base de conhecimento colaborativa</small></div>
     </div>
+
+    <nav class="main-nav" aria-label="Navegação principal">
+        <a href="/dashboard" class="active">Home</a>
+        <a href="/friends" class="nav-with-badge">
+            Amigos
+            {% if pending_friend_requests %}<span class="nav-badge">{{ pending_friend_requests }}</span>{% endif %}
+        </a>
+    </nav>
+
     <div id="search-container" class="topbar-search">
         <label class="visually-hidden" for="global-search">Buscar usuários ou páginas</label>
-        <input id="global-search" type="search" name="q" placeholder="Buscar usuários ou páginas..." autocomplete="off" hx-get="/busca" hx-trigger="input changed delay:350ms, search" hx-target="#search-results">
+        <input id="global-search" type="search" name="q" placeholder="Buscar usuários ou páginas..." autocomplete="off"
+               hx-get="/busca" hx-trigger="input changed delay:350ms, search" hx-target="#search-results">
         <div id="search-results"></div>
     </div>
+
     <div class="topbar-right">
-        <button type="button" class="theme-toggle" aria-label="Alternar tema"><img src="/static/sun_icon.png" alt="" class="theme-icon"></button>
+        <button type="button" class="theme-toggle" aria-label="Alternar tema">
+            <img src="/static/sun_icon.png" alt="" class="theme-icon">
+        </button>
         <a href="/profile" class="botao-user">{{ usuario.display_name or usuario.username }}</a>
         <button type="button" class="menu-hamburger" aria-label="Abrir ou fechar barra lateral" onclick="toggleSidebar()">≡</button>
     </div>
@@ -33,35 +48,71 @@
         <section id="welcome-panel" class="welcome-section hero-panel">
             <span class="eyebrow">Olá, {{ usuario.display_name or usuario.username }}</span>
             <h1>Construa conhecimento que continua útil.</h1>
-            <p>Organize páginas em pastas, publique conteúdo e encontre rapidamente o que sua equipe compartilhou.</p>
-            <div class="hero-actions"><button class="primary-action" hx-get="/pages/new" hx-target="#page-editor-container" onclick="hideWelcome()">Criar página</button><button class="secondary-action" hx-get="/folders/new" hx-target="#page-editor-container" onclick="hideWelcome()">Criar pasta</button></div>
+            <p>Organize páginas em pastas, compartilhe com amigos e encontre rapidamente o conteúdo disponível para você.</p>
+            <div class="hero-actions">
+                <button class="primary-action" hx-get="/pages/new" hx-target="#page-editor-container" onclick="hideWelcome()">Criar página</button>
+                <button class="secondary-action" hx-get="/folders/new" hx-target="#page-editor-container" onclick="hideWelcome()">Criar pasta</button>
+            </div>
         </section>
         <div id="page-editor-container" aria-live="polite"></div>
+        {% if open_page_id %}
+        <div hx-get="/pages/{{ open_page_id }}/blocks-editor" hx-trigger="load"
+             hx-target="#page-editor-container" hx-swap="innerHTML" hidden></div>
+        <script>document.getElementById('welcome-panel').hidden = true;</script>
+        {% endif %}
     </main>
 
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-actions">
-            <button type="button" class="add-page-button" hx-get="/pages/new" hx-target="#page-editor-container" hx-swap="innerHTML" onclick="hideWelcome()">+ Nova página</button>
-            <button type="button" class="add-folder-button" hx-get="/folders/new" hx-target="#page-editor-container" hx-swap="innerHTML" onclick="hideWelcome()">+ Nova pasta</button>
+            <button type="button" class="add-page-button" hx-get="/pages/new" hx-target="#page-editor-container"
+                    hx-swap="innerHTML" onclick="hideWelcome()">+ Nova página</button>
+            <button type="button" class="add-folder-button" hx-get="/folders/new" hx-target="#page-editor-container"
+                    hx-swap="innerHTML" onclick="hideWelcome()">+ Nova pasta</button>
         </div>
         {% include "partials/folder_sidebar.html" %}
         <div class="sidebar-section">
-            <div class="sidebar-section-heading"><span>Páginas acessíveis</span><span class="count-pill">{{ pages|length }}</span></div>
-            <ul class="file-tree" id="pages-list">{% for page in pages %}{% include "partials/page_item.html" %}{% endfor %}</ul>
+            <div class="sidebar-section-heading">
+                <span>Páginas acessíveis</span><span class="count-pill">{{ pages|length }}</span>
+            </div>
+            <ul class="file-tree" id="pages-list">
+                {% for page in pages %}{% include "partials/page_item.html" %}{% endfor %}
+            </ul>
         </div>
     </aside>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
 <script>
-    function hideWelcome() { const panel = document.getElementById('welcome-panel'); if (panel) panel.hidden = true; }
-    function showWelcome() { const panel = document.getElementById('welcome-panel'); const editor = document.getElementById('page-editor-container'); if (panel) panel.hidden = false; if (editor) editor.innerHTML = ''; }
+    function hideWelcome() {
+        const panel = document.getElementById('welcome-panel');
+        if (panel) panel.hidden = true;
+    }
+    function showWelcome() {
+        const panel = document.getElementById('welcome-panel');
+        const editor = document.getElementById('page-editor-container');
+        if (panel) panel.hidden = false;
+        if (editor) editor.innerHTML = '';
+    }
     function toggleSidebar() { document.getElementById('sidebar')?.classList.toggle('collapsed'); }
-    function closeSearch() { const results = document.getElementById('search-results'); if (results) results.innerHTML = ''; }
-    function highlightCodeBlocks(root = document) { if (!window.hljs) return; root.querySelectorAll('pre code').forEach((block) => { if (!block.dataset.highlighted) hljs.highlightElement(block); }); }
-    document.addEventListener('DOMContentLoaded', () => { highlightCodeBlocks(); if (window.innerWidth <= 900) document.getElementById('sidebar')?.classList.add('collapsed'); });
+    function closeSearch() {
+        const results = document.getElementById('search-results');
+        if (results) results.innerHTML = '';
+    }
+    function highlightCodeBlocks(root = document) {
+        if (!window.hljs) return;
+        root.querySelectorAll('pre code').forEach((block) => {
+            if (!block.dataset.highlighted) hljs.highlightElement(block);
+        });
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        highlightCodeBlocks();
+        if (window.innerWidth <= 900) document.getElementById('sidebar')?.classList.add('collapsed');
+    });
     document.body.addEventListener('htmx:afterSwap', (event) => highlightCodeBlocks(event.target));
-    document.addEventListener('click', (event) => { const container = document.getElementById('search-container'); if (container && !container.contains(event.target)) closeSearch(); });
+    document.addEventListener('click', (event) => {
+        const container = document.getElementById('search-container');
+        if (container && !container.contains(event.target)) closeSearch();
+    });
 </script>
 </body>
 </html>

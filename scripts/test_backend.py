@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 import urllib.error
@@ -10,7 +11,7 @@ import urllib.parse
 import urllib.request
 from http.cookiejar import CookieJar
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = os.getenv("APP_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(CookieJar()))
 
 

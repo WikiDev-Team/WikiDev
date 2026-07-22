@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from ..crud import update_user
 from ..db import get_session
 from ..dependencies import get_current_user
 from ..models import User, UserPublicRead, UserRead, UserUpdate
-from ..templates import templates
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -53,21 +51,6 @@ def list_users(
     _: User = Depends(get_current_user),
 ):
     return session.exec(select(User).order_by(User.display_name, User.username)).all()
-
-
-@router.get("/{user_id}/profile", response_class=HTMLResponse)
-def public_profile(
-    request: Request,
-    user_id: int,
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
-    user = _user_or_404(session, user_id)
-    return templates.TemplateResponse(
-        request=request,
-        name="public_profile.html",
-        context={"project": "WikiDev", "profile_user": user, "usuario": current_user},
-    )
 
 
 @router.get("/{user_id}", response_model=UserPublicRead)

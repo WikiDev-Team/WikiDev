@@ -20,30 +20,45 @@ if DATABASE_URL.startswith("sqlite"):
 
 
 def _migrate_sqlite_schema() -> None:
-    """Small, idempotent migrations for databases created before v1.1.
-
-    Alembic is the recommended next step. This keeps existing local databases usable
-    while the project is still in its prototype phase.
-    """
+    """Migrações idempotentes enquanto o projeto ainda não usa Alembic."""
     if not DATABASE_URL.startswith("sqlite"):
         return
 
     inspector = inspect(engine)
-    if "folder" not in inspector.get_table_names():
-        return
+    tables = set(inspector.get_table_names())
 
-    folder_columns = {column["name"] for column in inspector.get_columns("folder")}
     with engine.begin() as connection:
-        if "visibility" not in folder_columns:
-            connection.execute(
-                text(
-                    "ALTER TABLE folder "
-                    "ADD COLUMN visibility VARCHAR(7) NOT NULL DEFAULT 'PRIVATE'"
+        if "page" in tables:
+            page_columns = {column["name"] for column in inspector.get_columns("page")}
+            if "visibility" not in page_columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE page "
+                        "ADD COLUMN visibility VARCHAR(20) NOT NULL DEFAULT 'PRIVATE'"
+                    )
                 )
+                connection.execute(
+                    text(
+                        "UPDATE page SET visibility = 'PUBLIC' "
+                        "WHERE status IN ('PUBLISHED', 'published')"
+                    )
+                )
+            connection.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_page_visibility ON page (visibility)")
             )
-        connection.execute(
-            text("CREATE INDEX IF NOT EXISTS ix_folder_visibility ON folder (visibility)")
-        )
+
+        if "folder" in tables:
+            folder_columns = {column["name"] for column in inspector.get_columns("folder")}
+            if "visibility" not in folder_columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE folder "
+                        "ADD COLUMN visibility VARCHAR(20) NOT NULL DEFAULT 'PRIVATE'"
+                    )
+                )
+            connection.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_folder_visibility ON folder (visibility)")
+            )
 
 
 def init_db() -> None:

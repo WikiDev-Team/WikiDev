@@ -7,14 +7,14 @@ from sqlmodel import Session, or_, select
 from ..db import get_session
 from ..dependencies import get_current_user
 from ..models import User
-from ..permissions import accessible_pages
+from ..permissions import list_accessible_pages
 from ..templates import templates
 
 router = APIRouter(tags=["search"])
 
 
 @router.get("/busca", response_class=HTMLResponse)
-def buscar_global_htmx(
+def search(
     request: Request,
     q: str = "",
     session: Session = Depends(get_session),
@@ -22,9 +22,7 @@ def buscar_global_htmx(
 ):
     query = q.strip()
     if len(query) < 2:
-        return HTMLResponse(
-            "<div class='search-empty'>Digite pelo menos 2 caracteres...</div>"
-        )
+        return HTMLResponse("<div class='search-empty'>Digite pelo menos 2 caracteres...</div>")
 
     pattern = f"%{query}%"
     users = session.exec(
@@ -37,7 +35,7 @@ def buscar_global_htmx(
     normalized = query.casefold()
     pages = [
         page
-        for page in accessible_pages(session, current_user)
+        for page in list_accessible_pages(session, current_user.id)
         if normalized in page.title.casefold()
     ][:20]
 
@@ -45,9 +43,9 @@ def buscar_global_htmx(
         request=request,
         name="partials/search_results.html",
         context={
+            "termo": query,
             "usuarios": users,
             "paginas": pages,
-            "termo": query,
             "usuario_atual": current_user,
         },
     )

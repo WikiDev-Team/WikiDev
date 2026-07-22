@@ -41,14 +41,15 @@ def list_comments(
     if page_id is not None:
         page = _page_or_404(session, page_id)
         require_page_view(session, page, current_user)
-        statement = statement.where(Comment.page_id == page_id)
-        return session.exec(statement).all()
+        return session.exec(statement.where(Comment.page_id == page_id)).all()
 
     comments = session.exec(statement).all()
     page_cache: dict[int, Page | None] = {}
     visible: list[Comment] = []
     for comment in comments:
-        page = page_cache.setdefault(comment.page_id, session.get(Page, comment.page_id))
+        if comment.page_id not in page_cache:
+            page_cache[comment.page_id] = session.get(Page, comment.page_id)
+        page = page_cache[comment.page_id]
         if page is not None and can_view_page(session, page, current_user):
             visible.append(comment)
     return visible
@@ -71,6 +72,7 @@ def add_comment(
             raise HTTPException(status_code=422, detail="Comentário pai pertence a outra página")
         if parent.is_deleted:
             raise HTTPException(status_code=409, detail="Não é possível responder a comentário removido")
+
     safe_payload = CommentCreate(
         page_id=page.id,
         author_id=current_user.id,
@@ -105,7 +107,7 @@ def edit_comment(
         raise HTTPException(status_code=409, detail="Comentário removido não pode ser editado")
     if payload.body is not None and not payload.body.strip():
         raise HTTPException(status_code=422, detail="O comentário não pode ser vazio")
-    safe_payload = CommentUpdate(body=payload.body.strip() if payload.body else None)
+    safe_payload = CommentUpdate(body=payload.body.strip() if payload.body is not None else None)
     return update_comment(session, comment, safe_payload)
 
 

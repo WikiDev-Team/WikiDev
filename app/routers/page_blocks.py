@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlmodel import Session, select
@@ -36,10 +34,6 @@ def list_blocks(session: Session, page_id: int) -> list[PageBlock]:
     ).all()
 
 
-def _page_for_block(session: Session, block: PageBlock) -> Page:
-    return get_page_or_404(session, block.page_id)
-
-
 @router.get("/{page_id}/blocks-editor", response_class=HTMLResponse)
 def blocks_editor(
     request: Request,
@@ -49,13 +43,16 @@ def blocks_editor(
 ):
     page = get_page_or_404(session, page_id)
     require_page_view(session, page, current_user)
+    editable = can_edit_page(session, page, current_user)
+
     return templates.TemplateResponse(
         request=request,
         name="partials/page_blocks_editor.html",
         context={
             "page": page,
             "blocks": list_blocks(session, page_id),
-            "can_edit": can_edit_page(page, current_user),
+            "can_edit": editable,
+            "is_owner": page.author_id == current_user.id,
         },
     )
 
@@ -69,21 +66,20 @@ def add_block(
     current_user: User = Depends(get_current_user),
 ):
     page = get_page_or_404(session, page_id)
-    require_page_edit(page, current_user)
-    block = create_page_block(
-        session,
-        page_id,
-        PageBlockCreate(
-            block_type=block_type,
-            content="",
-            language="python" if block_type == PageBlockType.CODE else "",
-            font_size="normal",
-        ),
+    require_page_edit(session, page, current_user)
+
+    payload = PageBlockCreate(
+        block_type=block_type,
+        content="",
+        language="python" if block_type == PageBlockType.CODE else "",
+        font_size="normal",
     )
+    block = create_page_block(session, page_id, payload)
+
     return templates.TemplateResponse(
         request=request,
         name="partials/page_block_form.html",
-        context={"block": block},
+        context={"block": block, "can_edit": True},
     )
 
 
@@ -95,12 +91,16 @@ def get_block_partial(
     current_user: User = Depends(get_current_user),
 ):
     block = get_block_or_404(session, block_id)
-    page = _page_for_block(session, block)
+    page = get_page_or_404(session, block.page_id)
     require_page_view(session, page, current_user)
+
     return templates.TemplateResponse(
         request=request,
         name="partials/page_block.html",
-        context={"block": block, "can_edit": can_edit_page(page, current_user)},
+        context={
+            "block": block,
+            "can_edit": can_edit_page(session, page, current_user),
+        },
     )
 
 
@@ -112,11 +112,13 @@ def edit_block_form(
     current_user: User = Depends(get_current_user),
 ):
     block = get_block_or_404(session, block_id)
-    require_page_edit(_page_for_block(session, block), current_user)
+    page = get_page_or_404(session, block.page_id)
+    require_page_edit(session, page, current_user)
+
     return templates.TemplateResponse(
         request=request,
         name="partials/page_block_form.html",
-        context={"block": block},
+        context={"block": block, "can_edit": True},
     )
 
 
@@ -131,12 +133,14 @@ def update_block(
     current_user: User = Depends(get_current_user),
 ):
     block = get_block_or_404(session, block_id)
-    require_page_edit(_page_for_block(session, block), current_user)
-    payload = (
-        PageBlockUpdate(content=content, language="", font_size=font_size)
-        if block.block_type == PageBlockType.TEXT
-        else PageBlockUpdate(content=content, language=language.strip().lower())
-    )
+    page = get_page_or_404(session, block.page_id)
+    require_page_edit(session, page, current_user)
+
+    if block.block_type == PageBlockType.TEXT:
+        payload = PageBlockUpdate(content=content, language="", font_size=font_size)
+    else:
+        payload = PageBlockUpdate(content=content, language=language)
+
     block = update_page_block(session, block, payload)
     return templates.TemplateResponse(
         request=request,
@@ -152,6 +156,7 @@ def remove_block(
     current_user: User = Depends(get_current_user),
 ):
     block = get_block_or_404(session, block_id)
-    require_page_edit(_page_for_block(session, block), current_user)
+    page = get_page_or_404(session, block.page_id)
+    require_page_edit(session, page, current_user)
     delete_page_block(session, block)
     return HTMLResponse("")

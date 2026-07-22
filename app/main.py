@@ -6,23 +6,24 @@ from fastapi import Depends, FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from .db import get_session, init_db
 from .dependencies import get_current_user
-from .models import User
-from .permissions import accessible_folders, accessible_pages
-from .templates import templates
+from .models import Friendship, FriendshipStatus, User
+from .permissions import accessible_folders, can_edit_page, list_accessible_pages
 from .routers.auth import router as auth_router
 from .routers.comments import router as comments_router
 from .routers.examples import router as examples_router
 from .routers.folders import router as folders_router
+from .routers.friendships import router as friendships_router
 from .routers.languages import router as languages_router
 from .routers.page_blocks import router as page_blocks_router
 from .routers.pages import router as pages_router
 from .routers.search import router as search_router
 from .routers.tags import router as tags_router
 from .routers.users import router as users_router
+from .templates import templates
 
 app = FastAPI(title="WikiDev API", version="1.1.0")
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -54,6 +55,7 @@ for router in (
     examples_router,
     search_router,
     page_blocks_router,
+    friendships_router,
 ):
     app.include_router(router)
 
@@ -89,12 +91,24 @@ def root():
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(
     request: Request,
+    open_page: int | None = None,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    pages = accessible_pages(session, current_user)
+    pages = list_accessible_pages(session, current_user.id)
+    editable_page_ids = {
+        page.id for page in pages if can_edit_page(session, page, current_user)
+    }
     folders = accessible_folders(session, current_user)
     owned_folders = [folder for folder in folders if folder.author_id == current_user.id]
+    pending_friend_requests = len(
+        session.exec(
+            select(Friendship).where(
+                (Friendship.addressee_id == current_user.id)
+                & (Friendship.status == FriendshipStatus.PENDING)
+            )
+        ).all()
+    )
 
     return templates.TemplateResponse(
         request=request,
@@ -103,16 +117,15 @@ def dashboard(
             "project": "WikiDev",
             "usuario": current_user,
             "pages": pages,
+            "editable_page_ids": editable_page_ids,
             "folders": folders,
             "owned_folders": owned_folders,
+            "pending_friend_requests": pending_friend_requests,
+            "open_page_id": open_page if any(page.id == open_page for page in pages) else None,
         },
     )
 
 
-@app.get("/profile", response_class=HTMLResponse)
-def profile(request: Request, current_user: User = Depends(get_current_user)):
-    return templates.TemplateResponse(
-        request=request,
-        name="user_profile.html",
-        context={"project": "WikiDev", "usuario": current_user},
-    )
+@app.get("/profile")
+def profile(current_user: User = Depends(get_current_user)):
+    return RedirectResponse(url=f"/profile/{current_user.id}", status_code=303)

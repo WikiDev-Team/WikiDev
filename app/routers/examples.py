@@ -33,7 +33,7 @@ def _can_view_example(session: Session, example: CodeExample, current_user: User
     return bool(
         example.is_public
         or example.author_id == current_user.id
-        or can_edit_page(page, current_user)
+        or can_edit_page(session, page, current_user)
     )
 
 
@@ -43,12 +43,12 @@ def list_examples(
     current_user: User = Depends(get_current_user),
     page_id: int | None = None,
 ):
-    stmt = select(CodeExample).order_by(CodeExample.created_at.desc())
+    statement = select(CodeExample).order_by(CodeExample.created_at)
     if page_id is not None:
         page = _page_or_404(session, page_id)
         require_page_view(session, page, current_user)
-        stmt = stmt.where(CodeExample.page_id == page_id)
-    examples = session.exec(stmt).all()
+        statement = statement.where(CodeExample.page_id == page_id)
+    examples = session.exec(statement).all()
     return [item for item in examples if _can_view_example(session, item, current_user)]
 
 
@@ -59,7 +59,7 @@ def add_example(
     current_user: User = Depends(get_current_user),
 ):
     page = _page_or_404(session, payload.page_id)
-    require_page_edit(page, current_user)
+    require_page_edit(session, page, current_user)
     safe_payload = payload.model_copy(update={"author_id": current_user.id})
     return create_code_example(session, safe_payload)
 
@@ -85,7 +85,7 @@ def edit_example(
 ):
     example = _example_or_404(session, example_id)
     page = _page_or_404(session, example.page_id)
-    require_page_edit(page, current_user)
+    require_page_edit(session, page, current_user)
     return update_code_example(session, example, payload)
 
 
@@ -97,6 +97,6 @@ def remove_example(
 ):
     example = _example_or_404(session, example_id)
     page = _page_or_404(session, example.page_id)
-    require_page_edit(page, current_user)
+    require_page_edit(session, page, current_user)
     session.delete(example)
     session.commit()

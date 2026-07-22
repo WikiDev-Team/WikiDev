@@ -1,19 +1,35 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from sqlmodel import Session, select
 
 from ..crud import create_page, delete_page, update_page
 from ..db import get_session
 from ..dependencies import get_current_user
-from ..models import Folder, Page, PageBlock, PageCreate, PageRead, PageTagLink, PageUpdate, User
+from ..models import (
+    Folder,
+    Page,
+    PageBlock,
+    PageCreate,
+    PageRead,
+    PageStatus,
+    PageTagLink,
+    PageType,
+    PageUpdate,
+    PageVisibility,
+    User,
+)
 from ..permissions import (
-    accessible_pages,
+    accessible_folders,
     can_edit_page,
-    can_view_page,
+    get_friend_users,
+    get_page_share_user_ids,
+    list_accessible_pages,
+    replace_page_shares,
     require_folder_edit,
     require_page_edit,
+    require_page_owner,
     require_page_view,
 )
 from ..templates import templates
@@ -40,11 +56,10 @@ def _parse_tag_ids(value: str) -> list[int]:
     return result
 
 
-def _parse_folder_id(value: str) -> int | None:
-    value = value.strip()
-    if not value:
+def _parse_folder_id(value: str | None) -> int | None:
+    if value is None or not value.strip():
         return None
-    if not value.isdigit():
+    if not value.strip().isdigit():
         raise HTTPException(status_code=422, detail="Pasta inválida")
     return int(value)
 
@@ -63,6 +78,19 @@ def _blocks(session: Session, page_id: int) -> list[PageBlock]:
     ).all()
 
 
+def _sidebar_context(session: Session, current_user: User) -> dict:
+    pages = list_accessible_pages(session, current_user.id)
+    return {
+        "pages": pages,
+        "editable_page_ids": {
+            page.id for page in pages if can_edit_page(session, page, current_user)
+        },
+        "folders": accessible_folders(session, current_user),
+        "owned_folders": _owned_folders(session, current_user),
+        "usuario": current_user,
+    }
+
+
 @router.get("/", response_model=list[PageRead])
 def list_pages(
     session: Session = Depends(get_session),
@@ -74,7 +102,7 @@ def list_pages(
     tag_id: int | None = None,
     q: str | None = None,
 ):
-    pages = accessible_pages(session, current_user)
+    pages = list_accessible_pages(session, current_user.id)
     if language_id is not None:
         pages = [page for page in pages if page.language_id == language_id]
     if page_type is not None:
@@ -92,8 +120,8 @@ def list_pages(
         }
         pages = [page for page in pages if page.id in tagged_page_ids]
     if q:
-        query = q.casefold()
-        pages = [page for page in pages if query in page.title.casefold()]
+        normalized = q.casefold()
+        pages = [page for page in pages if normalized in page.title.casefold()]
     return pages
 
 
@@ -102,13 +130,20 @@ def add_page_htmx(
     request: Request,
     title: str = Form(...),
     summary: str = Form(""),
-    page_type: str = Form("note"),
-    page_status: str = Form("draft", alias="status"),
+    page_type: PageType = Form(PageType.NOTE),
+    status: PageStatus = Form(PageStatus.DRAFT),
+    visibility: PageVisibility = Form(PageVisibility.PRIVATE),
     tag_ids: str = Form(""),
     folder_id: str = Form(""),
+    shared_user_ids: list[int] | None = Form(None),
+    editor_user_ids: list[int] | None = Form(None),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
+    cleaned_title = title.strip()
+    if not cleaned_title:
+        raise HTTPException(status_code=422, detail="O título é obrigatório")
+
     parsed_folder_id = _parse_folder_id(folder_id)
     if parsed_folder_id is not None:
         folder = session.get(Folder, parsed_folder_id)
@@ -119,23 +154,34 @@ def add_page_htmx(
     page = create_page(
         session,
         PageCreate(
-            title=title.strip(),
+            title=cleaned_title,
             summary=summary.strip(),
             page_type=page_type,
-            status=page_status,
+            status=status,
+            visibility=visibility,
             author_id=current_user.id,
             folder_id=parsed_folder_id,
             tag_ids=_parse_tag_ids(tag_ids),
         ),
     )
+    replace_page_shares(
+        session,
+        page,
+        current_user.id,
+        shared_user_ids or [],
+        editor_user_ids or [],
+    )
+    session.commit()
+
     return templates.TemplateResponse(
         request=request,
         name="partials/page_response.html",
         context={
             "page": page,
-            "pages": accessible_pages(session, current_user),
             "blocks": [],
             "can_edit": True,
+            "is_owner": True,
+            **_sidebar_context(session, current_user),
         },
     )
 
@@ -156,6 +202,7 @@ def new_page_form(
         request=request,
         name="partials/page_create.html",
         context={
+            "friends": get_friend_users(session, current_user.id),
             "owned_folders": _owned_folders(session, current_user),
             "selected_folder_id": folder_id,
         },
@@ -179,41 +226,61 @@ def edit_page(
     page_id: int,
     title: str = Form(...),
     summary: str = Form(""),
-    page_type: str = Form("note"),
-    page_status: str = Form("draft", alias="status"),
-    folder_id: str = Form(""),
+    page_type: PageType = Form(PageType.NOTE),
+    status: PageStatus = Form(PageStatus.DRAFT),
+    visibility: PageVisibility | None = Form(None),
+    folder_id: str | None = Form(None),
+    shared_user_ids: list[int] | None = Form(None),
+    editor_user_ids: list[int] | None = Form(None),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
     page = _page_or_404(session, page_id)
-    require_page_edit(page, current_user)
+    require_page_edit(session, page, current_user)
+    is_owner = page.author_id == current_user.id
 
-    parsed_folder_id = _parse_folder_id(folder_id)
-    if parsed_folder_id is not None:
-        folder = session.get(Folder, parsed_folder_id)
-        if folder is None:
-            raise HTTPException(status_code=404, detail="Pasta não encontrada")
-        require_folder_edit(folder, current_user)
+    cleaned_title = title.strip()
+    if not cleaned_title:
+        raise HTTPException(status_code=422, detail="O título é obrigatório")
 
-    page = update_page(
-        session,
-        page,
-        PageUpdate(
-            title=title.strip(),
-            summary=summary.strip(),
-            page_type=page_type,
-            status=page_status,
-            folder_id=parsed_folder_id,
-        ),
-    )
+    updates: dict = {
+        "title": cleaned_title,
+        "summary": summary.strip(),
+        "page_type": page_type,
+        "status": status,
+    }
+    if is_owner:
+        if visibility is not None:
+            updates["visibility"] = visibility
+        if folder_id is not None:
+            parsed_folder_id = _parse_folder_id(folder_id)
+            if parsed_folder_id is not None:
+                folder = session.get(Folder, parsed_folder_id)
+                if folder is None:
+                    raise HTTPException(status_code=404, detail="Pasta não encontrada")
+                require_folder_edit(folder, current_user)
+            updates["folder_id"] = parsed_folder_id
+
+    page = update_page(session, page, PageUpdate(**updates))
+    if is_owner:
+        replace_page_shares(
+            session,
+            page,
+            current_user.id,
+            shared_user_ids or [],
+            editor_user_ids or [],
+        )
+        session.commit()
+
     return templates.TemplateResponse(
         request=request,
         name="partials/page_response.html",
         context={
             "page": page,
-            "pages": accessible_pages(session, current_user),
             "blocks": _blocks(session, page.id),
             "can_edit": True,
+            "is_owner": is_owner,
+            **_sidebar_context(session, current_user),
         },
     )
 
@@ -226,13 +293,19 @@ def edit_page_metadata_form(
     current_user: User = Depends(get_current_user),
 ):
     page = _page_or_404(session, page_id)
-    require_page_edit(page, current_user)
+    require_page_edit(session, page, current_user)
+    is_owner = page.author_id == current_user.id
+    shared_user_ids, editor_user_ids = get_page_share_user_ids(session, page.id)
     return templates.TemplateResponse(
         request=request,
         name="partials/page_metadata_form.html",
         context={
             "page": page,
-            "owned_folders": _owned_folders(session, current_user),
+            "is_owner": is_owner,
+            "friends": get_friend_users(session, current_user.id) if is_owner else [],
+            "shared_user_ids": shared_user_ids,
+            "editor_user_ids": editor_user_ids,
+            "owned_folders": _owned_folders(session, current_user) if is_owner else [],
         },
     )
 
@@ -245,10 +318,12 @@ def remove_page(
     current_user: User = Depends(get_current_user),
 ):
     page = _page_or_404(session, page_id)
-    require_page_edit(page, current_user)
+    require_page_owner(page, current_user)
     delete_page(session, page)
+    if not request.headers.get("HX-Request"):
+        return Response(status_code=204)
     return templates.TemplateResponse(
         request=request,
         name="partials/page_deleted.html",
-        context={"pages": accessible_pages(session, current_user)},
+        context=_sidebar_context(session, current_user),
     )

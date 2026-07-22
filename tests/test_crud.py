@@ -32,6 +32,13 @@ def test_crud_hashes_password_generates_unique_slugs_and_keeps_font_size(session
     assert block.position == 0
     assert block.font_size == "large"
 
+    second_block = create_page_block(
+        session,
+        first.id,
+        PageBlockCreate(block_type=PageBlockType.CODE, content="print('ok')"),
+    )
+    assert second_block.position == 1
+
 
 def test_page_can_be_detached_from_folder_via_update(session: Session):
     user = create_user(
