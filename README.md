@@ -1,4 +1,4 @@
-````markdown
+
 # WikiDev
 
 Plataforma colaborativa para criação, organização e compartilhamento de documentação sobre programação.
@@ -480,4 +480,4 @@ O histórico completo de contribuições pode ser consultado na página de contr
 Este projeto é distribuído sob a licença MIT.
 
 Consulte o arquivo [LICENSE](LICENSE) para mais informações.
-````
+
