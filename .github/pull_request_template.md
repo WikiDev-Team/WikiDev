@@ -9,7 +9,7 @@ Descreva o comportamento anterior e a issue relacionada.
 ## Como testar
 
 ```bash
-pytest
+python -m pytest
 ```
 
 ## Segurança e dados
