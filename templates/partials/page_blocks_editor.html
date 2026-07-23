@@ -32,4 +32,18 @@
                     hx-target="#page-blocks-list" hx-swap="beforeend">+ Código</button>
         </div>
     {% endif %}
+
+    <details
+        id="page-discussion-panel-{{ page.id }}"
+        class="page-discussion"
+        hx-get="/comments/pages/{{ page.id }}"
+        hx-trigger="toggle once"
+        hx-target="#page-discussion-{{ page.id }}"
+        hx-swap="outerHTML"
+    >
+        <summary>Discussão</summary>
+        <div id="page-discussion-{{ page.id }}" class="discussion-loading">
+            Carregando discussão…
+        </div>
+    </details>
 </div>

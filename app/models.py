@@ -5,6 +5,7 @@ import unicodedata
 from typing import Optional, List
 
 from sqlalchemy import CheckConstraint, Column, DateTime, UniqueConstraint
+from pydantic import ConfigDict
 from sqlmodel import Field, SQLModel, Relationship
 
 
@@ -332,6 +333,7 @@ class PageBlock(PageBlockBase, table=True):
     )
 
     page: Optional[Page] = Relationship(back_populates="blocks")
+    comments: List["Comment"] = Relationship(back_populates="block")
 
 
 class PageBlockCreate(SQLModel):
@@ -359,9 +361,12 @@ class PageBlockUpdate(SQLModel):
 
 class CommentBase(SQLModel):
     page_id: int = Field(foreign_key="page.id")
-    author_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    author_id: int = Field(foreign_key="user.id")
+    block_id: Optional[int] = Field(default=None, foreign_key="pageblock.id")
     parent_comment_id: Optional[int] = Field(default=None, foreign_key="comment.id")
-    body: str = Field(default="")
+    body: str
+    code: Optional[str] = None
+    language: Optional[str] = Field(default=None, max_length=20)
     is_deleted: bool = Field(default=False)
 
 
@@ -372,22 +377,26 @@ class Comment(CommentBase, table=True):
 
     page:   Optional[Page] = Relationship(back_populates="comments")
     author: Optional[User] = Relationship(back_populates="comments")
+    block: Optional[PageBlock] = Relationship(back_populates="comments")
 
 
-class CommentCreate(CommentBase):
-    pass
+class CommentCreate(SQLModel):
+    model_config = ConfigDict(extra="forbid")
 
-
-class CommentRead(CommentBase):
-    id: int
-    created_at: datetime
-    updated_at: datetime
-    author: Optional[UserPublicRead] = None
+    page_id: int
+    block_id: Optional[int] = None
+    parent_comment_id: Optional[int] = None
+    body: str
+    code: Optional[str] = None
+    language: Optional[str] = Field(default=None, max_length=20)
 
 
 class CommentUpdate(SQLModel):
+    model_config = ConfigDict(extra="forbid")
+
     body: Optional[str] = None
-    is_deleted: Optional[bool] = None
+    code: Optional[str] = None
+    language: Optional[str] = Field(default=None, max_length=20)
 
 
 # ── CodeExample ───────────────────────────────────────────────────────────────
