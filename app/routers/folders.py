@@ -25,7 +25,7 @@ from ..permissions import (
     can_view_page,
     require_folder_edit,
     require_folder_view,
-    require_page_owner,
+    require_page_view,
 )
 from ..templates import templates
 
