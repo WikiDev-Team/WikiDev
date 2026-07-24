@@ -405,7 +405,7 @@ def add_existing_page_to_folder(
     folder = _folder_or_404(session, folder_id)
     page = _page_or_404(session, page_id)
     require_folder_edit(folder, current_user)
-    require_page_owner(page, current_user)
+    require_page_view(session, page, current_user)
     page.folder_id = folder.id
     session.add(page)
     session.commit()
