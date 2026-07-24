@@ -2,60 +2,68 @@ from __future__ import annotations
 
 import os
 
-from sqlalchemy import inspect, text
+from sqlalchemy import event, inspect, text
 from sqlmodel import SQLModel, Session, create_engine
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./wikidev.db")
 
-connect_args = {}
-if DATABASE_URL.startswith("sqlite"):
-    connect_args = {"check_same_thread": False}
-
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args)
 
 
-def _migrate_sqlite_page_visibility() -> None:
-    """Migração mínima para bancos SQLite criados antes da visibilidade.
+if DATABASE_URL.startswith("sqlite"):
+    @event.listens_for(engine, "connect")
+    def _enable_sqlite_foreign_keys(dbapi_connection, _connection_record) -> None:
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
-    O projeto ainda não usa Alembic. Portanto, adicionamos a única coluna nova em
-    bancos existentes sem apagar dados. Páginas antes publicadas continuam
-    públicas; as demais começam privadas.
-    """
+
+def _migrate_sqlite_schema() -> None:
+    """Migrações idempotentes enquanto o projeto ainda não usa Alembic."""
     if not DATABASE_URL.startswith("sqlite"):
         return
 
     inspector = inspect(engine)
-    if "page" not in inspector.get_table_names():
-        return
-
-    columns = {column["name"] for column in inspector.get_columns("page")}
-    if "visibility" in columns:
-        return
+    tables = set(inspector.get_table_names())
 
     with engine.begin() as connection:
-        connection.execute(
-            text(
-                "ALTER TABLE page "
-                "ADD COLUMN visibility VARCHAR(20) NOT NULL DEFAULT 'PRIVATE'"
+        if "page" in tables:
+            page_columns = {column["name"] for column in inspector.get_columns("page")}
+            if "visibility" not in page_columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE page "
+                        "ADD COLUMN visibility VARCHAR(20) NOT NULL DEFAULT 'PRIVATE'"
+                    )
+                )
+                connection.execute(
+                    text(
+                        "UPDATE page SET visibility = 'PUBLIC' "
+                        "WHERE status IN ('PUBLISHED', 'published')"
+                    )
+                )
+            connection.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_page_visibility ON page (visibility)")
             )
-        )
-        connection.execute(
-            text(
-                "UPDATE page SET visibility = 'PUBLIC' "
-                "WHERE status IN ('PUBLISHED', 'published')"
+
+        if "folder" in tables:
+            folder_columns = {column["name"] for column in inspector.get_columns("folder")}
+            if "visibility" not in folder_columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE folder "
+                        "ADD COLUMN visibility VARCHAR(20) NOT NULL DEFAULT 'PRIVATE'"
+                    )
+                )
+            connection.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_folder_visibility ON folder (visibility)")
             )
-        )
-        connection.execute(
-            text(
-                "CREATE INDEX IF NOT EXISTS ix_page_visibility "
-                "ON page (visibility)"
-            )
-        )
 
 
 def init_db() -> None:
     SQLModel.metadata.create_all(engine)
-    _migrate_sqlite_page_visibility()
+    _migrate_sqlite_schema()
 
 
 def get_session():

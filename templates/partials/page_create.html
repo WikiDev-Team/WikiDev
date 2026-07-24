@@ -1,71 +1,32 @@
-<form
-    class="page-editor"
-    hx-post="/pages/"
-    hx-target="#page-editor-container"
-    hx-swap="innerHTML"
->
-    <div class="editor-top">
-        <input class="page-title" type="text" name="title" placeholder="Título da página" required>
-        <button type="submit" class="save-page-button">Criar página</button>
-    </div>
+<section class="workspace-card">
+    <header class="workspace-header"><div><span class="eyebrow">Conteúdo</span><h1>Nova página</h1></div></header>
+    <form class="stack-form" hx-post="/pages/" hx-target="#page-editor-container" hx-swap="innerHTML">
+        <label><span>Título</span><input type="text" name="title" placeholder="Título da página" maxlength="200" required></label>
+        <label><span>Resumo</span><textarea name="summary" rows="3" placeholder="Uma descrição curta"></textarea></label>
+        <div class="form-grid">
+            <label><span>Tipo</span><select name="page_type"><option value="personal">Pessoal</option><option value="official">Oficial</option><option value="question">Pergunta</option><option value="example">Exemplo</option><option value="note" selected>Nota</option></select></label>
+            <label><span>Status</span><select name="status"><option value="draft" selected>Rascunho</option><option value="published">Publicada</option><option value="archived">Arquivada</option></select></label>
+            <label><span>Quem pode ver</span><select name="visibility"><option value="private" selected>Somente eu</option><option value="friends">Todos os meus amigos</option><option value="public">Todos os usuários</option><option value="custom">Amigos específicos</option></select></label>
+            <label><span>Pasta</span><select name="folder_id"><option value="">Sem pasta</option>{% for folder in owned_folders %}<option value="{{ folder.id }}" {% if selected_folder_id == folder.id %}selected{% endif %}>{{ folder.name }}</option>{% endfor %}</select></label>
+            <label><span>IDs de tags</span><input type="text" name="tag_ids" placeholder="Ex.: 1, 4, 7"></label>
+        </div>
 
-    <div class="page-settings">
-        <label>
-            Resumo
-            <input type="text" name="summary" placeholder="Resumo">
-        </label>
-
-        <label>
-            Tipo
-            <select name="page_type">
-                <option value="personal">Pessoal</option>
-                <option value="official">Oficial</option>
-                <option value="question">Pergunta</option>
-                <option value="example">Exemplo</option>
-                <option value="note" selected>Nota</option>
-            </select>
-        </label>
-
-        <label>
-            Estado
-            <select name="status">
-                <option value="draft" selected>Rascunho</option>
-                <option value="published">Publicado</option>
-                <option value="archived">Arquivado</option>
-            </select>
-        </label>
-
-        <label>
-            Quem pode ver
-            <select name="visibility" class="visibility-select">
-                <option value="private" selected>Somente eu</option>
-                <option value="friends">Todos os meus amigos</option>
-                <option value="public">Todos os usuários</option>
-                <option value="custom">Amigos específicos</option>
-            </select>
-        </label>
-
-        <label>
-            Tags
-            <input type="text" name="tag_ids" placeholder="IDs separados por vírgula">
-        </label>
-    </div>
-
-    <fieldset class="sharing-fieldset">
-        <legend>Compartilhar com amigos específicos</legend>
-        <p>Esta lista é usada quando a visibilidade está em “Amigos específicos”. Editores também podem alterar o título e os blocos.</p>
-        {% if friends %}
+        <fieldset class="sharing-fieldset">
+            <legend>Compartilhar com amigos específicos</legend>
+            <p>Esta lista é usada quando a visibilidade está em “Amigos específicos”. Editores também podem alterar título e blocos.</p>
+            {% if friends %}
             <div class="sharing-grid">
                 {% for friend in friends %}
-                    <div class="sharing-row">
-                        <span><strong>{{ friend.display_name or friend.username }}</strong> @{{ friend.username }}</span>
-                        <label><input type="checkbox" name="shared_user_ids" value="{{ friend.id }}"> Visualizar</label>
-                        <label><input type="checkbox" name="editor_user_ids" value="{{ friend.id }}"> Editar</label>
-                    </div>
+                <div class="sharing-row">
+                    <span><strong>{{ friend.display_name or friend.username }}</strong> @{{ friend.username }}</span>
+                    <label><input type="checkbox" name="shared_user_ids" value="{{ friend.id }}"> Visualizar</label>
+                    <label><input type="checkbox" name="editor_user_ids" value="{{ friend.id }}"> Editar</label>
+                </div>
                 {% endfor %}
             </div>
-        {% else %}
-            <p class="empty-state">Adicione amigos para compartilhar uma página diretamente.</p>
-        {% endif %}
-    </fieldset>
-</form>
+            {% else %}<p class="empty-state">Adicione amigos para compartilhar uma página diretamente.</p>{% endif %}
+        </fieldset>
+
+        <div class="form-actions"><button type="submit" class="primary-action">Criar página</button><button type="button" class="secondary-action" onclick="showWelcome()">Cancelar</button></div>
+    </form>
+</section>

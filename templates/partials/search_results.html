@@ -1,38 +1,16 @@
 {% if termo|length >= 2 %}
-    <div class="search-dropdown">
-        <div class="search-group">
-            <h4>Usuários</h4>
-            {% if usuarios %}
-                <ul>
-                    {% for u in usuarios %}
-                        <li><a class="search-user" href="/profile/{{ u.id }}">
-                            <strong>{{ u.display_name or u.username }}</strong>
-                            <span>@{{ u.username }}</span>
-                        </a></li>
-                    {% endfor %}
-                </ul>
-            {% else %}<span class="search-empty">Nenhum usuário.</span>{% endif %}
-        </div>
-
-        <div class="search-group">
-            <h4>Páginas disponíveis para você</h4>
-            {% if paginas %}
-                <ul>
-                    {% for p in paginas %}
-                        <li>
-                            <a class="search-page" href="/dashboard?open_page={{ p.id }}">
-                                <span>
-                                    <strong>{{ p.title }}</strong>
-                                    {% if p.author %}<small>@{{ p.author.username }}</small>{% endif %}
-                                </span>
-                                <span class="visibility-badge visibility-{{ p.visibility.value }}">
-                                    {% if p.visibility.value == 'private' %}Somente eu{% elif p.visibility.value == 'friends' %}Amigos{% elif p.visibility.value == 'custom' %}Selecionados{% else %}Público{% endif %}
-                                </span>
-                            </a>
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}<span class="search-empty">Nenhuma página.</span>{% endif %}
-        </div>
+<div class="search-dropdown">
+    <div class="search-group">
+        <h4>Usuários</h4>
+        {% if usuarios %}
+        <ul>{% for u in usuarios %}<li><a class="search-user" href="/profile/{{ u.id }}"><strong>{{ u.display_name or u.username }}</strong><span>@{{ u.username }}</span></a></li>{% endfor %}</ul>
+        {% else %}<span class="search-empty">Nenhum usuário.</span>{% endif %}
     </div>
+    <div class="search-group">
+        <h4>Páginas disponíveis para você</h4>
+        {% if paginas %}
+        <ul>{% for p in paginas %}<li><a class="search-page" href="/dashboard?open_page={{ p.id }}"><span><strong>{{ p.title }}</strong>{% if p.author %}<small>@{{ p.author.username }}</small>{% endif %}</span><span class="visibility-badge visibility-{{ p.visibility.value }}">{% if p.visibility.value == 'private' %}Somente eu{% elif p.visibility.value == 'friends' %}Amigos{% elif p.visibility.value == 'custom' %}Selecionados{% else %}Público{% endif %}</span></a></li>{% endfor %}</ul>
+        {% else %}<span class="search-empty">Nenhuma página.</span>{% endif %}
+    </div>
+</div>
 {% endif %}

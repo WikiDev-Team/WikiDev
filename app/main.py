@@ -1,105 +1,95 @@
-from fastapi import FastAPI, Request, status, Depends
-from fastapi.middleware.cors import CORSMiddleware
+from __future__ import annotations
+
+from html import escape
+
+from fastapi import Depends, FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from fastapi.exceptions import RequestValidationError
 
 from .db import get_session, init_db
-from .models import Friendship, FriendshipStatus, Folder, Language, Page, Tag, User
 from .dependencies import get_current_user
-from .permissions import can_edit_page, list_accessible_pages
-from .templates import templates
-
-from .routers.users import router as users_router
-from .routers.languages import router as languages_router
-from .routers.tags import router as tags_router
-from .routers.folders import router as folders_router
-from .routers.pages import router as pages_router
+from .models import Friendship, FriendshipStatus, User
+from .permissions import accessible_folders, can_edit_page, list_accessible_pages
+from .routers.auth import router as auth_router
 from .routers.comments import router as comments_router
 from .routers.examples import router as examples_router
-from .routers.auth import router as auth_router
-from .routers.search import router as search_router
-from .routers.page_blocks import router as page_blocks_router
+from .routers.folders import router as folders_router
 from .routers.friendships import router as friendships_router
+from .routers.languages import router as languages_router
+from .routers.page_blocks import router as page_blocks_router
+from .routers.pages import router as pages_router
+from .routers.search import router as search_router
+from .routers.tags import router as tags_router
+from .routers.users import router as users_router
+from .templates import templates
 
-app = FastAPI(title="WikiDev API", version="1.0.0")
-
+app = FastAPI(title="WikiDev API", version="1.1.0")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 @app.exception_handler(RequestValidationError)
 async def htmx_validation_exception_handler(request: Request, exc: RequestValidationError):
     if request.headers.get("HX-Request"):
         errors = exc.errors()
         error_msg = errors[0].get("msg", "Erro de validação") if errors else "Dados inválidos"
-        html_content = f'<div class="error-message" style="color: red;">{error_msg}</div>'
-        return HTMLResponse(content=html_content, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
-    
+        return HTMLResponse(
+            content=f'<div class="error-message">{escape(str(error_msg))}</div>',
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={"detail": exc.errors()},
     )
 
-app.include_router(auth_router)
-app.include_router(users_router)
-app.include_router(languages_router)
-app.include_router(tags_router)
-app.include_router(folders_router)
-app.include_router(pages_router)
-app.include_router(comments_router)
-app.include_router(examples_router)
-app.include_router(search_router)
-app.include_router(page_blocks_router)
-app.include_router(friendships_router)
+
+for router in (
+    auth_router,
+    users_router,
+    languages_router,
+    tags_router,
+    folders_router,
+    pages_router,
+    comments_router,
+    examples_router,
+    search_router,
+    page_blocks_router,
+    friendships_router,
+):
+    app.include_router(router)
+
 
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
 
 
-#@app.get("/")
-#def root():
-#    return {
-#        "project": "WikiDev",
-#        "status": "ok",
-#        "description": "API para linguagens, páginas, pastas, comentários, tags e exemplos de código.",
-#        "docs": "/docs",
-#    }
-
-
 @app.get("/health")
 def health():
-    return {"status": "healthy"}
+    return {"status": "healthy", "version": app.version}
 
 
 @app.get("/login", response_class=HTMLResponse)
-async def tela_login(request: Request):
-    registered = request.query_params.get("registered") == "1"
-
+def login_page(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="login.html",
         context={
             "project": "WikiDev",
-            "registered": registered
-        }
+            "registered": request.query_params.get("registered") == "1",
+            "password_reset": request.query_params.get("reset") == "1",
+        },
     )
 
+
 @app.get("/")
-async def root():
+def root():
     return RedirectResponse(url="/login")
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(
+def dashboard(
     request: Request,
     open_page: int | None = None,
     session: Session = Depends(get_session),
@@ -109,6 +99,8 @@ async def dashboard(
     editable_page_ids = {
         page.id for page in pages if can_edit_page(session, page, current_user)
     }
+    folders = accessible_folders(session, current_user)
+    owned_folders = [folder for folder in folders if folder.author_id == current_user.id]
     pending_friend_requests = len(
         session.exec(
             select(Friendship).where(
@@ -126,11 +118,14 @@ async def dashboard(
             "usuario": current_user,
             "pages": pages,
             "editable_page_ids": editable_page_ids,
+            "folders": folders,
+            "owned_folders": owned_folders,
             "pending_friend_requests": pending_friend_requests,
             "open_page_id": open_page if any(page.id == open_page for page in pages) else None,
         },
     )
 
+
 @app.get("/profile")
-async def profile(current_user: User = Depends(get_current_user)):
+def profile(current_user: User = Depends(get_current_user)):
     return RedirectResponse(url=f"/profile/{current_user.id}", status_code=303)

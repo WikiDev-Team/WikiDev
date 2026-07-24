@@ -1,20 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
 from ..crud import create_comment, update_comment
 from ..db import get_session
 from ..dependencies import get_current_user
 from ..models import Comment, CommentCreate, CommentRead, CommentUpdate, Page, User
-from ..permissions import list_accessible_pages, require_page_view
+from ..permissions import can_view_page, require_page_view
 
 router = APIRouter(prefix="/comments", tags=["comments"])
-
-
-def _page_or_404(session: Session, page_id: int) -> Page:
-    page = session.get(Page, page_id)
-    if page is None:
-        raise HTTPException(status_code=404, detail="Página não encontrada")
-    return page
 
 
 def _comment_or_404(session: Session, comment_id: int) -> Comment:
@@ -24,26 +19,43 @@ def _comment_or_404(session: Session, comment_id: int) -> Comment:
     return comment
 
 
+def _page_or_404(session: Session, page_id: int) -> Page:
+    page = session.get(Page, page_id)
+    if page is None:
+        raise HTTPException(status_code=404, detail="Página não encontrada")
+    return page
+
+
+def _require_comment_author(comment: Comment, current_user: User) -> None:
+    if comment.author_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Você não pode alterar este comentário")
+
+
 @router.get("/", response_model=list[CommentRead])
 def list_comments(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
     page_id: int | None = None,
 ):
-    stmt = select(Comment).order_by(Comment.created_at)
+    statement = select(Comment).order_by(Comment.created_at)
     if page_id is not None:
         page = _page_or_404(session, page_id)
         require_page_view(session, page, current_user)
-        stmt = stmt.where(Comment.page_id == page_id)
-    else:
-        accessible_ids = [page.id for page in list_accessible_pages(session, current_user.id)]
-        if not accessible_ids:
-            return []
-        stmt = stmt.where(Comment.page_id.in_(accessible_ids))
-    return session.exec(stmt).all()
+        return session.exec(statement.where(Comment.page_id == page_id)).all()
+
+    comments = session.exec(statement).all()
+    page_cache: dict[int, Page | None] = {}
+    visible: list[Comment] = []
+    for comment in comments:
+        if comment.page_id not in page_cache:
+            page_cache[comment.page_id] = session.get(Page, comment.page_id)
+        page = page_cache[comment.page_id]
+        if page is not None and can_view_page(session, page, current_user):
+            visible.append(comment)
+    return visible
 
 
-@router.post("/", response_model=CommentRead, status_code=201)
+@router.post("/", response_model=CommentRead, status_code=status.HTTP_201_CREATED)
 def add_comment(
     payload: CommentCreate,
     session: Session = Depends(get_session),
@@ -51,7 +63,23 @@ def add_comment(
 ):
     page = _page_or_404(session, payload.page_id)
     require_page_view(session, page, current_user)
-    safe_payload = payload.model_copy(update={"author_id": current_user.id})
+    body = payload.body.strip()
+    if not body:
+        raise HTTPException(status_code=422, detail="O comentário não pode ser vazio")
+    if payload.parent_comment_id is not None:
+        parent = _comment_or_404(session, payload.parent_comment_id)
+        if parent.page_id != page.id:
+            raise HTTPException(status_code=422, detail="Comentário pai pertence a outra página")
+        if parent.is_deleted:
+            raise HTTPException(status_code=409, detail="Não é possível responder a comentário removido")
+
+    safe_payload = CommentCreate(
+        page_id=page.id,
+        author_id=current_user.id,
+        parent_comment_id=payload.parent_comment_id,
+        body=body,
+        is_deleted=False,
+    )
     return create_comment(session, safe_payload)
 
 
@@ -74,21 +102,25 @@ def edit_comment(
     current_user: User = Depends(get_current_user),
 ):
     comment = _comment_or_404(session, comment_id)
-    page = _page_or_404(session, comment.page_id)
-    if comment.author_id != current_user.id and page.author_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Você não pode editar este comentário")
-    return update_comment(session, comment, payload)
+    _require_comment_author(comment, current_user)
+    if comment.is_deleted:
+        raise HTTPException(status_code=409, detail="Comentário removido não pode ser editado")
+    if payload.body is not None and not payload.body.strip():
+        raise HTTPException(status_code=422, detail="O comentário não pode ser vazio")
+    safe_payload = CommentUpdate(body=payload.body.strip() if payload.body is not None else None)
+    return update_comment(session, comment, safe_payload)
 
 
-@router.delete("/{comment_id}", status_code=204)
+@router.delete("/{comment_id}", response_model=CommentRead)
 def remove_comment(
     comment_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
     comment = _comment_or_404(session, comment_id)
-    page = _page_or_404(session, comment.page_id)
-    if comment.author_id != current_user.id and page.author_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Você não pode excluir este comentário")
-    session.delete(comment)
-    session.commit()
+    _require_comment_author(comment, current_user)
+    return update_comment(
+        session,
+        comment,
+        CommentUpdate(body="[comentário removido]", is_deleted=True),
+    )

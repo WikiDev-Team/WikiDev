@@ -1,5 +1,5 @@
-<div id="page-blocks-editor" class="page-blocks-editor">
-    <header class="blocks-editor-header">
+<div id="page-blocks-editor" class="workspace-card page-blocks-editor">
+    <header class="workspace-header blocks-editor-header">
         <div>
             <div class="page-title-line">
                 <h1>{{ page.title }}</h1>
@@ -8,22 +8,19 @@
                 </span>
             </div>
             {% if page.author %}<p class="page-author">por @{{ page.author.username }}</p>{% endif %}
+            {% if page.folder %}<p class="page-author">Pasta: {{ page.folder.name }}</p>{% endif %}
             {% if page.summary %}<p>{{ page.summary }}</p>{% endif %}
         </div>
-
         <div class="page-header-actions">
             {% if can_edit %}
-                <button type="button" class="page-action-button"
-                        hx-get="/pages/{{ page.id }}/metadata/edit"
+                <button type="button" class="secondary-action" hx-get="/pages/{{ page.id }}/metadata/edit"
                         hx-target="#page-blocks-editor" hx-swap="outerHTML">Editar página</button>
             {% else %}
                 <span class="read-only-label">Somente leitura</span>
             {% endif %}
         </div>
     </header>
-
     {% include "partials/page_blocks_list.html" %}
-
     {% if can_edit %}
         <div class="block-add-actions">
             <button type="button" hx-post="/pages/{{ page.id }}/blocks" hx-vals='{"block_type": "text"}'
@@ -31,5 +28,7 @@
             <button type="button" hx-post="/pages/{{ page.id }}/blocks" hx-vals='{"block_type": "code"}'
                     hx-target="#page-blocks-list" hx-swap="beforeend">+ Código</button>
         </div>
+    {% elif not blocks %}
+        <p class="empty-state">Esta página ainda não possui conteúdo.</p>
     {% endif %}
 </div>

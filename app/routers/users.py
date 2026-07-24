@@ -1,58 +1,62 @@
+from __future__ import annotations
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
-from ..crud import create_user, update_user
+from ..crud import update_user
 from ..db import get_session
 from ..dependencies import get_current_user
-from ..models import User, UserCreate, UserPublicRead, UserRead, UserUpdate
+from ..models import User, UserPublicRead, UserRead, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+
+def _user_or_404(session: Session, user_id: int) -> User:
+    user = session.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    return user
+
+
+@router.get("/me", response_model=UserRead)
+def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.patch("/me", response_model=UserRead)
+def edit_me(
+    payload: UserUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    data = payload.model_dump(exclude_unset=True)
+    if "username" in data:
+        duplicate = session.exec(
+            select(User).where(User.username == data["username"], User.id != current_user.id)
+        ).first()
+        if duplicate:
+            raise HTTPException(status_code=409, detail="Nome de usuário já utilizado")
+    if "email" in data:
+        duplicate = session.exec(
+            select(User).where(User.email == data["email"], User.id != current_user.id)
+        ).first()
+        if duplicate:
+            raise HTTPException(status_code=409, detail="E-mail já utilizado")
+    return update_user(session, current_user, payload)
 
 
 @router.get("/", response_model=list[UserPublicRead])
 def list_users(
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    _: User = Depends(get_current_user),
 ):
-    return session.exec(select(User).order_by(User.id)).all()
-
-
-@router.post("/", response_model=UserRead, status_code=201)
-def add_user(payload: UserCreate, session: Session = Depends(get_session)):
-    return create_user(session, payload)
+    return session.exec(select(User).order_by(User.display_name, User.username)).all()
 
 
 @router.get("/{user_id}", response_model=UserPublicRead)
 def get_user(
     user_id: int,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    _: User = Depends(get_current_user),
 ):
-    obj = session.get(User, user_id)
-    if obj is None:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    return obj
-
-
-@router.patch("/{user_id}", response_model=UserRead)
-def edit_user(
-    user_id: int,
-    payload: UserUpdate,
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
-    if user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Você só pode editar o próprio perfil")
-    return update_user(session, current_user, payload)
-
-
-@router.delete("/{user_id}", status_code=204)
-def remove_user(
-    user_id: int,
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
-    if user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Você só pode excluir a própria conta")
-    session.delete(current_user)
-    session.commit()
+    return _user_or_404(session, user_id)

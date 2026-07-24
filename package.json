@@ -1,11 +1,11 @@
 {
   "name": "wikidev",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Plataforma colaborativa de documentação",
   "scripts": {
     "commit": "cz",
     "lint": "eslint . --ext .js",
-    "test": "echo \"Nenhum teste configurado\" && exit 0"
+    "test": "python -m pytest"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",
