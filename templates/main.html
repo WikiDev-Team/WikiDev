@@ -27,7 +27,7 @@
                     Amigos
                     {% if pending_friend_requests %}<span class="nav-badge">{{ pending_friend_requests }}</span>{% endif %}
                 </a>
-                <a href="/forum">Fórum</a>
+                <a href="#">Forum</a>
                 <a href="#">Manpages</a>
             </nav>
         </div>
@@ -73,9 +73,6 @@
                     style="display: none;"
                 ></div>
                 <script>document.getElementById('welcome-panel').style.display = 'none';</script>
-                {% if discussion_target %}
-                    <script>window.requestedDiscussionTarget = {{ discussion_target|tojson }};</script>
-                {% endif %}
             {% endif %}
         </main>
 
@@ -143,18 +140,6 @@
             });
         }
 
-        function openRequestedDiscussion() {
-            if (!window.requestedDiscussionTarget) return;
-            const discussion = document.getElementById(window.requestedDiscussionTarget);
-            if (!discussion) return;
-            window.requestedDiscussionTarget = null;
-            discussion.open = true;
-            htmx.trigger(discussion, "toggle");
-            discussion.classList.add("discussion-highlight");
-            discussion.scrollIntoView({ behavior: "smooth", block: "center" });
-            window.setTimeout(() => discussion.classList.remove("discussion-highlight"), 2200);
-        }
-
         document.addEventListener("DOMContentLoaded", function () {
             highlightCodeBlocks();
         });
@@ -162,47 +147,6 @@
         document.body.addEventListener("htmx:afterSwap", function (event) {
             highlightCodeBlocks(event.target);
         });
-
-        document.body.addEventListener("htmx:afterSettle", function () {
-            openRequestedDiscussion();
-        });
-
-        function showCommentCode(button) {
-            const form = button.closest("form");
-            const fields = form.querySelector(".comment-code-fields");
-            fields.hidden = false;
-            fields.querySelector("select").required = true;
-            button.hidden = true;
-        }
-
-        function removeCommentCode(button) {
-            const form = button.closest("form");
-            const fields = form.querySelector(".comment-code-fields");
-            fields.querySelector("select").value = "";
-            fields.querySelector("select").required = false;
-            fields.querySelector("textarea").value = "";
-            fields.hidden = true;
-            form.querySelector(".add-code-button").hidden = false;
-        }
-
-        function showNewCommentForm(button) {
-            const area = button.closest(".new-comment-area");
-            button.hidden = true;
-            area.querySelector(".new-comment-form").hidden = false;
-            area.querySelector("textarea[name='body']").focus();
-        }
-
-        function hideNewCommentForm(button) {
-            const area = button.closest(".new-comment-area");
-            const form = button.closest("form");
-            form.reset();
-            const codeFields = form.querySelector(".comment-code-fields");
-            codeFields.hidden = true;
-            codeFields.querySelector("select").required = false;
-            form.querySelector(".add-code-button").hidden = false;
-            area.querySelector(".new-comment-form").hidden = true;
-            area.querySelector(".new-comment-button").hidden = false;
-        }
     </script>
 </body>
 </html>

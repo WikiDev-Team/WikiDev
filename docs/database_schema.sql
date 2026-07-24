@@ -101,12 +101,9 @@ CREATE TABLE page_block (
 CREATE TABLE comment (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     page_id INTEGER NOT NULL REFERENCES page(id),
-    author_id INTEGER NOT NULL REFERENCES user(id),
-    block_id INTEGER NULL REFERENCES pageblock(id),
+    author_id INTEGER NULL REFERENCES user(id),
     parent_comment_id INTEGER NULL REFERENCES comment(id),
-    body TEXT NOT NULL,
-    code TEXT NULL,
-    language VARCHAR(20) NULL,
+    body TEXT NOT NULL DEFAULT '',
     is_deleted BOOLEAN NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL

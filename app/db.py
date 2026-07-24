@@ -53,33 +53,9 @@ def _migrate_sqlite_page_visibility() -> None:
         )
 
 
-def _migrate_sqlite_comments() -> None:
-    """Adiciona campos opcionais sem apagar comentários existentes."""
-    if not DATABASE_URL.startswith("sqlite"):
-        return
-
-    inspector = inspect(engine)
-    if "comment" not in inspector.get_table_names():
-        return
-
-    columns = {column["name"] for column in inspector.get_columns("comment")}
-    with engine.begin() as connection:
-        if "block_id" not in columns:
-            connection.execute(
-                text("ALTER TABLE comment ADD COLUMN block_id INTEGER REFERENCES pageblock(id)")
-            )
-        if "code" not in columns:
-            connection.execute(text("ALTER TABLE comment ADD COLUMN code TEXT"))
-        if "language" not in columns:
-            connection.execute(
-                text("ALTER TABLE comment ADD COLUMN language VARCHAR(20)")
-            )
-
-
 def init_db() -> None:
     SQLModel.metadata.create_all(engine)
     _migrate_sqlite_page_visibility()
-    _migrate_sqlite_comments()
 
 
 def get_session():

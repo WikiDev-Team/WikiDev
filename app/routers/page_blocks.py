@@ -2,12 +2,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlmodel import Session, select
 
-from ..crud import (
-    count_active_comments_by_block,
-    create_page_block,
-    delete_page_block,
-    update_page_block,
-)
+from ..crud import create_page_block, delete_page_block, update_page_block
 from ..db import get_session
 from ..dependencies import get_current_user
 from ..models import Page, PageBlock, PageBlockCreate, PageBlockType, PageBlockUpdate, User
@@ -50,16 +45,12 @@ def blocks_editor(
     require_page_view(session, page, current_user)
     editable = can_edit_page(session, page, current_user)
 
-    blocks = list_blocks(session, page_id)
     return templates.TemplateResponse(
         request=request,
         name="partials/page_blocks_editor.html",
         context={
             "page": page,
-            "blocks": blocks,
-            "block_comment_counts": count_active_comments_by_block(
-                session, [block.id for block in blocks]
-            ),
+            "blocks": list_blocks(session, page_id),
             "can_edit": editable,
             "is_owner": page.author_id == current_user.id,
         },
@@ -109,9 +100,6 @@ def get_block_partial(
         context={
             "block": block,
             "can_edit": can_edit_page(session, page, current_user),
-            "block_comment_counts": count_active_comments_by_block(
-                session, [block.id]
-            ),
         },
     )
 
@@ -157,13 +145,7 @@ def update_block(
     return templates.TemplateResponse(
         request=request,
         name="partials/page_block.html",
-        context={
-            "block": block,
-            "can_edit": True,
-            "block_comment_counts": count_active_comments_by_block(
-                session, [block.id]
-            ),
-        },
+        context={"block": block, "can_edit": True},
     )
 
 

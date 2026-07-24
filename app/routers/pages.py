@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlmodel import Session, select
 
-from ..crud import count_active_comments_by_block, create_page, update_page
+from ..crud import create_page, update_page
 from ..db import get_session
 from ..dependencies import get_current_user
 from ..models import (
@@ -205,9 +205,6 @@ def edit_page(
         context={
             "page": page,
             "blocks": blocks,
-            "block_comment_counts": count_active_comments_by_block(
-                session, [block.id for block in blocks]
-            ),
             "can_edit": True,
             "is_owner": is_owner,
             **_sidebar_context(session, current_user),
