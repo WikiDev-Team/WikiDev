@@ -63,25 +63,18 @@ def add_comment(
 ):
     page = _page_or_404(session, payload.page_id)
     require_page_view(session, page, current_user)
-    body = payload.body.strip()
-    if not body:
-        raise HTTPException(status_code=422, detail="O comentário não pode ser vazio")
-    if payload.parent_comment_id is not None:
-        parent = _comment_or_404(session, payload.parent_comment_id)
-        if parent.page_id != page.id:
-            raise HTTPException(status_code=422, detail="Comentário pai pertence a outra página")
-        if parent.is_deleted:
-            raise HTTPException(status_code=409, detail="Não é possível responder a comentário removido")
-
     safe_payload = CommentCreate(
         page_id=page.id,
         block_id=payload.block_id,
         parent_comment_id=payload.parent_comment_id,
-        body=body,
+        body=payload.body,
         code=payload.code,
         language=payload.language,
     )
-    return create_comment(session, safe_payload, author_id=current_user.id)
+    try:
+        return create_comment(session, safe_payload, author_id=current_user.id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/{comment_id}", response_model=CommentRead)
@@ -103,17 +96,12 @@ def edit_comment(
     current_user: User = Depends(get_current_user),
 ):
     comment = _comment_or_404(session, comment_id)
+    require_page_view(session, _page_or_404(session, comment.page_id), current_user)
     _require_comment_author(comment, current_user)
-    if comment.is_deleted:
-        raise HTTPException(status_code=409, detail="Comentário removido não pode ser editado")
-    if payload.body is not None and not payload.body.strip():
-        raise HTTPException(status_code=422, detail="O comentário não pode ser vazio")
-    safe_payload = CommentUpdate(
-        body=payload.body.strip() if payload.body is not None else None,
-        code=payload.code,
-        language=payload.language,
-    )
-    return update_comment(session, comment, safe_payload)
+    try:
+        return update_comment(session, comment, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.delete("/{comment_id}", response_model=CommentRead)
@@ -123,5 +111,6 @@ def remove_comment(
     current_user: User = Depends(get_current_user),
 ):
     comment = _comment_or_404(session, comment_id)
+    require_page_view(session, _page_or_404(session, comment.page_id), current_user)
     _require_comment_author(comment, current_user)
     return delete_comment(session, comment)
