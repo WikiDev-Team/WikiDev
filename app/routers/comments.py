@@ -1,15 +1,27 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from dataclasses import dataclass, field
+
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from fastapi.responses import HTMLResponse
 from sqlmodel import Session, select
 
-from ..crud import create_comment, delete_comment, update_comment
+from ..crud import COMMENT_LANGUAGES, MAX_COMMENT_REPLY_LEVELS, create_comment, delete_comment, update_comment
 from ..db import get_session
 from ..dependencies import get_current_user
 from ..models import Comment, CommentCreate, CommentRead, CommentUpdate, Page, User
 from ..permissions import can_view_page, require_page_view
+from ..templates import templates
 
 router = APIRouter(prefix="/comments", tags=["comments"])
+
+
+@dataclass
+class CommentNode:
+    comment: Comment
+    depth: int = 0
+    replying_to: User | None = None
+    replies: list["CommentNode"] = field(default_factory=list)
 
 
 def _comment_or_404(session: Session, comment_id: int) -> Comment:
@@ -29,6 +41,46 @@ def _page_or_404(session: Session, page_id: int) -> Page:
 def _require_comment_author(comment: Comment, current_user: User) -> None:
     if comment.author_id != current_user.id:
         raise HTTPException(status_code=403, detail="Você não pode alterar este comentário")
+
+
+def _comment_tree(session: Session, page_id: int) -> list[CommentNode]:
+    comments = session.exec(
+        select(Comment)
+        .where(Comment.page_id == page_id, Comment.block_id.is_(None))
+        .order_by(Comment.created_at, Comment.id)
+    ).all()
+    nodes = {comment.id: CommentNode(comment=comment) for comment in comments}
+    roots: list[CommentNode] = []
+    for comment in comments:
+        node = nodes[comment.id]
+        parent = nodes.get(comment.parent_comment_id)
+        if parent is None:
+            roots.append(node)
+        else:
+            node.depth = parent.depth + 1
+            node.replying_to = parent.comment.author
+            parent.replies.append(node)
+
+    def visible(node: CommentNode) -> bool:
+        node.replies = [reply for reply in node.replies if visible(reply)]
+        return not node.comment.is_deleted or bool(node.replies)
+
+    return [root for root in roots if visible(root)]
+
+
+def _render_page_discussion(request: Request, session: Session, page: Page, current_user: User):
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/page_discussion.html",
+        context={
+            "page": page,
+            "current_user": current_user,
+            "comment_nodes": _comment_tree(session, page.id),
+            "comment_languages": {language: language.capitalize() for language in COMMENT_LANGUAGES},
+            "max_reply_levels": MAX_COMMENT_REPLY_LEVELS,
+            "discussion_id": f"page-discussion-{page.id}",
+        },
+    )
 
 
 @router.get("/", response_model=list[CommentRead])
@@ -114,3 +166,135 @@ def remove_comment(
     require_page_view(session, _page_or_404(session, comment.page_id), current_user)
     _require_comment_author(comment, current_user)
     return delete_comment(session, comment)
+
+
+# ── Interface HTMX: discussão geral da página ────────────────────────────────
+
+@router.get("/pages/{page_id}/discussion", response_class=HTMLResponse)
+def page_discussion(
+    request: Request,
+    page_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    page = _page_or_404(session, page_id)
+    require_page_view(session, page, current_user)
+    return _render_page_discussion(request, session, page, current_user)
+
+
+@router.post("/pages/{page_id}/discussion", response_class=HTMLResponse, status_code=status.HTTP_201_CREATED)
+def add_page_discussion_comment(
+    request: Request,
+    page_id: int,
+    body: str = Form(...),
+    code: str = Form(""),
+    language: str = Form(""),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    page = _page_or_404(session, page_id)
+    require_page_view(session, page, current_user)
+    try:
+        create_comment(
+            session,
+            CommentCreate(page_id=page.id, body=body, code=code or None, language=language or None),
+            author_id=current_user.id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return _render_page_discussion(request, session, page, current_user)
+
+
+@router.get("/{comment_id}/reply-form", response_class=HTMLResponse)
+def reply_form(
+    request: Request,
+    comment_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    comment = _comment_or_404(session, comment_id)
+    page = _page_or_404(session, comment.page_id)
+    require_page_view(session, page, current_user)
+    if comment.is_deleted or comment.block_id is not None:
+        raise HTTPException(status_code=422, detail="Comentário não disponível para resposta")
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/comment_form.html",
+        context={"page": page, "parent": comment, "comment_languages": {language: language.capitalize() for language in COMMENT_LANGUAGES}, "discussion_id": f"page-discussion-{page.id}"},
+    )
+
+
+@router.post("/{comment_id}/replies", response_class=HTMLResponse, status_code=status.HTTP_201_CREATED)
+def add_reply(
+    request: Request,
+    comment_id: int,
+    body: str = Form(...),
+    code: str = Form(""),
+    language: str = Form(""),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    parent = _comment_or_404(session, comment_id)
+    page = _page_or_404(session, parent.page_id)
+    require_page_view(session, page, current_user)
+    try:
+        create_comment(session, CommentCreate(page_id=page.id, parent_comment_id=parent.id, body=body, code=code or None, language=language or None), author_id=current_user.id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return _render_page_discussion(request, session, page, current_user)
+
+
+@router.get("/{comment_id}/edit-form", response_class=HTMLResponse)
+def edit_discussion_form(
+    request: Request,
+    comment_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    comment = _comment_or_404(session, comment_id)
+    page = _page_or_404(session, comment.page_id)
+    require_page_view(session, page, current_user)
+    _require_comment_author(comment, current_user)
+    if comment.is_deleted or comment.block_id is not None:
+        raise HTTPException(status_code=422, detail="Comentário não disponível para edição")
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/comment_form.html",
+        context={"page": page, "editing_comment": comment, "comment_languages": {language: language.capitalize() for language in COMMENT_LANGUAGES}, "discussion_id": f"page-discussion-{page.id}"},
+    )
+
+
+@router.patch("/{comment_id}/discussion", response_class=HTMLResponse)
+def update_discussion_comment(
+    request: Request,
+    comment_id: int,
+    body: str = Form(""),
+    code: str = Form(""),
+    language: str = Form(""),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    comment = _comment_or_404(session, comment_id)
+    page = _page_or_404(session, comment.page_id)
+    require_page_view(session, page, current_user)
+    _require_comment_author(comment, current_user)
+    try:
+        update_comment(session, comment, CommentUpdate(body=body, code=code or None, language=language or None))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return _render_page_discussion(request, session, page, current_user)
+
+
+@router.delete("/{comment_id}/discussion", response_class=HTMLResponse)
+def remove_discussion_comment(
+    request: Request,
+    comment_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    comment = _comment_or_404(session, comment_id)
+    page = _page_or_404(session, comment.page_id)
+    require_page_view(session, page, current_user)
+    _require_comment_author(comment, current_user)
+    delete_comment(session, comment)
+    return _render_page_discussion(request, session, page, current_user)

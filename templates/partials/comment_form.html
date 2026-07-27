@@ -1,0 +1,12 @@
+<form class="comment-form"
+      {% if editing_comment %}hx-patch="/comments/{{ editing_comment.id }}/discussion"{% elif parent %}hx-post="/comments/{{ parent.id }}/replies"{% else %}hx-post="/comments/pages/{{ page.id }}/discussion"{% endif %}
+      hx-target="#{{ discussion_id }}" hx-swap="outerHTML">
+    {% if parent %}<p class="comment-reply-context">Respondendo a @{{ parent.author.username if parent.author else 'usuário removido' }}</p>{% endif %}
+    <label>Comentário<textarea name="body" rows="3" required>{% if editing_comment %}{{ editing_comment.body }}{% endif %}</textarea></label>
+    <details class="comment-code-details"{% if editing_comment and editing_comment.code %} open{% endif %}>
+        <summary>Adicionar código</summary>
+        <label>Linguagem<select name="language"><option value="">Selecione</option>{% for value, label in comment_languages.items() %}<option value="{{ value }}"{% if editing_comment and editing_comment.language == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label>Código<textarea name="code" rows="5" spellcheck="false">{% if editing_comment and editing_comment.code %}{{ editing_comment.code }}{% endif %}</textarea></label>
+    </details>
+    <div class="comment-form-actions"><button type="submit" class="primary-action">{% if editing_comment %}Salvar{% elif parent %}Responder{% else %}Comentar{% endif %}</button></div>
+</form>

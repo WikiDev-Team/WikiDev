@@ -1295,6 +1295,37 @@ pre.code-block.font-size-large code {
     background: rgba(88, 166, 255, 0.1);
 }
 
+.page-discussion-panel {
+    margin-top: 24px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 16px;
+}
+
+.page-discussion-panel > summary {
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.discussion-content,
+.new-comment-area {
+    display: grid;
+    gap: 14px;
+}
+
+.discussion-content { margin-top: 16px; }
+.comment-list, .comment-replies { display: grid; gap: 12px; }
+.comment-replies { margin: 12px 0 0 22px; padding-left: 14px; border-left: 2px solid var(--border-color); }
+.comment-content, .comment-form { padding: 14px; border: 1px solid var(--border-color); border-radius: 10px; }
+.comment-meta, .comment-actions, .comment-form-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.comment-meta time, .comment-replying-to, .comment-removed, .discussion-empty, .discussion-loading { color: var(--text-secondary); font-size: .86rem; }
+.comment-meta time { margin-left: auto; }
+.comment-text { white-space: pre-wrap; }
+.comment-code { overflow-x: auto; }
+.comment-actions button { background: transparent; border: 0; color: var(--accent-blue); cursor: pointer; padding: 0; }
+.comment-form { display: grid; gap: 12px; }
+.comment-form label { display: grid; gap: 6px; font-weight: 700; }
+.comment-code-details { display: grid; gap: 10px; }
+
 @media (max-width: 760px) {
     .profile-card-modern {
         grid-template-columns: 1fr;
