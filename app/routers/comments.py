@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
 from sqlmodel import Session, select
 
-from ..crud import COMMENT_LANGUAGES, MAX_COMMENT_REPLY_LEVELS, create_comment, delete_comment, update_comment
+from ..crud import MAX_COMMENT_REPLY_LEVELS, create_comment, delete_comment, update_comment
 from ..db import get_session
 from ..dependencies import get_current_user
 from ..models import Comment, CommentCreate, CommentRead, CommentUpdate, Page, User
@@ -14,6 +14,12 @@ from ..permissions import can_view_page, require_page_view
 from ..templates import templates
 
 router = APIRouter(prefix="/comments", tags=["comments"])
+COMMENT_LANGUAGE_LABELS = {
+    "python": "Python",
+    "c": "C",
+    "cpp": "C++",
+    "java": "Java",
+}
 
 
 @dataclass
@@ -76,7 +82,7 @@ def _render_page_discussion(request: Request, session: Session, page: Page, curr
             "page": page,
             "current_user": current_user,
             "comment_nodes": _comment_tree(session, page.id),
-            "comment_languages": {language: language.capitalize() for language in COMMENT_LANGUAGES},
+            "comment_languages": COMMENT_LANGUAGE_LABELS,
             "max_reply_levels": MAX_COMMENT_REPLY_LEVELS,
             "discussion_id": f"page-discussion-{page.id}",
         },
@@ -220,7 +226,7 @@ def reply_form(
     return templates.TemplateResponse(
         request=request,
         name="partials/comment_form.html",
-        context={"page": page, "parent": comment, "comment_languages": {language: language.capitalize() for language in COMMENT_LANGUAGES}, "discussion_id": f"page-discussion-{page.id}"},
+        context={"page": page, "parent": comment, "comment_languages": COMMENT_LANGUAGE_LABELS, "discussion_id": f"page-discussion-{page.id}"},
     )
 
 
@@ -260,7 +266,7 @@ def edit_discussion_form(
     return templates.TemplateResponse(
         request=request,
         name="partials/comment_form.html",
-        context={"page": page, "editing_comment": comment, "comment_languages": {language: language.capitalize() for language in COMMENT_LANGUAGES}, "discussion_id": f"page-discussion-{page.id}"},
+        context={"page": page, "editing_comment": comment, "comment_languages": COMMENT_LANGUAGE_LABELS, "discussion_id": f"page-discussion-{page.id}"},
     )
 
 
