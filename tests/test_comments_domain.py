@@ -30,8 +30,12 @@ def domain_fixture():
         session.commit()
         session.refresh(user)
 
-        page = Page(title="Página", author_id=user.id)
-        other_page = Page(title="Outra página", author_id=user.id)
+        page = Page(title="Página", slug="pagina", author_id=user.id)
+        other_page = Page(
+            title="Outra página",
+            slug="outra-pagina",
+            author_id=user.id,
+        )
         session.add(page)
         session.add(other_page)
         session.commit()

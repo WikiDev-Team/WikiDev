@@ -128,4 +128,4 @@ def test_private_block_discussion_is_not_exposed(
     _logout(client)
     register_and_login(username="reader", email="reader@example.com")
     response = client.get(f"/comments/blocks/{block.id}/discussion", headers={"HX-Request": "true"})
-    assert response.status_code == 404
+    assert response.status_code == 403

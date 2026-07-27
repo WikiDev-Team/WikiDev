@@ -116,4 +116,4 @@ def test_private_page_discussion_is_not_exposed(client: TestClient, register_and
     _logout(client)
     register_and_login(username="reader", email="reader@example.com")
     response = client.get(f"/comments/pages/{page['id']}/discussion", headers={"HX-Request": "true"})
-    assert response.status_code == 404
+    assert response.status_code == 403

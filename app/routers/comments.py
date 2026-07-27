@@ -88,6 +88,7 @@ def _render_discussion(
     page: Page,
     current_user: User,
     block: PageBlock | None = None,
+    status_code: int = status.HTTP_200_OK,
 ):
     return templates.TemplateResponse(
         request=request,
@@ -106,11 +107,18 @@ def _render_discussion(
                 else None
             ),
         },
+        status_code=status_code,
     )
 
 
-def _render_page_discussion(request: Request, session: Session, page: Page, current_user: User):
-    return _render_discussion(request, session, page, current_user)
+def _render_page_discussion(
+    request: Request,
+    session: Session,
+    page: Page,
+    current_user: User,
+    status_code: int = status.HTTP_200_OK,
+):
+    return _render_discussion(request, session, page, current_user, status_code=status_code)
 
 
 @router.get("/", response_model=list[CommentRead])
@@ -232,7 +240,7 @@ def add_page_discussion_comment(
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    return _render_page_discussion(request, session, page, current_user)
+    return _render_page_discussion(request, session, page, current_user, status.HTTP_201_CREATED)
 
 
 @router.get("/{comment_id}/reply-form", response_class=HTMLResponse)
@@ -272,7 +280,14 @@ def add_reply(
         create_comment(session, CommentCreate(page_id=page.id, block_id=parent.block_id, parent_comment_id=parent.id, body=body, code=code or None, language=language or None), author_id=current_user.id)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    return _render_discussion(request, session, page, current_user, session.get(PageBlock, parent.block_id) if parent.block_id is not None else None)
+    return _render_discussion(
+        request,
+        session,
+        page,
+        current_user,
+        session.get(PageBlock, parent.block_id) if parent.block_id is not None else None,
+        status.HTTP_201_CREATED,
+    )
 
 
 @router.get("/{comment_id}/edit-form", response_class=HTMLResponse)
@@ -364,4 +379,4 @@ def add_block_discussion_comment(
         create_comment(session, CommentCreate(page_id=page.id, block_id=block.id, body=body, code=code or None, language=language or None), author_id=current_user.id)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    return _render_discussion(request, session, page, current_user, block)
+    return _render_discussion(request, session, page, current_user, block, status.HTTP_201_CREATED)
