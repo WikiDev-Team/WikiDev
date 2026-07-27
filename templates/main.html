@@ -109,17 +109,17 @@
         highlightCodeBlocks();
         if (window.innerWidth <= 900) document.getElementById('sidebar')?.classList.add('collapsed');
     });
+    let pendingDiscussion = {{ open_discussion|tojson }};
     document.body.addEventListener('htmx:afterSwap', (event) => {
         highlightCodeBlocks(event.target);
-        const discussion = event.detail.elt?.dataset.openDiscussion;
-        if (!discussion || event.detail.elt.dataset.discussionOpened) return;
-        const target = discussion === 'page'
+        if (!pendingDiscussion || event.target.id !== 'page-editor-container') return;
+        const target = pendingDiscussion === 'page'
             ? event.target.querySelector('.page-discussion-panel')
-            : event.target.querySelector(`#block-${discussion.replace('block-', '')} .block-discussion-panel`);
+            : event.target.querySelector(`#block-${pendingDiscussion.replace('block-', '')} .block-discussion-panel`);
         if (!target) return;
-        event.detail.elt.dataset.discussionOpened = 'true';
+        pendingDiscussion = null;
         target.open = true;
-        target.dispatchEvent(new Event('toggle'));
+        htmx.trigger(target, 'toggle');
     });
     document.addEventListener('click', (event) => {
         const container = document.getElementById('search-container');
