@@ -58,7 +58,7 @@
         <div id="page-editor-container" aria-live="polite"></div>
         {% if open_page_id %}
         <div hx-get="/pages/{{ open_page_id }}/blocks-editor" hx-trigger="load"
-             hx-target="#page-editor-container" hx-swap="innerHTML" hidden></div>
+             hx-target="#page-editor-container" hx-swap="innerHTML" data-open-discussion="{{ open_discussion or '' }}" hidden></div>
         <script>document.getElementById('welcome-panel').hidden = true;</script>
         {% endif %}
     </main>
@@ -109,7 +109,18 @@
         highlightCodeBlocks();
         if (window.innerWidth <= 900) document.getElementById('sidebar')?.classList.add('collapsed');
     });
-    document.body.addEventListener('htmx:afterSwap', (event) => highlightCodeBlocks(event.target));
+    document.body.addEventListener('htmx:afterSwap', (event) => {
+        highlightCodeBlocks(event.target);
+        const discussion = event.detail.elt?.dataset.openDiscussion;
+        if (!discussion || event.detail.elt.dataset.discussionOpened) return;
+        const target = discussion === 'page'
+            ? event.target.querySelector('.page-discussion-panel')
+            : event.target.querySelector(`#block-${discussion.replace('block-', '')} .block-discussion-panel`);
+        if (!target) return;
+        event.detail.elt.dataset.discussionOpened = 'true';
+        target.open = true;
+        target.dispatchEvent(new Event('toggle'));
+    });
     document.addEventListener('click', (event) => {
         const container = document.getElementById('search-container');
         if (container && !container.contains(event.target)) closeSearch();

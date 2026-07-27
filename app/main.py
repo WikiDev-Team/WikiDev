@@ -94,6 +94,7 @@ def root():
 def dashboard(
     request: Request,
     open_page: int | None = None,
+    discussion: str | None = None,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
@@ -112,6 +113,12 @@ def dashboard(
         ).all()
     )
 
+    open_discussion = None
+    if discussion == "page":
+        open_discussion = discussion
+    elif discussion and discussion.startswith("block-") and discussion.removeprefix("block-").isdigit():
+        open_discussion = discussion
+
     return templates.TemplateResponse(
         request=request,
         name="main.html",
@@ -124,6 +131,7 @@ def dashboard(
             "owned_folders": owned_folders,
             "pending_friend_requests": pending_friend_requests,
             "open_page_id": open_page if any(page.id == open_page for page in pages) else None,
+            "open_discussion": open_discussion,
         },
     )
 
