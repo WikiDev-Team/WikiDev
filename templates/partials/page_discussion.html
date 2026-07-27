@@ -22,5 +22,8 @@
 <section id="{{ discussion_id }}" class="discussion-content">
     <div class="comment-list">{% for node in comment_nodes %}{{ render_comment(node) }}{% else %}<p class="discussion-empty">Ainda não há comentários.</p>{% endfor %}</div>
     <div id="{{ discussion_id }}-inline-form"></div>
-    <div class="new-comment-area"><h3>Adicionar comentário</h3>{% include "partials/comment_form.html" %}</div>
+    <div class="new-comment-area">
+        <button type="button" class="comment-link-button new-comment-button" onclick="this.hidden=true; this.nextElementSibling.hidden=false;">+ Adicionar comentário</button>
+        <div class="new-comment-form" hidden>{% set collapsible_comment_form = true %}{% include "partials/comment_form.html" %}</div>
+    </div>
 </section>

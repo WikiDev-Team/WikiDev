@@ -1312,19 +1312,26 @@ pre.code-block.font-size-large code {
     gap: 14px;
 }
 
-.discussion-content { margin-top: 16px; }
+.discussion-content { margin-top: 16px; max-width: 820px; }
 .comment-list, .comment-replies { display: grid; gap: 12px; }
-.comment-replies { margin: 12px 0 0 22px; padding-left: 14px; border-left: 2px solid var(--border-color); }
-.comment-content, .comment-form { padding: 14px; border: 1px solid var(--border-color); border-radius: 10px; }
+.comment-replies { margin: 12px 0 0 26px; padding-left: 16px; border-left: 2px solid var(--border-color); }
+.comment-content { padding: 15px 16px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-main); }
+.comment-form { display: grid; gap: 12px; padding: 15px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-main); }
 .comment-meta, .comment-actions, .comment-form-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .comment-meta time, .comment-replying-to, .comment-removed, .discussion-empty, .discussion-loading { color: var(--text-secondary); font-size: .86rem; }
 .comment-meta time { margin-left: auto; }
-.comment-text { white-space: pre-wrap; }
-.comment-code { overflow-x: auto; }
-.comment-actions button { background: transparent; border: 0; color: var(--accent-blue); cursor: pointer; padding: 0; }
-.comment-form { display: grid; gap: 12px; }
+.comment-text { margin: 10px 0; white-space: pre-wrap; }
+.comment-code { overflow-x: auto; border-radius: 8px; }
+.comment-actions { margin-top: 10px; }
+.comment-actions button, .comment-link-button { background: transparent; border: 0; color: var(--accent-blue); cursor: pointer; padding: 2px 0; font: inherit; }
+.comment-actions button:hover, .comment-link-button:hover { text-decoration: underline; }
 .comment-form label { display: grid; gap: 6px; font-weight: 700; }
-.comment-code-details { display: grid; gap: 10px; }
+.comment-form textarea, .comment-form select { width: 100%; padding: 10px 11px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-panel); color: var(--text-primary); font: inherit; }
+.comment-code-fields { display: grid; gap: 10px; padding: 12px; border-radius: 9px; background: var(--bg-panel); }
+.comment-form-actions { justify-content: flex-end; }
+.comment-form-actions .add-code-button { margin-right: auto; }
+.new-comment-area { padding-top: 2px; }
+.new-comment-button { justify-self: start; font-weight: 700; }
 
 @media (max-width: 760px) {
     .profile-card-modern {
