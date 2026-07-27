@@ -1337,6 +1337,19 @@ pre.code-block.font-size-large code {
 .new-comment-area { padding-top: 2px; }
 .new-comment-button { justify-self: start; font-weight: 700; }
 
+.forum-shell { width: min(1000px, calc(100% - 40px)); margin: 42px auto; }
+.forum-heading { margin-bottom: 24px; }
+.forum-heading h1 { margin: 6px 0; }
+.forum-heading p, .forum-page-summary, .forum-block-context, .forum-discussion-meta { color: var(--text-secondary); }
+.forum-discussion-list { display: grid; gap: 10px; }
+.forum-discussion-row { display: flex; justify-content: space-between; gap: 24px; padding: 18px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-panel); }
+.forum-discussion-main { min-width: 0; }
+.forum-discussion-title { color: var(--text-primary); font-weight: 800; text-decoration: none; }
+.forum-discussion-title:hover { color: var(--accent-blue); }
+.forum-page-summary, .forum-block-context { margin: 7px 0 0; font-size: .9rem; }
+.forum-discussion-meta { display: grid; align-content: center; gap: 5px; min-width: 160px; font-size: .82rem; text-align: right; }
+.forum-empty { padding: 28px; border: 1px dashed var(--border-color); border-radius: 12px; color: var(--text-secondary); text-align: center; }
+
 @media (max-width: 760px) {
     .profile-card-modern {
         grid-template-columns: 1fr;

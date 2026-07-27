@@ -16,6 +16,7 @@ from .routers.auth import router as auth_router
 from .routers.comments import router as comments_router
 from .routers.examples import router as examples_router
 from .routers.folders import router as folders_router
+from .routers.forum import router as forum_router
 from .routers.friendships import router as friendships_router
 from .routers.languages import router as languages_router
 from .routers.page_blocks import router as page_blocks_router
@@ -56,6 +57,7 @@ for router in (
     search_router,
     page_blocks_router,
     friendships_router,
+    forum_router,
 ):
     app.include_router(router)
 
