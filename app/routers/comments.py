@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
-from ..crud import create_comment, update_comment
+from ..crud import create_comment, delete_comment, update_comment
 from ..db import get_session
 from ..dependencies import get_current_user
 from ..models import Comment, CommentCreate, CommentRead, CommentUpdate, Page, User
@@ -75,12 +75,13 @@ def add_comment(
 
     safe_payload = CommentCreate(
         page_id=page.id,
-        author_id=current_user.id,
+        block_id=payload.block_id,
         parent_comment_id=payload.parent_comment_id,
         body=body,
-        is_deleted=False,
+        code=payload.code,
+        language=payload.language,
     )
-    return create_comment(session, safe_payload)
+    return create_comment(session, safe_payload, author_id=current_user.id)
 
 
 @router.get("/{comment_id}", response_model=CommentRead)
@@ -107,7 +108,11 @@ def edit_comment(
         raise HTTPException(status_code=409, detail="Comentário removido não pode ser editado")
     if payload.body is not None and not payload.body.strip():
         raise HTTPException(status_code=422, detail="O comentário não pode ser vazio")
-    safe_payload = CommentUpdate(body=payload.body.strip() if payload.body is not None else None)
+    safe_payload = CommentUpdate(
+        body=payload.body.strip() if payload.body is not None else None,
+        code=payload.code,
+        language=payload.language,
+    )
     return update_comment(session, comment, safe_payload)
 
 
@@ -119,8 +124,4 @@ def remove_comment(
 ):
     comment = _comment_or_404(session, comment_id)
     _require_comment_author(comment, current_user)
-    return update_comment(
-        session,
-        comment,
-        CommentUpdate(body="[comentário removido]", is_deleted=True),
-    )
+    return delete_comment(session, comment)

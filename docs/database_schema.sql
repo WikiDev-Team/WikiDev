@@ -111,8 +111,11 @@ CREATE TABLE comment (
     id INTEGER PRIMARY KEY,
     page_id INTEGER NOT NULL REFERENCES page(id),
     author_id INTEGER REFERENCES user(id),
+    block_id INTEGER REFERENCES pageblock(id),
     parent_comment_id INTEGER REFERENCES comment(id),
     body TEXT NOT NULL DEFAULT '',
+    code TEXT,
+    language VARCHAR(20),
     is_deleted BOOLEAN NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL

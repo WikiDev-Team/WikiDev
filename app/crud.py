@@ -279,8 +279,8 @@ def delete_page_block(session: Session, obj: PageBlock) -> None:
 
 # ── Comment ───────────────────────────────────────────────────────────────────
 
-def create_comment(session: Session, data: CommentCreate) -> Comment:
-    obj = Comment.model_validate(data)
+def create_comment(session: Session, data: CommentCreate, *, author_id: int) -> Comment:
+    obj = Comment(**data.model_dump(), author_id=author_id)
     session.add(obj)
     session.commit()
     session.refresh(obj)
@@ -292,6 +292,18 @@ def update_comment(session: Session, obj: Comment, data: CommentUpdate) -> Comme
     for key, value in payload.items():
         if value is not None:
             setattr(obj, key, value)
+    _touch_update(obj)
+    session.add(obj)
+    session.commit()
+    session.refresh(obj)
+    return obj
+
+
+def delete_comment(session: Session, obj: Comment) -> Comment:
+    obj.body = "[comentário removido]"
+    obj.code = None
+    obj.language = None
+    obj.is_deleted = True
     _touch_update(obj)
     session.add(obj)
     session.commit()

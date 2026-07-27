@@ -6,6 +6,7 @@ import unicodedata
 from typing import List, Optional
 
 from sqlalchemy import CheckConstraint, Column, DateTime, UniqueConstraint
+from pydantic import ConfigDict
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -351,6 +352,7 @@ class PageBlock(PageBlockBase, table=True):
     updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
 
     page: Optional[Page] = Relationship(back_populates="blocks")
+    comments: List["Comment"] = Relationship(back_populates="block")
 
 
 class PageBlockCreate(SQLModel):
@@ -380,8 +382,11 @@ class PageBlockUpdate(SQLModel):
 class CommentBase(SQLModel):
     page_id: int = Field(foreign_key="page.id")
     author_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    block_id: Optional[int] = Field(default=None, foreign_key="pageblock.id", index=True)
     parent_comment_id: Optional[int] = Field(default=None, foreign_key="comment.id")
     body: str = Field(default="")
+    code: Optional[str] = Field(default=None)
+    language: Optional[str] = Field(default=None, max_length=20)
     is_deleted: bool = Field(default=False)
 
 
@@ -392,10 +397,20 @@ class Comment(CommentBase, table=True):
 
     page: Optional[Page] = Relationship(back_populates="comments")
     author: Optional[User] = Relationship(back_populates="comments")
+    block: Optional[PageBlock] = Relationship(back_populates="comments")
 
 
-class CommentCreate(CommentBase):
-    pass
+class CommentCreate(SQLModel):
+    """Dados que um cliente pode enviar ao criar um comentário."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    page_id: int
+    block_id: Optional[int] = None
+    parent_comment_id: Optional[int] = None
+    body: str
+    code: Optional[str] = None
+    language: Optional[str] = Field(default=None, max_length=20)
 
 
 class CommentRead(CommentBase):
@@ -406,8 +421,11 @@ class CommentRead(CommentBase):
 
 
 class CommentUpdate(SQLModel):
+    model_config = ConfigDict(extra="forbid")
+
     body: Optional[str] = None
-    is_deleted: Optional[bool] = None
+    code: Optional[str] = None
+    language: Optional[str] = Field(default=None, max_length=20)
 
 
 # ── CodeExample ──────────────────────────────────────────────────────────────
