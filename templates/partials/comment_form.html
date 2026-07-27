@@ -1,5 +1,5 @@
 <form class="comment-form"
-      {% if editing_comment %}hx-patch="/comments/{{ editing_comment.id }}/discussion"{% elif parent %}hx-post="/comments/{{ parent.id }}/replies"{% else %}hx-post="/comments/pages/{{ page.id }}/discussion"{% endif %}
+      {% if editing_comment %}hx-patch="/comments/{{ editing_comment.id }}/discussion"{% elif parent %}hx-post="/comments/{{ parent.id }}/replies"{% elif block %}hx-post="/comments/blocks/{{ block.id }}/discussion"{% else %}hx-post="/comments/pages/{{ page.id }}/discussion"{% endif %}
       hx-target="#{{ discussion_id }}" hx-swap="outerHTML">
     {% if parent %}<p class="comment-reply-context">Respondendo a @{{ parent.author.username if parent.author else 'usuário removido' }}</p>{% elif editing_comment %}<p class="comment-reply-context">Editando comentário</p>{% endif %}
     <label class="comment-body-field"><span class="visually-hidden">Comentário</span><textarea name="body" rows="3" required placeholder="Escreva um comentário">{% if editing_comment %}{{ editing_comment.body }}{% endif %}</textarea></label>

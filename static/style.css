@@ -1306,6 +1306,9 @@ pre.code-block.font-size-large code {
     font-weight: 800;
 }
 
+.block-discussion-panel { margin-top: 14px; border-top: 1px solid var(--border-color); padding-top: 10px; }
+.block-discussion-panel > summary { cursor: pointer; color: var(--text-secondary); font-size: .86rem; }
+
 .discussion-content,
 .new-comment-area {
     display: grid;

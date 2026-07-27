@@ -19,6 +19,10 @@
     </article>
 {% endmacro %}
 
+{% if block %}
+    <summary id="block-comment-summary-{{ block.id }}" hx-swap-oob="innerHTML">💬 {% if active_comment_count %}{{ active_comment_count }} comentário{% if active_comment_count != 1 %}s{% endif %}{% else %}Comentários{% endif %}</summary>
+{% endif %}
+
 <section id="{{ discussion_id }}" class="discussion-content">
     <div class="comment-list">{% for node in comment_nodes %}{{ render_comment(node) }}{% else %}<p class="discussion-empty">Ainda não há comentários.</p>{% endfor %}</div>
     <div id="{{ discussion_id }}-inline-form"></div>
