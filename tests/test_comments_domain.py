@@ -272,10 +272,12 @@ def test_deleting_block_and_page_removes_their_comments(domain):
         CommentCreate(page_id=page.id, body="na página"),
         author_id=user.id,
     )
+    block_comment_id = block_comment.id
+    page_comment_id = page_comment.id
 
     delete_page_block(session, block)
-    assert session.get(Comment, block_comment.id) is None
-    assert session.get(Comment, page_comment.id) is not None
+    assert session.get(Comment, block_comment_id) is None
+    assert session.get(Comment, page_comment_id) is not None
 
     delete_page(session, page)
-    assert session.get(Comment, page_comment.id) is None
+    assert session.get(Comment, page_comment_id) is None
