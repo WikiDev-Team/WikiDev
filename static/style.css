@@ -857,7 +857,8 @@ pre.code-block.font-size-large code {
 .compact-action { border: 0; padding: 5px 0 10px; cursor: pointer; }
 .empty-state { color: var(--text-secondary); padding: 16px 0; }
 .page-blocks-list { display: grid; gap: 12px; }
-.page-block { position: relative; padding: 18px; border: 1px solid transparent; border-radius: 11px; line-height: 1.7; white-space: pre-wrap; }
+.page-block { position: relative; padding: 18px; border: 1px solid transparent; border-radius: 11px; }
+.page-block > .page-block-text { line-height: 1.7; white-space: pre-wrap; }
 .page-block:hover { border-color: var(--border-color); }
 .block-menu { position: absolute; top: 8px; right: 8px; z-index: 5; }
 .block-menu summary { list-style: none; cursor: pointer; padding: 2px 8px; border-radius: 6px; }
