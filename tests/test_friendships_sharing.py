@@ -5,6 +5,7 @@ from sqlmodel import Session, select
 
 from app.crud import create_user
 from app.models import (
+    FolderShare,
     Friendship,
     FriendshipStatus,
     Page,
@@ -57,6 +58,42 @@ def _create_page(client: TestClient, title: str, visibility: str, viewers=None, 
     assert response.status_code == 200, response.text
     pages = client.get("/pages/").json()
     return next(page["id"] for page in pages if page["title"] == title)
+
+
+def _create_folder(
+    client: TestClient,
+    name: str,
+    visibility: str,
+    viewers=None,
+    parent_folder_id=None,
+) -> int:
+    response = client.post(
+        "/folders/ui",
+        data={
+            "name": name,
+            "description": "Pasta de teste",
+            "visibility": visibility,
+            "parent_folder_id": (
+                ""
+                if parent_folder_id is None
+                else str(parent_folder_id)
+            ),
+            "shared_user_ids": [
+                str(value)
+                for value in (viewers or [])
+            ],
+        },
+    )
+
+    assert response.status_code == 200, response.text
+
+    folders = client.get("/folders/").json()
+
+    return next(
+        folder["id"]
+        for folder in folders
+        if folder["name"] == name
+    )
 
 
 def test_friend_request_lifecycle(client: TestClient, engine):
@@ -153,3 +190,226 @@ def test_visibility_edit_and_friendship_revocation(client: TestClient, engine):
     with Session(engine) as session:
         assert session.get(Friendship, friendship_id) is None
         assert session.get(PageShare, (viewer_id, bob_id)) is None
+
+
+def test_folder_visibility_and_friendship_revocation(
+    client: TestClient,
+    engine,
+):
+    alice_id, alice_token = _create_authenticated_user(
+        client,
+        engine,
+        "alice_folder_share",
+    )
+
+    bob_id, bob_token = _create_authenticated_user(
+        client,
+        engine,
+        "bob_folder_share",
+    )
+
+    _, charlie_token = _create_authenticated_user(
+        client,
+        engine,
+        "charlie_folder_share",
+    )
+
+    with Session(engine) as session:
+        friendship = Friendship(
+            requester_id=alice_id,
+            addressee_id=bob_id,
+            status=FriendshipStatus.ACCEPTED,
+        )
+        session.add(friendship)
+        session.commit()
+        session.refresh(friendship)
+        friendship_id = friendship.id
+
+    _login_as(client, alice_token)
+
+    private_id = _create_folder(
+        client,
+        "Private folder test",
+        "private",
+    )
+
+    friends_id = _create_folder(
+        client,
+        "Friends folder test",
+        "friends",
+    )
+
+    custom_id = _create_folder(
+        client,
+        "Custom folder test",
+        "custom",
+        viewers=[bob_id],
+    )
+
+    public_id = _create_folder(
+        client,
+        "Public folder test",
+        "public",
+    )
+
+    with Session(engine) as session:
+        assert session.get(
+            FolderShare,
+            (custom_id, bob_id),
+        ) is not None
+
+    _login_as(client, bob_token)
+
+    assert client.get(
+        f"/folders/{private_id}"
+    ).status_code == 403
+
+    assert client.get(
+        f"/folders/{friends_id}"
+    ).status_code == 200
+
+    assert client.get(
+        f"/folders/{custom_id}"
+    ).status_code == 200
+
+    assert client.get(
+        f"/folders/{public_id}"
+    ).status_code == 200
+
+    _login_as(client, charlie_token)
+
+    assert client.get(
+        f"/folders/{friends_id}"
+    ).status_code == 403
+
+    assert client.get(
+        f"/folders/{custom_id}"
+    ).status_code == 403
+
+    assert client.get(
+        f"/folders/{public_id}"
+    ).status_code == 200
+
+    _login_as(client, bob_token)
+
+    removed = client.post(
+        f"/friendships/{friendship_id}/remove",
+        data={"return_to": "/friends"},
+        follow_redirects=False,
+    )
+
+    assert removed.status_code == 303
+
+    assert client.get(
+        f"/folders/{friends_id}"
+    ).status_code == 403
+
+    assert client.get(
+        f"/folders/{custom_id}"
+    ).status_code == 403
+
+    with Session(engine) as session:
+        assert session.get(
+            FolderShare,
+            (custom_id, bob_id),
+        ) is None
+
+def test_folder_visibility_respects_parent_folders(
+    client: TestClient,
+    engine,
+):
+    alice_id, alice_token = _create_authenticated_user(
+        client,
+        engine,
+        "alice_folder_parent",
+    )
+
+    bob_id, bob_token = _create_authenticated_user(
+        client,
+        engine,
+        "bob_folder_parent",
+    )
+
+    with Session(engine) as session:
+        session.add(
+            Friendship(
+                requester_id=alice_id,
+                addressee_id=bob_id,
+                status=FriendshipStatus.ACCEPTED,
+            )
+        )
+        session.commit()
+
+    _login_as(client, alice_token)
+
+    private_parent = _create_folder(
+        client,
+        "Private parent",
+        "private",
+    )
+
+    blocked_child = _create_folder(
+        client,
+        "Shared child under private parent",
+        "custom",
+        viewers=[bob_id],
+        parent_folder_id=private_parent,
+    )
+
+    shared_parent = _create_folder(
+        client,
+        "Shared parent",
+        "custom",
+        viewers=[bob_id],
+    )
+
+    visible_child = _create_folder(
+        client,
+        "Public child under shared parent",
+        "public",
+        parent_folder_id=shared_parent,
+    )
+
+    _login_as(client, bob_token)
+
+    assert client.get(
+        f"/folders/{blocked_child}"
+    ).status_code == 403
+
+    assert client.get(
+        f"/folders/{shared_parent}"
+    ).status_code == 200
+
+    assert client.get(
+        f"/folders/{visible_child}"
+    ).status_code == 200
+
+def test_update_folder_without_shared_users(
+    client: TestClient,
+    engine,
+):
+    _, alice_token = _create_authenticated_user(
+        client,
+        engine,
+        "alice_folder_update",
+    )
+
+    _login_as(client, alice_token)
+
+    folder_id = _create_folder(
+        client,
+        "Folder without shares",
+        "private",
+    )
+
+    response = client.patch(
+        f"/folders/{folder_id}/ui",
+        data={
+            "name": "Updated folder",
+            "description": "Updated description",
+            "visibility": "private",
+            "parent_folder_id": "",
+        },
+    )
+
+    assert response.status_code == 200, response.text

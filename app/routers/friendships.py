@@ -9,7 +9,16 @@ from sqlmodel import Session, select
 
 from ..db import get_session
 from ..dependencies import get_current_user
-from ..models import Friendship, FriendshipStatus, Page, PageShare, User, now_utc
+from ..models import (
+    Folder,
+    FolderShare,
+    Friendship,
+    FriendshipStatus,
+    Page,
+    PageShare,
+    User,
+    now_utc,
+)
 from ..permissions import (
     friendship_state,
     get_friend_ids,
@@ -279,6 +288,49 @@ def remove_friendship(
                 & (PageShare.user_id == first_user_id)
             )
         )
+
+    first_user_folders = session.exec(
+        select(Folder.id).where(
+            Folder.author_id == first_user_id
+        )
+    ).all()
+
+    second_user_folders = session.exec(
+        select(Folder.id).where(
+            Folder.author_id == second_user_id
+        )
+    ).all()
+
+    if first_user_folders:
+        session.exec(
+            delete(FolderShare).where(
+                (
+                    FolderShare.folder_id.in_(
+                        first_user_folders
+                    )
+                )
+                & (
+                    FolderShare.user_id
+                    == second_user_id
+                )
+            )
+        )
+
+    if second_user_folders:
+        session.exec(
+            delete(FolderShare).where(
+                (
+                    FolderShare.folder_id.in_(
+                        second_user_folders
+                    )
+                )
+                & (
+                    FolderShare.user_id
+                    == first_user_id
+                )
+            )
+        )
+
 
     session.delete(friendship)
     session.commit()

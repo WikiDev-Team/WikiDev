@@ -60,8 +60,9 @@ class PageSharePermission(str, Enum):
 
 class FolderVisibility(str, Enum):
     PRIVATE = "private"
+    FRIENDS = "friends"
     PUBLIC = "public"
-
+    CUSTOM = "custom"
 
 # ── User ─────────────────────────────────────────────────────────────────────
 
@@ -261,6 +262,23 @@ class FolderUpdate(SQLModel):
     visibility: Optional[FolderVisibility] = None
     parent_folder_id: Optional[int] = None
 
+class FolderShare(SQLModel, table=True):
+    folder_id: int = Field(
+        foreign_key="folder.id",
+        primary_key=True,
+    )
+    user_id: int = Field(
+        foreign_key="user.id",
+        primary_key=True,
+    )
+    created_at: datetime = Field(
+        default_factory=now_utc,
+        sa_column=Column(DateTime, nullable=False),
+    )
+    updated_at: datetime = Field(
+        default_factory=now_utc,
+        sa_column=Column(DateTime, nullable=False),
+    )
 
 # ── Page ─────────────────────────────────────────────────────────────────────
 
