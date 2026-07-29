@@ -1,14 +1,15 @@
 from __future__ import annotations
-
+from sqlalchemy import delete
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
 from sqlmodel import Session, select
-
+from typing import Annotated
 from ..crud import create_folder, create_page, update_folder
 from ..db import get_session
 from ..dependencies import get_current_user
 from ..models import (
     Folder,
+    FolderShare,
     FolderCreate,
     FolderRead,
     FolderUpdate,
@@ -23,10 +24,14 @@ from ..permissions import (
     accessible_folders,
     can_view_folder,
     can_view_page,
+    get_folder_share_user_ids,
+    get_friend_users,
+    replace_folder_shares,
     require_folder_edit,
     require_folder_view,
     require_page_view,
 )
+
 from ..templates import templates
 
 router = APIRouter(prefix="/folders", tags=["folders"])
@@ -128,6 +133,11 @@ def new_folder_form(
             "folder": None,
             "owned_folders": owned_folders,
             "selected_parent_id": parent_folder_id,
+            "friends": get_friend_users(
+                session,
+                current_user.id,
+            ),
+            "shared_user_ids": set(),
         },
     )
 
@@ -137,11 +147,18 @@ def create_folder_ui(
     request: Request,
     name: str = Form(...),
     description: str = Form(""),
-    visibility: FolderVisibility = Form(FolderVisibility.PRIVATE),
+    visibility: FolderVisibility = Form(
+        FolderVisibility.PRIVATE
+    ),
     parent_folder_id: str = Form(""),
+    shared_user_ids: Annotated[
+        list[int] | None,
+        Form(),
+    ] = None,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
+    
     parsed_parent = _parse_optional_id(parent_folder_id, field_name="Pasta pai")
     _validate_parent(session, parsed_parent, current_user)
     folder = create_folder(
@@ -154,6 +171,16 @@ def create_folder_ui(
             parent_folder_id=parsed_parent,
         ),
     )
+    replace_folder_shares(
+        session,
+        folder,
+        current_user.id,
+        shared_user_ids or [],
+    )
+    session.commit()
+
+
+
     return templates.TemplateResponse(
         request=request,
         name="partials/folder_panel_with_sidebar.html",
@@ -197,8 +224,20 @@ def edit_folder_form(
         name="partials/folder_form.html",
         context={
             "folder": folder,
-            "owned_folders": [item for item in owned_folders if item.id != folder.id],
+            "owned_folders": [
+                item
+                for item in owned_folders
+                if item.id != folder.id
+            ],
             "selected_parent_id": folder.parent_folder_id,
+            "friends": get_friend_users(
+                session,
+                current_user.id,
+            ),
+            "shared_user_ids": get_folder_share_user_ids(
+                session,
+                folder.id,
+            ),
         },
     )
 
@@ -233,6 +272,20 @@ def update_folder_ui(
             parent_folder_id=parsed_parent,
         ),
     )
+
+    shared_user_ids: Annotated[
+        list[int] | None,
+        Form(),
+    ] = None,
+
+    replace_folder_shares(
+        session,
+        folder,
+        current_user.id,
+        shared_user_ids or [],
+    )
+    session.commit() 
+
     return templates.TemplateResponse(
         request=request,
         name="partials/folder_panel_with_sidebar.html",
@@ -260,6 +313,13 @@ def delete_folder_ui(
     ).all():
         subfolder.parent_folder_id = None
         session.add(subfolder)
+
+    session.exec(
+        delete(FolderShare).where(
+            FolderShare.folder_id == folder.id
+        )
+    )
+
     session.delete(folder)
     session.commit()
     return templates.TemplateResponse(
@@ -445,7 +505,25 @@ def edit_folder(
             current_user,
             edited_folder_id=folder.id,
         )
-    return update_folder(session, folder, payload)
+    folder = update_folder(
+        session,
+        folder,
+        payload,
+    )
+
+    if (
+        "visibility" in payload.model_fields_set
+        and folder.visibility != FolderVisibility.CUSTOM
+    ):
+        replace_folder_shares(
+            session,
+            folder,
+            current_user.id,
+            [],
+        )
+        session.commit()
+
+    return folder
 
 
 @router.delete("/{folder_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -464,5 +542,12 @@ def remove_folder(
     ).all():
         subfolder.parent_folder_id = None
         session.add(subfolder)
+
+    session.exec(
+        delete(FolderShare).where(
+            FolderShare.folder_id == folder.id
+        )
+    )
+
     session.delete(folder)
     session.commit()

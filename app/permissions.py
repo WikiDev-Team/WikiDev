@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 
 from .models import (
     Folder,
+    FolderShare,
     FolderVisibility,
     Friendship,
     FriendshipStatus,
@@ -82,26 +83,77 @@ def friendship_state(friendship: Friendship | None, current_user_id: int) -> str
 def get_page_share(session: Session, page_id: int, user_id: int) -> PageShare | None:
     return session.get(PageShare, (page_id, user_id))
 
+def get_folder_share(
+    session: Session,
+    folder_id: int,
+    user_id: int,
+) -> FolderShare | None:
+    return session.get(FolderShare, (folder_id, user_id))
 
-def can_view_folder(session: Session, folder: Folder, user: User) -> bool:
+def _can_view_single_folder(
+    session: Session,
+    folder: Folder,
+    user: User,
+) -> bool:
     if folder.author_id == user.id:
         return True
-    if folder.visibility != FolderVisibility.PUBLIC:
-        return False
 
-    visited = {folder.id}
-    parent_id = folder.parent_folder_id
-    while parent_id is not None:
-        if parent_id in visited:
+    if folder.visibility == FolderVisibility.PUBLIC:
+        return True
+
+    if (
+        folder.visibility == FolderVisibility.FRIENDS
+        and folder.author_id is not None
+    ):
+        return are_friends(
+            session,
+            folder.author_id,
+            user.id,
+        )
+
+    if (
+        folder.visibility == FolderVisibility.CUSTOM
+        and folder.id is not None
+    ):
+        return get_folder_share(
+            session,
+            folder.id,
+            user.id,
+        ) is not None
+
+    return False
+
+
+def can_view_folder(
+    session: Session,
+    folder: Folder,
+    user: User,
+) -> bool:
+    visited: set[int] = set()
+    current: Folder | None = folder
+
+    while current is not None:
+        if current.id is None or current.id in visited:
             return False
-        visited.add(parent_id)
-        parent = session.get(Folder, parent_id)
-        if parent is None:
+
+        visited.add(current.id)
+
+        if not _can_view_single_folder(
+            session,
+            current,
+            user,
+        ):
             return False
-        if parent.author_id != user.id and parent.visibility != FolderVisibility.PUBLIC:
-            return False
-        parent_id = parent.parent_folder_id
-    return True
+
+        if current.parent_folder_id is None:
+            return True
+
+        current = session.get(
+            Folder,
+            current.parent_folder_id,
+        )
+
+    return False
 
 
 def can_edit_folder(folder: Folder, user: User) -> bool:
@@ -207,6 +259,69 @@ def accessible_folders(session: Session, user: User) -> list[Folder]:
     folders = session.exec(select(Folder).order_by(Folder.name)).all()
     return [folder for folder in folders if can_view_folder(session, folder, user)]
 
+def get_folder_share_user_ids(
+    session: Session,
+    folder_id: int,
+) -> set[int]:
+    shares = session.exec(
+        select(FolderShare).where(
+            FolderShare.folder_id == folder_id
+        )
+    ).all()
+
+    return {
+        share.user_id
+        for share in shares
+    }
+
+
+def replace_folder_shares(
+    session: Session,
+    folder: Folder,
+    owner_id: int,
+    viewer_ids: Iterable[int] | None,
+) -> None:
+    if folder.id is None:
+        return
+
+    session.exec(
+        delete(FolderShare).where(
+            FolderShare.folder_id == folder.id
+        )
+    )
+
+    if folder.visibility != FolderVisibility.CUSTOM:
+        return
+
+    friend_ids = get_friend_ids(
+        session,
+        owner_id,
+    )
+
+    requested_viewers: set[int] = set()
+
+    for user_id in viewer_ids or []:
+        if user_id is None:
+            continue
+
+        if isinstance(user_id, str):
+            user_id = user_id.strip()
+
+            if not user_id:
+                continue
+
+        requested_viewers.add(int(user_id))
+
+    allowed_viewers = requested_viewers & friend_ids
+
+    for user_id in sorted(allowed_viewers):
+        session.add(
+            FolderShare(
+                folder_id=folder.id,
+                user_id=user_id,
+                updated_at=now_utc(),
+            )
+        )
 
 def get_page_share_user_ids(session: Session, page_id: int) -> tuple[set[int], set[int]]:
     shares = session.exec(select(PageShare).where(PageShare.page_id == page_id)).all()

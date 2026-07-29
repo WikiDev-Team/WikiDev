@@ -1,7 +1,17 @@
 <section id="folder-panel" class="workspace-card">
     <header class="workspace-header">
         <div>
-            <span class="eyebrow">Pasta {{ 'pública' if folder.visibility.value == 'public' else 'privada' }}</span>
+            <span class="eyebrow">
+                {% if folder.visibility.value == 'private' %}
+                    Pasta privada
+                {% elif folder.visibility.value == 'friends' %}
+                    Pasta visível para amigos
+                {% elif folder.visibility.value == 'public' %}
+                    Pasta pública
+                {% else %}
+                    Pasta compartilhada
+                {% endif %}
+            </span>
             <h1>{{ folder.name }}</h1>
             {% if folder.description %}<p>{{ folder.description }}</p>{% endif %}
         </div>
