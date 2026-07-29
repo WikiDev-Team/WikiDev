@@ -1,17 +1,16 @@
 from __future__ import annotations
 from sqlmodel import Session, select
-from sqlalchemy import delete
-from typing import Iterable, Optional, TypeVar, Type, Any
-from .security import get_password_hash #para rodar a funcao trocada
-from sqlmodel import Session, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy import delete, update
+from typing import TypeVar
+
+from .security import get_password_hash
 
 from .models import (
     CodeExample, CodeExampleCreate, CodeExampleUpdate,
     Comment, CommentCreate, CommentUpdate,
     Folder, FolderCreate, FolderUpdate,
     Language, LanguageCreate, LanguageUpdate,
-    Page, PageCreate, PageUpdate, PageTagLink,
+    Page, PageCreate, PageUpdate, PageTagLink, PageShare,
     Tag, TagCreate, TagUpdate,
     User, UserCreate, UserUpdate,
     slugify_text,
@@ -58,7 +57,8 @@ def create_user(session: Session, data: UserCreate) -> User:
 def update_user(session: Session, obj: User, data: UserUpdate) -> User:
     payload = data.model_dump(exclude_unset=True)
     for key, value in payload.items():
-        setattr(obj, key, value)
+        if value is not None:
+            setattr(obj, key, value)
     _touch_update(obj)
     session.add(obj)
     session.commit()
@@ -143,7 +143,8 @@ def create_folder(session: Session, data: FolderCreate) -> Folder:
 def update_folder(session: Session, obj: Folder, data: FolderUpdate) -> Folder:
     payload = data.model_dump(exclude_unset=True)
     for key, value in payload.items():
-        setattr(obj, key, value)
+        if value is not None or key == "parent_folder_id":
+            setattr(obj, key, value)
     if "name" in payload and not payload.get("slug"):
         obj.slug = _unique_slug(session, Folder, slugify_text(obj.name), exclude_id=obj.id)
     elif payload.get("slug"):
@@ -177,7 +178,7 @@ def create_page(session: Session, data: PageCreate) -> Page:
 def update_page(session: Session, obj: Page, data: PageUpdate) -> Page:
     payload = data.model_dump(exclude_unset=True, exclude={"tag_ids"})
     for key, value in payload.items():
-        if value is not None:
+        if value is not None or key in {"folder_id", "parent_page_id", "language_id"}:
             setattr(obj, key, value)
     if "title" in payload and not payload.get("slug"):
         obj.slug = _unique_slug(session, Page, slugify_text(obj.title), exclude_id=obj.id)
@@ -193,6 +194,22 @@ def update_page(session: Session, obj: Page, data: PageUpdate) -> Page:
     session.commit()
     session.refresh(obj)
     return obj
+
+
+def delete_page(session: Session, obj: Page) -> None:
+    """Remove dependências explícitas para funcionar também com SQLite sem cascade."""
+    session.exec(delete(PageTagLink).where(PageTagLink.page_id == obj.id))
+    session.exec(delete(PageShare).where(PageShare.page_id == obj.id))
+    session.exec(delete(Comment).where(Comment.page_id == obj.id))
+    session.exec(delete(CodeExample).where(CodeExample.page_id == obj.id))
+    session.exec(delete(PageBlock).where(PageBlock.page_id == obj.id))
+    session.exec(
+        update(Page)
+        .where(Page.parent_page_id == obj.id)
+        .values(parent_page_id=None)
+    )
+    session.delete(obj)
+    session.commit()
 
 
 # ── PageBlock ────────────────────────────────────────────────────────────────
@@ -226,6 +243,7 @@ def create_page_block(
         block_type=data.block_type,
         content=data.content,
         language=data.language,
+        font_size=data.font_size,
     )
 
     session.add(obj)
@@ -256,13 +274,92 @@ def update_page_block(
 
 
 def delete_page_block(session: Session, obj: PageBlock) -> None:
+    session.exec(delete(Comment).where(Comment.block_id == obj.id))
     session.delete(obj)
     session.commit()
 
 # ── Comment ───────────────────────────────────────────────────────────────────
 
-def create_comment(session: Session, data: CommentCreate) -> Comment:
-    obj = Comment.model_validate(data)
+COMMENT_LANGUAGES = frozenset({"python", "java", "c", "cpp"})
+MAX_COMMENT_REPLY_LEVELS = 4
+
+
+def _normalize_comment_content(
+    body: str,
+    code: str | None,
+    language: str | None,
+) -> tuple[str, str | None, str | None]:
+    normalized_body = body.strip()
+    normalized_code = code.strip() if code else None
+
+    if not normalized_body and not normalized_code:
+        raise ValueError("O comentário não pode ser vazio")
+
+    if normalized_code is None:
+        return normalized_body, None, None
+
+    normalized_language = language.strip().lower() if language else None
+    if normalized_language not in COMMENT_LANGUAGES:
+        raise ValueError("A linguagem é obrigatória e deve ser python, java, c ou cpp")
+    return normalized_body, normalized_code, normalized_language
+
+
+def get_comment_depth(session: Session, comment: Comment) -> int:
+    """Retorna a profundidade do comentário e impede cadeias circulares."""
+    depth = 0
+    seen_ids = {comment.id}
+    parent_id = comment.parent_comment_id
+    while parent_id is not None:
+        if parent_id in seen_ids:
+            raise ValueError("Referência circular entre comentários")
+        seen_ids.add(parent_id)
+        parent = session.get(Comment, parent_id)
+        if parent is None:
+            raise ValueError("Comentário pai não encontrado")
+        depth += 1
+        parent_id = parent.parent_comment_id
+    return depth
+
+
+def _validate_comment_relations(session: Session, data: CommentCreate) -> None:
+    if session.get(Page, data.page_id) is None:
+        raise ValueError("Página não encontrada")
+
+    if data.block_id is not None:
+        block = session.get(PageBlock, data.block_id)
+        if block is None:
+            raise ValueError("Bloco não encontrado")
+        if block.page_id != data.page_id:
+            raise ValueError("O bloco não pertence à página informada")
+
+    if data.parent_comment_id is None:
+        return
+
+    parent = session.get(Comment, data.parent_comment_id)
+    if parent is None:
+        raise ValueError("Comentário pai não encontrado")
+    if parent.is_deleted:
+        raise ValueError("Não é possível responder a comentário removido")
+    if parent.page_id != data.page_id:
+        raise ValueError("A resposta deve pertencer à mesma página")
+    if parent.block_id != data.block_id:
+        raise ValueError("A resposta deve pertencer à mesma discussão")
+    if get_comment_depth(session, parent) >= MAX_COMMENT_REPLY_LEVELS:
+        raise ValueError("O limite de quatro níveis de resposta foi atingido")
+
+
+def create_comment(session: Session, data: CommentCreate, *, author_id: int) -> Comment:
+    if session.get(User, author_id) is None:
+        raise ValueError("Autor não encontrado")
+    _validate_comment_relations(session, data)
+    body, code, language = _normalize_comment_content(data.body, data.code, data.language)
+    obj = Comment(
+        **data.model_dump(exclude={"body", "code", "language"}),
+        author_id=author_id,
+        body=body,
+        code=code,
+        language=language,
+    )
     session.add(obj)
     session.commit()
     session.refresh(obj)
@@ -270,10 +367,29 @@ def create_comment(session: Session, data: CommentCreate) -> Comment:
 
 
 def update_comment(session: Session, obj: Comment, data: CommentUpdate) -> Comment:
+    if obj.is_deleted:
+        raise ValueError("Comentário removido não pode ser editado")
     payload = data.model_dump(exclude_unset=True)
-    for key, value in payload.items():
-        if value is not None:
-            setattr(obj, key, value)
+    body, code, language = _normalize_comment_content(
+        payload.get("body") if payload.get("body") is not None else obj.body,
+        payload.get("code", obj.code),
+        payload.get("language", obj.language),
+    )
+    obj.body = body
+    obj.code = code
+    obj.language = language
+    _touch_update(obj)
+    session.add(obj)
+    session.commit()
+    session.refresh(obj)
+    return obj
+
+
+def delete_comment(session: Session, obj: Comment) -> Comment:
+    obj.body = "[comentário removido]"
+    obj.code = None
+    obj.language = None
+    obj.is_deleted = True
     _touch_update(obj)
     session.add(obj)
     session.commit()

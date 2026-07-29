@@ -1,0 +1,19 @@
+<section id="folder-panel" class="workspace-card">
+    <header class="workspace-header">
+        <div>
+            <span class="eyebrow">Pasta {{ 'pública' if folder.visibility.value == 'public' else 'privada' }}</span>
+            <h1>{{ folder.name }}</h1>
+            {% if folder.description %}<p>{{ folder.description }}</p>{% endif %}
+        </div>
+        {% if can_edit %}<div class="workspace-actions"><button type="button" class="secondary-action" hx-get="/folders/{{ folder.id }}/edit-form" hx-target="#page-editor-container">Editar</button><button type="button" class="primary-action" hx-get="/pages/new?folder_id={{ folder.id }}" hx-target="#page-editor-container">Nova página</button></div>{% endif %}
+    </header>
+
+    {% if subfolders %}<div class="content-section"><h2>Subpastas</h2><div class="resource-grid">{% for item in subfolders %}<button class="resource-card" hx-get="/folders/{{ item.id }}/panel" hx-target="#page-editor-container"><strong>📁 {{ item.name }}</strong><span>{{ item.description or 'Sem descrição' }}</span></button>{% endfor %}</div></div>{% endif %}
+
+    <div class="content-section">
+        <h2>Páginas</h2>
+        {% if folder_pages %}<div class="resource-grid">{% for page in folder_pages %}<button class="resource-card" hx-get="/pages/{{ page.id }}/blocks-editor" hx-target="#page-editor-container"><strong>{{ page.title }}</strong><span>{{ page.summary or page.status.value }}</span></button>{% if can_edit %}<form hx-post="/folders/{{ folder.id }}/detach" hx-target="#folder-panel" hx-swap="outerHTML"><input type="hidden" name="page_id" value="{{ page.id }}"><button class="text-danger compact-action" type="submit">Remover da pasta</button></form>{% endif %}{% endfor %}</div>{% else %}<p class="empty-state">Esta pasta ainda não contém páginas.</p>{% endif %}
+    </div>
+
+    {% if can_edit and attachable_pages %}<div class="content-section attach-section"><h2>Adicionar página existente</h2><form class="inline-form" hx-post="/folders/{{ folder.id }}/attach" hx-target="#folder-panel" hx-swap="outerHTML"><select name="page_id" required><option value="">Selecione...</option>{% for page in attachable_pages %}<option value="{{ page.id }}">{{ page.title }}</option>{% endfor %}</select><button class="secondary-action" type="submit">Adicionar</button></form></div>{% endif %}
+</section>

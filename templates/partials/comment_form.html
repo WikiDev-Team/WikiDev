@@ -1,0 +1,16 @@
+<form class="comment-form"
+      {% if editing_comment %}hx-patch="/comments/{{ editing_comment.id }}/discussion"{% elif parent %}hx-post="/comments/{{ parent.id }}/replies"{% elif block %}hx-post="/comments/blocks/{{ block.id }}/discussion"{% else %}hx-post="/comments/pages/{{ page.id }}/discussion"{% endif %}
+      hx-target="#{{ discussion_id }}" hx-swap="outerHTML">
+    {% if parent %}<p class="comment-reply-context">Respondendo a @{{ parent.author.username if parent.author else 'usuário removido' }}</p>{% elif editing_comment %}<p class="comment-reply-context">Editando comentário</p>{% endif %}
+    <label class="comment-body-field"><span class="visually-hidden">Comentário</span><textarea name="body" rows="3" required placeholder="Escreva um comentário">{% if editing_comment %}{{ editing_comment.body }}{% endif %}</textarea></label>
+    <div class="comment-code-fields"{% if not editing_comment or not editing_comment.code %} hidden{% endif %}>
+        <label>Linguagem<select name="language"><option value="">Selecione</option>{% for value, label in comment_languages.items() %}<option value="{{ value }}"{% if editing_comment and editing_comment.language == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label>Código<textarea name="code" rows="5" spellcheck="false">{% if editing_comment and editing_comment.code %}{{ editing_comment.code }}{% endif %}</textarea></label>
+        <button type="button" class="comment-link-button" onclick="const form=this.closest('.comment-form'); form.querySelector('.comment-code-fields').hidden=true; form.querySelector('[name=code]').value=''; form.querySelector('[name=language]').value=''; form.querySelector('.add-code-button').hidden=false;">Remover código</button>
+    </div>
+    <div class="comment-form-actions">
+        <button type="button" class="comment-link-button add-code-button"{% if editing_comment and editing_comment.code %} hidden{% endif %} onclick="const form=this.closest('.comment-form'); form.querySelector('.comment-code-fields').hidden=false; this.hidden=true;">+ Adicionar código</button>
+        {% if parent or editing_comment %}<button type="button" class="comment-link-button" onclick="this.closest('[id$=-inline-form]').replaceChildren()">Cancelar</button>{% elif collapsible_comment_form %}<button type="button" class="comment-link-button" onclick="const area=this.closest('.new-comment-area'); area.querySelector('.new-comment-form').hidden=true; area.querySelector('.new-comment-button').hidden=false;">Cancelar</button>{% endif %}
+        <button type="submit" class="primary-action">{% if editing_comment %}Salvar{% elif parent %}Responder{% else %}Comentar{% endif %}</button>
+    </div>
+</form>

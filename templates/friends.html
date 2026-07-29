@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amigos - WikiDev</title>
+    <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script defer src="/static/theme.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-brand">
+            <a href="/dashboard" class="topbar-logo-link" aria-label="Página inicial">
+                <img src="/static/wikidev_logo.png" alt="WikiDev" class="topbar-logo">
+            </a>
+            <div><strong>WikiDev</strong><small>Sua base de conhecimento colaborativa</small></div>
+        </div>
+        <nav class="main-nav" aria-label="Navegação principal">
+            <a href="/dashboard">Home</a>
+            <a href="/friends" class="active">Amigos</a>
+            <a href="/forum">Fórum</a>
+        </nav>
+        <div id="search-container" class="topbar-search">
+            <label class="visually-hidden" for="global-search">Buscar usuários ou páginas</label>
+            <input id="global-search" type="search" name="q" placeholder="Buscar usuários ou páginas..." autocomplete="off"
+                hx-get="/busca" hx-trigger="input changed delay:350ms, search" hx-target="#search-results">
+            <div id="search-results"></div>
+        </div>
+        <div class="topbar-right">
+            <button type="button" class="theme-toggle" aria-label="Alternar tema">
+                <img src="/static/sun_icon.png" alt="" class="theme-icon">
+            </button>
+            <a href="/profile" class="botao-user">{{ usuario.display_name or usuario.username }}</a>
+        </div>
+    </header>
+
+    <main class="social-shell">
+        <div class="social-heading">
+            <div>
+                <h1>Amizades</h1>
+                <p>Gerencie solicitações e as pessoas com quem você pode compartilhar páginas.</p>
+            </div>
+        </div>
+
+        {% if message %}<div class="flash-message">{{ message }}</div>{% endif %}
+
+        <section class="social-section">
+            <h2>Solicitações recebidas <span class="count-pill">{{ incoming|length }}</span></h2>
+            {% if incoming %}
+                <div class="user-grid">
+                    {% for friendship in incoming %}
+                        {% set friend_user = incoming_users[friendship.id] %}
+                        {% if friend_user %}
+                        <article class="user-card">
+                            <a href="/profile/{{ friend_user.id }}" class="user-card-name">
+                                {{ friend_user.display_name or friend_user.username }}
+                            </a>
+                            <span>@{{ friend_user.username }}</span>
+                            <div class="inline-actions">
+                                <form method="post" action="/friendships/{{ friendship.id }}/accept">
+                                    <input type="hidden" name="return_to" value="/friends">
+                                    <button class="primary-action" type="submit">Aceitar</button>
+                                </form>
+                                <form method="post" action="/friendships/{{ friendship.id }}/reject">
+                                    <input type="hidden" name="return_to" value="/friends">
+                                    <button class="secondary-action" type="submit">Recusar</button>
+                                </form>
+                            </div>
+                        </article>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="empty-state">Nenhuma solicitação pendente.</p>
+            {% endif %}
+        </section>
+
+        <section class="social-section">
+            <h2>Meus amigos <span class="count-pill">{{ friends|length }}</span></h2>
+            {% if friends %}
+                <div class="user-grid">
+                    {% for friend_user in friends %}
+                        <article class="user-card">
+                            <a href="/profile/{{ friend_user.id }}" class="user-card-name">
+                                {{ friend_user.display_name or friend_user.username }}
+                            </a>
+                            <span>@{{ friend_user.username }}</span>
+                            <a class="secondary-action action-link" href="/profile/{{ friend_user.id }}">Ver perfil</a>
+                        </article>
+                    {% endfor %}
+                </div>
+                <p class="sharing-hint">Para remover uma amizade, abra o perfil da pessoa.</p>
+            {% else %}
+                <p class="empty-state">Você ainda não adicionou amigos.</p>
+            {% endif %}
+        </section>
+
+        <section class="social-section">
+            <h2>Solicitações enviadas <span class="count-pill">{{ outgoing|length }}</span></h2>
+            {% if outgoing %}
+                <div class="user-grid">
+                    {% for friendship in outgoing %}
+                        {% set friend_user = outgoing_users[friendship.id] %}
+                        {% if friend_user %}
+                        <article class="user-card">
+                            <a href="/profile/{{ friend_user.id }}" class="user-card-name">
+                                {{ friend_user.display_name or friend_user.username }}
+                            </a>
+                            <span>@{{ friend_user.username }}</span>
+                            <form method="post" action="/friendships/{{ friendship.id }}/cancel">
+                                <input type="hidden" name="return_to" value="/friends">
+                                <button class="secondary-action" type="submit">Cancelar solicitação</button>
+                            </form>
+                        </article>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="empty-state">Nenhuma solicitação enviada.</p>
+            {% endif %}
+        </section>
+
+        <section class="social-section">
+            <h2>Encontrar pessoas</h2>
+            {% if suggestions %}
+                <div class="user-grid">
+                    {% for suggested_user in suggestions %}
+                        <article class="user-card">
+                            <a href="/profile/{{ suggested_user.id }}" class="user-card-name">
+                                {{ suggested_user.display_name or suggested_user.username }}
+                            </a>
+                            <span>@{{ suggested_user.username }}</span>
+                            <form method="post" action="/friendships/request/{{ suggested_user.id }}">
+                                <input type="hidden" name="return_to" value="/friends">
+                                <button class="primary-action" type="submit">Adicionar amigo</button>
+                            </form>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="empty-state">Nenhuma nova sugestão no momento.</p>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

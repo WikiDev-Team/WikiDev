@@ -3,80 +3,86 @@
 ```mermaid
 classDiagram
     class User {
-      +id: int
-      +username: str
-      +email: str
-      +display_name: str
-      +bio: str
-      +avatar_url: str
-      +created_at: datetime
-      +updated_at: datetime
+      +int id
+      +string username
+      +string email
+      +string hashed_password
+      +string token
     }
-
-    class Language {
-      +id: int
-      +name: str
-      +slug: str
-      +description: str
-      +official_url: str
-      +logo_url: str
-      +created_at: datetime
-      +updated_at: datetime
+    class PasswordResetToken {
+      +int id
+      +int user_id
+      +string token_hash
+      +datetime expires_at
+      +datetime used_at
     }
-
-    class Tag {
-      +id: int
-      +name: str
-      +slug: str
-      +created_at: datetime
-      +updated_at: datetime
+    class Friendship {
+      +int id
+      +int requester_id
+      +int addressee_id
+      +FriendshipStatus status
     }
-
+    class Folder {
+      +int id
+      +string name
+      +FolderVisibility visibility
+      +int author_id
+      +int parent_folder_id
+    }
     class Page {
-      +id: int
-      +title: str
-      +slug: str
-      +page_type: PageType
-      +status: PageStatus
-      +summary: str
-      +content: str
-      +language_id: int?
-      +author_id: int?
-      +parent_page_id: int?
-      +created_at: datetime
-      +updated_at: datetime
+      +int id
+      +string title
+      +PageStatus status
+      +PageVisibility visibility
+      +int author_id
+      +int folder_id
     }
-
+    class PageShare {
+      +int page_id
+      +int user_id
+      +PageSharePermission permission
+    }
+    class PageBlock {
+      +int id
+      +int page_id
+      +PageBlockType block_type
+      +string content
+      +int position
+    }
     class Comment {
-      +id: int
-      +page_id: int
-      +author_id: int?
-      +parent_comment_id: int?
-      +body: str
-      +is_deleted: bool
-      +created_at: datetime
-      +updated_at: datetime
+      +int id
+      +int page_id
+      +int author_id
+      +int parent_comment_id
+      +string body
+      +bool is_deleted
     }
-
     class CodeExample {
-      +id: int
-      +page_id: int
-      +author_id: int?
-      +title: str
-      +code: str
-      +explanation: str
-      +language_hint: str
-      +is_public: bool
-      +created_at: datetime
-      +updated_at: datetime
+      +int id
+      +int page_id
+      +int author_id
+      +string code
+      +bool is_public
     }
+    class Language
+    class Tag
+    class PageTagLink
 
-    User "1" --> "0..*" Page : author
-    User "1" --> "0..*" Comment : author
-    User "1" --> "0..*" CodeExample : author
-    Language "1" --> "0..*" Page
-    Page "1" --> "0..*" Comment
-    Page "1" --> "0..*" CodeExample
-    Page "0..1" --> "0..*" Page : parent_page
-    Page "*" --> "*" Tag : tags
+    User "1" --> "*" PasswordResetToken
+    User "1" --> "*" Folder : owns
+    User "1" --> "*" Page : authors
+    User "1" --> "*" Comment : authors
+    User "1" --> "*" CodeExample : authors
+    User "1" --> "*" Friendship : requester/addressee
+    Folder "0..1" --> "*" Folder : parent
+    Folder "0..1" --> "*" Page : contains
+    Page "1" --> "*" PageBlock
+    Page "1" --> "*" Comment
+    Page "1" --> "*" CodeExample
+    Page "1" --> "*" PageShare
+    User "1" --> "*" PageShare
+    Language "0..1" --> "*" Page
+    Page "*" --> "*" Tag : PageTagLink
 ```
+
+As regras de acesso não ficam espalhadas nas classes: são centralizadas em `app/permissions.py`, que combina autoria, amizade, compartilhamento específico e privacidade hierárquica das pastas.

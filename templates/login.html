@@ -27,11 +27,8 @@
                 Entre para organizar e consultar suas anotações de programação.
             </p>
 
-            {% if registered %}
-                <div class="success-message">
-                    Conta criada com sucesso! Agora faça login.
-                </div>
-            {% endif %}
+            {% if registered %}<div class="success-message">Conta criada com sucesso! Agora faça login.</div>{% endif %}
+            {% if password_reset %}<div class="success-message">Senha alterada. Entre com sua nova senha.</div>{% endif %}
 
             <form
                 method="post"
@@ -51,6 +48,7 @@
                     <input type="password" name="password" placeholder="Digite sua senha" required>
                 </label>
 
+                <div class="auth-row"><a href="/forgot-password" class="subtle-link">Esqueci minha senha</a></div>
                 <button type="submit" class="primary-button">Entrar</button>
             </form>
 

@@ -1,0 +1,33 @@
+{% macro render_comment(node) %}
+    {% set comment = node.comment %}
+    <article class="comment-thread comment-depth-{{ [node.depth, 3]|min }}">
+        <div class="comment-content">
+            {% if comment.is_deleted %}
+                <p class="comment-removed">Comentário removido</p>
+            {% else %}
+                <header class="comment-meta"><strong>{% if comment.author %}{{ comment.author.display_name or comment.author.username }}{% else %}Usuário removido{% endif %}</strong><time datetime="{{ comment.created_at.isoformat() }}">{{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}</time></header>
+                {% if node.replying_to %}<p class="comment-replying-to">Respondendo a @{{ node.replying_to.username }}</p>{% endif %}
+                <p class="comment-text">{{ comment.body }}</p>
+                {% if comment.code %}<pre class="comment-code"><code class="language-{{ comment.language }}">{{ comment.code }}</code></pre>{% endif %}
+                <div class="comment-actions">
+                    {% if node.depth < max_reply_levels %}<button type="button" hx-get="/comments/{{ comment.id }}/reply-form" hx-target="#{{ discussion_id }}-inline-form" hx-swap="innerHTML">Responder</button>{% endif %}
+                    {% if comment.author_id == current_user.id %}<button type="button" hx-get="/comments/{{ comment.id }}/edit-form" hx-target="#{{ discussion_id }}-inline-form" hx-swap="innerHTML">Editar</button><button type="button" hx-delete="/comments/{{ comment.id }}/discussion" hx-target="#{{ discussion_id }}" hx-swap="outerHTML" hx-confirm="Remover este comentário?">Remover</button>{% endif %}
+                </div>
+            {% endif %}
+        </div>
+        {% if node.replies %}<div class="comment-replies">{% for reply in node.replies %}{{ render_comment(reply) }}{% endfor %}</div>{% endif %}
+    </article>
+{% endmacro %}
+
+{% if block %}
+    <summary id="block-comment-summary-{{ block.id }}" hx-swap-oob="innerHTML">💬 {% if active_comment_count %}{{ active_comment_count }} comentário{% if active_comment_count != 1 %}s{% endif %}{% else %}Comentários{% endif %}</summary>
+{% endif %}
+
+<section id="{{ discussion_id }}" class="discussion-content">
+    <div class="comment-list">{% for node in comment_nodes %}{{ render_comment(node) }}{% else %}<p class="discussion-empty">Ainda não há comentários.</p>{% endfor %}</div>
+    <div id="{{ discussion_id }}-inline-form"></div>
+    <div class="new-comment-area">
+        <button type="button" class="comment-link-button new-comment-button" onclick="this.hidden=true; this.nextElementSibling.hidden=false;">+ Adicionar comentário</button>
+        <div class="new-comment-form" hidden>{% set collapsible_comment_form = true %}{% include "partials/comment_form.html" %}</div>
+    </div>
+</section>

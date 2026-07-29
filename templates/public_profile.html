@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ profile_user.display_name or profile_user.username }} - WikiDev</title>
+    <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
+    <script defer src="/static/theme.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/auth.css">
+</head>
+<body class="auth-page">
+    <button type="button" class="theme-toggle auth-theme-toggle" aria-label="Alternar tema">☀️</button>
+    <main class="auth-shell">
+        <section class="auth-card profile-auth-card">
+            {% if profile_user.avatar_url %}<img src="{{ profile_user.avatar_url }}" alt="Avatar" class="profile-avatar">{% else %}<img src="/static/wikidev_logo.png" alt="" class="auth-logo">{% endif %}
+            <h1>{{ profile_user.display_name or profile_user.username }}</h1>
+            <p class="auth-subtitle">@{{ profile_user.username }}</p>
+            {% if profile_user.bio %}<div class="profile-details"><p>{{ profile_user.bio }}</p></div>{% endif %}
+            <a href="/dashboard" class="profile-back-link">Voltar ao WikiDev</a>
+        </section>
+    </main>
+</body>
+</html>

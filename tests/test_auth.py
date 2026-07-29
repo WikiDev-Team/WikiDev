@@ -1,101 +1,115 @@
-# tests/test_auth.py
-import pytest
+from __future__ import annotations
+
+from urllib.parse import parse_qs, urlparse
+
 from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, create_engine
-from sqlalchemy.pool import StaticPool # <-- Nova importação crucial
+from sqlmodel import Session, select
 
-from app.main import app
-from app.db import get_session
-
-# 1. Configuração do Banco Temporário com StaticPool para Multi-threading
-sqlite_url = "sqlite:///:memory:"
-engine = create_engine(
-    sqlite_url, 
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool # <-- Força todas as threads a usarem o mesmo banco
-)
-
-def override_get_session():
-    with Session(engine) as session:
-        yield session
+import app.routers.auth as auth_module
+from app.models import PasswordResetToken, User
+from app.security import hash_token
 
 
-@pytest.fixture(name="client")
-def client_fixture():
-    # Cria as tabelas, entrega o cliente de teste, e depois limpa tudo
-    SQLModel.metadata.create_all(engine)
-    # Mágica do FastAPI: Dizemos para a API usar o nosso banco em memória em vez do original
-    app.dependency_overrides[get_session] = override_get_session
-    client = TestClient(app)
-    yield client
-    app.dependency_overrides.clear()
-    SQLModel.metadata.drop_all(engine)
+def test_registration_login_logout_and_dev_login_guard(client: TestClient, engine, register_and_login):
+    register_and_login()
 
-# ... (Mantenha todos os testes test_registro... e test_login... abaixo sem alterações)
+    dashboard = client.get("/dashboard")
+    assert dashboard.status_code == 200
+    assert "Ada" in dashboard.text
+
+    raw_cookie = client.cookies.get("session_token")
+    with Session(engine) as db_session:
+        user = db_session.exec(select(User).where(User.username == "ada")).one()
+        assert user.token == hash_token(raw_cookie)
+        assert user.token != raw_cookie
+
+    logout = client.post("/logout", headers={"HX-Request": "true"})
+    assert logout.status_code == 200
+    assert logout.headers["HX-Redirect"] == "/login"
+    assert "session_token" not in client.cookies
+    assert client.get("/dev-login").status_code == 404
 
 
-# 2. Testes de Casos de Uso (Funcionais)
-
-def test_registro_usuario_com_sucesso_htmx(client: TestClient):
-    # Simulamos o envio do formulário de registro com um header HTMX
+def test_duplicate_registration_does_not_leak_or_overwrite(client: TestClient, register_and_login):
+    register_and_login()
     response = client.post(
         "/register",
         data={
-            "username": "turing",
-            "email": "alan@computacao.com",
-            "password": "senha_segura",
-            "password_confirm": "senha_segura",
-            "display_name": "Alan Turing"
+            "username": "ada",
+            "email": "other@example.com",
+            "password": "outra-senha",
+            "password_confirm": "outra-senha",
         },
-        headers={"HX-Request": "true"}
     )
-    
-    # Valida se a sua função redirect_htmx respondeu com os headers corretos
     assert response.status_code == 200
-    assert response.headers["HX-Redirect"] == "/login?registered=1"
+    assert "já cadastrado" in response.text
 
-def test_registro_com_senhas_diferentes_retorna_erro_html(client: TestClient):
-    # Simulamos um usuário errando a digitação da senha
-    response = client.post(
-        "/register",
-        data={
-            "username": "hopper",
-            "email": "grace@computacao.com",
-            "password": "senha_segura",
-            "password_confirm": "senha_errada",
-            "display_name": "Grace Hopper"
-        }
-    )
-    
-    # Como não redirecionou, retorna 200 OK com o fragmento HTML de erro
+
+def test_password_reset_is_hashed_expiring_and_single_use(
+    client: TestClient,
+    engine,
+    register_and_login,
+    monkeypatch,
+):
+    register_and_login(password="senha-antiga")
+    client.post("/logout")
+
+    sent: dict[str, str] = {}
+
+    def fake_send_password_reset_email(*, to_email, username, reset_url, settings):
+        sent.update(to_email=to_email, username=username, reset_url=reset_url)
+
+    monkeypatch.setattr(auth_module, "send_password_reset_email", fake_send_password_reset_email)
+
+    response = client.post("/forgot-password", data={"email": "ada@example.com"})
     assert response.status_code == 200
-    assert "As senhas não coincidem." in response.text
+    assert "Se o e-mail estiver cadastrado" in response.text
+    assert sent["to_email"] == "ada@example.com"
 
-def test_login_com_sucesso_gera_cookie_de_sessao(client: TestClient):
-    # Setup: Primeiro precisamos registrar um usuário no banco temporário
-    client.post(
-        "/register",
+    raw_token = parse_qs(urlparse(sent["reset_url"]).query)["token"][0]
+    with Session(engine) as db_session:
+        stored = db_session.exec(select(PasswordResetToken)).one()
+        assert stored.token_hash == hash_token(raw_token)
+        assert stored.token_hash != raw_token
+        assert stored.used_at is None
+
+    reset = client.post(
+        "/reset-password",
         data={
-            "username": "lovelace",
-            "email": "ada@lovelace.com",
-            "password": "senha_valida",
-            "password_confirm": "senha_valida",
-            "display_name": "Ada"
-        }
+            "token": raw_token,
+            "password": "senha-nova",
+            "password_confirm": "senha-nova",
+        },
+        headers={"HX-Request": "true"},
     )
-    
-    # Execução: Tentamos logar com as mesmas credenciais via HTMX
-    response = client.post(
+    assert reset.status_code == 200
+    assert reset.headers["HX-Redirect"] == "/login?reset=1"
+
+    reused = client.post(
+        "/reset-password",
+        data={
+            "token": raw_token,
+            "password": "terceira-senha",
+            "password_confirm": "terceira-senha",
+        },
+    )
+    assert "inválido ou expirou" in reused.text
+
+    old_login = client.post("/login", data={"username": "ada", "password": "senha-antiga"})
+    assert "inválidos" in old_login.text
+    new_login = client.post(
         "/login",
-        data={
-            "username": "lovelace",
-            "password": "senha_valida"
-        },
-        headers={"HX-Request": "true"}
+        data={"username": "ada", "password": "senha-nova"},
+        headers={"HX-Request": "true"},
     )
-    
-    # Asserções críticas de segurança e navegação
+    assert new_login.headers["HX-Redirect"] == "/dashboard"
+
+    with Session(engine) as db_session:
+        user = db_session.exec(select(User).where(User.username == "ada")).one()
+        assert user.hashed_password != "senha-nova"
+
+
+def test_forgot_password_response_does_not_enumerate_accounts(client: TestClient):
+    response = client.post("/forgot-password", data={"email": "unknown@example.com"})
     assert response.status_code == 200
-    assert response.headers["HX-Redirect"] == "/dashboard"
-    # Valida se a sua rota efetivamente gerou e enviou o cookie 'session_token'
-    assert "session_token" in response.cookies
+    assert "Se o e-mail estiver cadastrado" in response.text
