@@ -113,11 +113,18 @@ def dashboard(
         ).all()
     )
 
+    open_page_id = open_page if any(page.id == open_page for page in pages) else None
+
     open_discussion = None
-    if discussion == "page":
-        open_discussion = discussion
-    elif discussion and discussion.startswith("block-") and discussion.removeprefix("block-").isdigit():
-        open_discussion = discussion
+    if open_page_id is not None:
+        if discussion == "page":
+            open_discussion = discussion
+        elif (
+            discussion
+            and discussion.startswith("block-")
+            and discussion.removeprefix("block-").isdigit()
+        ):
+            open_discussion = discussion
 
     return templates.TemplateResponse(
         request=request,
@@ -130,7 +137,7 @@ def dashboard(
             "folders": folders,
             "owned_folders": owned_folders,
             "pending_friend_requests": pending_friend_requests,
-            "open_page_id": open_page if any(page.id == open_page for page in pages) else None,
+            "open_page_id": open_page_id,
             "open_discussion": open_discussion,
         },
     )
