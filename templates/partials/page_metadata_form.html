@@ -1,32 +1,107 @@
 <div id="page-blocks-editor" class="workspace-card">
     <header class="workspace-header"><div><span class="eyebrow">Configurações</span><h1>Editar página</h1></div></header>
-    <form class="stack-form" hx-patch="/pages/{{ page.id }}" hx-target="#page-blocks-editor" hx-swap="outerHTML">
+    <form 
+        class="stack-form" 
+        hx-patch="/pages/{{ page.id }}" 
+        hx-target="#page-blocks-editor" 
+        hx-swap="outerHTML"
+        data-page-sharing-form
+        >
         <label><span>Título</span><input type="text" name="title" value="{{ page.title }}" maxlength="200" required></label>
         <label><span>Resumo</span><textarea name="summary" rows="3">{{ page.summary or '' }}</textarea></label>
         <div class="form-grid">
             <label><span>Tipo</span><select name="page_type">{% for value, label in [('personal','Pessoal'),('official','Oficial'),('question','Pergunta'),('example','Exemplo'),('note','Nota')] %}<option value="{{ value }}" {% if page.page_type.value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
             <label><span>Status</span><select name="status">{% for value, label in [('draft','Rascunho'),('published','Publicada'),('archived','Arquivada')] %}<option value="{{ value }}" {% if page.status.value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
             {% if is_owner %}
-            <label><span>Quem pode ver</span><select name="visibility">{% for value, label in [('private','Somente eu'),('friends','Todos os amigos'),('public','Todos os usuários'),('custom','Amigos específicos')] %}<option value="{{ value }}" {% if page.visibility.value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+            <label><span>Quem pode ver</span><select name="visibility" data-page-visibility>{% for value, label in [('private','Somente eu'),('friends','Todos os amigos'),('public','Todos os usuários'),('custom','Amigos específicos')] %}<option value="{{ value }}" {% if page.visibility.value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
             <label><span>Pasta</span><select name="folder_id"><option value="">Sem pasta</option>{% for folder in owned_folders %}<option value="{{ folder.id }}" {% if page.folder_id == folder.id %}selected{% endif %}>{{ folder.name }}</option>{% endfor %}</select></label>
             {% endif %}
         </div>
 
         {% if is_owner %}
-        <fieldset class="sharing-fieldset">
+        <fieldset
+            class="sharing-fieldset"
+            data-page-sharing
+            {% if page.visibility.value != 'custom' %}
+            hidden
+            disabled
+            {% endif %}
+        >
             <legend>Compartilhamento específico</legend>
-            <p>Somente amizades aceitas aparecem aqui. Editores recebem também visualização.</p>
+
+            <p>
+                Escolha uma permissão para cada amigo.
+                Quem pode editar também pode visualizar a página.
+            </p>
+
             {% if friends %}
             <div class="sharing-grid">
                 {% for friend in friends %}
-                <div class="sharing-row">
-                    <span><strong>{{ friend.display_name or friend.username }}</strong> @{{ friend.username }}</span>
-                    <label><input type="checkbox" name="shared_user_ids" value="{{ friend.id }}" {% if friend.id in shared_user_ids %}checked{% endif %}> Visualizar</label>
-                    <label><input type="checkbox" name="editor_user_ids" value="{{ friend.id }}" {% if friend.id in editor_user_ids %}checked{% endif %}> Editar</label>
+                <div
+                    class="sharing-row"
+                    data-friend-permission-row
+                >
+                    <span>
+                        <strong>
+                            {{ friend.display_name or friend.username }}
+                        </strong>
+                        @{{ friend.username }}
+                    </span>
+
+                    <select
+                        data-friend-permission
+                        aria-label="Permissão para @{{ friend.username }}"
+                    >
+                        <option
+                            value="none"
+                            {% if friend.id not in shared_user_ids %}
+                            selected
+                            {% endif %}
+                        >
+                            Sem acesso
+                        </option>
+
+                        <option
+                            value="view"
+                            {% if friend.id in shared_user_ids
+                                and friend.id not in editor_user_ids %}
+                            selected
+                            {% endif %}
+                        >
+                            Pode visualizar
+                        </option>
+
+                        <option
+                            value="edit"
+                            {% if friend.id in editor_user_ids %}
+                            selected
+                            {% endif %}
+                        >
+                            Pode editar
+                        </option>
+                    </select>
+
+                    <input
+                        type="hidden"
+                        name="shared_user_ids"
+                        value="{{ friend.id }}"
+                        disabled
+                    >
+
+                    <input
+                        type="hidden"
+                        name="editor_user_ids"
+                        value="{{ friend.id }}"
+                        disabled
+                    >
                 </div>
                 {% endfor %}
             </div>
-            {% else %}<p class="empty-state">Você ainda não tem amigos para compartilhar.</p>{% endif %}
+            {% else %}
+            <p class="empty-state">
+                Você ainda não tem amigos para compartilhar.
+            </p>
+            {% endif %}
         </fieldset>
         {% else %}
         <p class="permission-note">Você recebeu permissão para editar esta página. Somente o autor pode alterar pasta e compartilhamento.</p>
