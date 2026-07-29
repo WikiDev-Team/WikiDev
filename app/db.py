@@ -60,6 +60,20 @@ def _migrate_sqlite_schema() -> None:
                 text("CREATE INDEX IF NOT EXISTS ix_folder_visibility ON folder (visibility)")
             )
 
+        if "comment" in tables:
+            comment_columns = {column["name"] for column in inspector.get_columns("comment")}
+            if "block_id" not in comment_columns:
+                connection.execute(
+                    text("ALTER TABLE comment ADD COLUMN block_id INTEGER REFERENCES pageblock(id)")
+                )
+            if "code" not in comment_columns:
+                connection.execute(text("ALTER TABLE comment ADD COLUMN code TEXT"))
+            if "language" not in comment_columns:
+                connection.execute(text("ALTER TABLE comment ADD COLUMN language VARCHAR(20)"))
+            connection.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_comment_block_id ON comment (block_id)")
+            )
+
 
 def init_db() -> None:
     SQLModel.metadata.create_all(engine)

@@ -17,4 +17,11 @@
     {% elif block.block_type.value == "code" %}
         {% include "partials/page_block_code.html" %}
     {% endif %}
+
+    {% set comment_count = block_comment_counts.get(block.id, 0) if block_comment_counts is defined else 0 %}
+    <details class="block-discussion-panel" hx-get="/comments/blocks/{{ block.id }}/discussion"
+             hx-trigger="toggle once" hx-target="#block-discussion-slot-{{ block.id }}" hx-swap="innerHTML">
+        <summary id="block-comment-summary-{{ block.id }}">💬 {% if comment_count %}{{ comment_count }} comentário{% if comment_count != 1 %}s{% endif %}{% else %}Comentários{% endif %}</summary>
+        <div id="block-discussion-slot-{{ block.id }}" class="discussion-loading">Abra para carregar os comentários.</div>
+    </details>
 </article>
