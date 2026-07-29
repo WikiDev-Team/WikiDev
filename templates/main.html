@@ -25,6 +25,7 @@
             Amigos
             {% if pending_friend_requests %}<span class="nav-badge">{{ pending_friend_requests }}</span>{% endif %}
         </a>
+        <a href="/forum">Fórum</a>
     </nav>
 
     <div id="search-container" class="topbar-search">
@@ -57,7 +58,7 @@
         <div id="page-editor-container" aria-live="polite"></div>
         {% if open_page_id %}
         <div hx-get="/pages/{{ open_page_id }}/blocks-editor" hx-trigger="load"
-             hx-target="#page-editor-container" hx-swap="innerHTML" hidden></div>
+             hx-target="#page-editor-container" hx-swap="innerHTML" data-open-discussion="{{ open_discussion or '' }}" hidden></div>
         <script>document.getElementById('welcome-panel').hidden = true;</script>
         {% endif %}
     </main>
@@ -108,7 +109,21 @@
         highlightCodeBlocks();
         if (window.innerWidth <= 900) document.getElementById('sidebar')?.classList.add('collapsed');
     });
-    document.body.addEventListener('htmx:afterSwap', (event) => highlightCodeBlocks(event.target));
+    let pendingDiscussion = {{ open_discussion|tojson }};
+    document.body.addEventListener('htmx:afterSwap', (event) => {
+        highlightCodeBlocks(event.target);
+        if (!pendingDiscussion || event.target.id !== 'page-editor-container') return;
+        const target = pendingDiscussion === 'page'
+            ? event.target.querySelector('.page-discussion-panel')
+            : event.target.querySelector(`#block-${pendingDiscussion.replace('block-', '')} .block-discussion-panel`);
+        if (!target) return;
+        pendingDiscussion = null;
+        target.open = true;
+        htmx.ajax('GET', target.getAttribute('hx-get'), {
+            target: target.getAttribute('hx-target'),
+            swap: 'innerHTML',
+        });
+    });
     document.addEventListener('click', (event) => {
         const container = document.getElementById('search-container');
         if (container && !container.contains(event.target)) closeSearch();

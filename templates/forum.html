@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Fórum · {{ project }}</title>
+    <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script defer src="/static/theme.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar-brand"><a href="/dashboard" class="topbar-logo-link" aria-label="Página inicial"><img src="/static/wikidev_logo.png" alt="WikiDev" class="topbar-logo"></a><div><strong>WikiDev</strong><small>Sua base de conhecimento colaborativa</small></div></div>
+    <nav class="main-nav" aria-label="Navegação principal"><a href="/dashboard">Home</a><a href="/friends">Amigos</a><a href="/forum" class="active">Fórum</a></nav>
+    <div id="search-container" class="topbar-search"><label class="visually-hidden" for="global-search">Buscar usuários ou páginas</label><input id="global-search" type="search" name="q" placeholder="Buscar usuários ou páginas..." autocomplete="off" hx-get="/busca" hx-trigger="input changed delay:350ms, search" hx-target="#search-results"><div id="search-results"></div></div>
+    <div class="topbar-right"><button type="button" class="theme-toggle" aria-label="Alternar tema"><img src="/static/sun_icon.png" alt="" class="theme-icon"></button><a href="/profile" class="botao-user">{{ usuario.display_name or usuario.username }}</a></div>
+</header>
+<main class="forum-shell">
+    <header class="forum-heading"><span class="eyebrow">Fórum</span><h1>Discussões recentes</h1><p>Acompanhe as conversas mais recentes nas páginas e em seus blocos.</p></header>
+    <section class="forum-discussion-list" aria-label="Discussões recentes">
+        {% for discussion in discussions %}
+            <article class="forum-discussion-row">
+                <div class="forum-discussion-main"><a href="{{ discussion.url }}" class="forum-discussion-title">{{ discussion.page.title }}</a>{% if discussion.page.summary %}<p class="forum-page-summary">{{ discussion.page.summary }}</p>{% endif %}<p class="forum-block-context">{{ discussion.block_label }}</p></div>
+                <div class="forum-discussion-meta"><span>{{ discussion.comment_count }} comentário{% if discussion.comment_count != 1 %}s{% endif %}</span>{% if discussion.latest_author %}<span>por {{ discussion.latest_author.display_name or '@' ~ discussion.latest_author.username }}</span>{% endif %}<time datetime="{{ discussion.latest_activity.isoformat() }}">{{ discussion.latest_activity.strftime('%d/%m/%Y %H:%M') }}</time></div>
+            </article>
+        {% else %}<p class="forum-empty">Ainda não há discussões acessíveis.</p>{% endfor %}
+    </section>
+</main>
+</body>
+</html>

@@ -16,6 +16,7 @@ from .routers.auth import router as auth_router
 from .routers.comments import router as comments_router
 from .routers.examples import router as examples_router
 from .routers.folders import router as folders_router
+from .routers.forum import router as forum_router
 from .routers.friendships import router as friendships_router
 from .routers.languages import router as languages_router
 from .routers.page_blocks import router as page_blocks_router
@@ -56,6 +57,7 @@ for router in (
     search_router,
     page_blocks_router,
     friendships_router,
+    forum_router,
 ):
     app.include_router(router)
 
@@ -92,6 +94,7 @@ def root():
 def dashboard(
     request: Request,
     open_page: int | None = None,
+    discussion: str | None = None,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
@@ -110,6 +113,12 @@ def dashboard(
         ).all()
     )
 
+    open_discussion = None
+    if discussion == "page":
+        open_discussion = discussion
+    elif discussion and discussion.startswith("block-") and discussion.removeprefix("block-").isdigit():
+        open_discussion = discussion
+
     return templates.TemplateResponse(
         request=request,
         name="main.html",
@@ -122,6 +131,7 @@ def dashboard(
             "owned_folders": owned_folders,
             "pending_friend_requests": pending_friend_requests,
             "open_page_id": open_page if any(page.id == open_page for page in pages) else None,
+            "open_discussion": open_discussion,
         },
     )
 
