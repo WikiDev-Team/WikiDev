@@ -34,9 +34,15 @@ def test_comment_author_is_server_controlled(client: TestClient, register_and_lo
     _logout(client)
     register_and_login(username="commenter", email="commenter@example.com")
     commenter_id = client.get("/users/me").json()["id"]
-    created = client.post(
+    rejected = client.post(
         "/comments/",
         json={"page_id": page["id"], "author_id": owner_id, "body": "Minha opinião"},
+    )
+    assert rejected.status_code == 422
+
+    created = client.post(
+        "/comments/",
+        json={"page_id": page["id"], "body": "Minha opinião"},
     )
     assert created.status_code == 201
     assert created.json()["author_id"] == commenter_id

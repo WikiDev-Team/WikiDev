@@ -31,4 +31,9 @@
     {% elif not blocks %}
         <p class="empty-state">Esta página ainda não possui conteúdo.</p>
     {% endif %}
+    <details class="page-discussion-panel" hx-get="/comments/pages/{{ page.id }}/discussion"
+             hx-trigger="toggle once" hx-target="#page-discussion-slot-{{ page.id }}" hx-swap="innerHTML">
+        <summary>Discussão</summary>
+        <div id="page-discussion-slot-{{ page.id }}" class="discussion-loading">Abra para carregar os comentários.</div>
+    </details>
 </div>

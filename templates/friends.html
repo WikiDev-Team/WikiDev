@@ -5,25 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Amigos - WikiDev</title>
     <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script defer src="/static/theme.js"></script>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <header class="topbar compact-topbar">
-        <div class="topbar-left">
-            <a href="/profile" class="botao-user">{{ usuario.display_name or usuario.username }}</a>
-            <nav class="main-nav">
-                <a href="/dashboard">Home</a>
-                <a href="/friends" class="active">Amigos</a>
-            </nav>
+    <header class="topbar">
+        <div class="topbar-brand">
+            <a href="/dashboard" class="topbar-logo-link" aria-label="Página inicial">
+                <img src="/static/wikidev_logo.png" alt="WikiDev" class="topbar-logo">
+            </a>
+            <div><strong>WikiDev</strong><small>Sua base de conhecimento colaborativa</small></div>
+        </div>
+        <nav class="main-nav" aria-label="Navegação principal">
+            <a href="/dashboard">Home</a>
+            <a href="/friends" class="active">Amigos</a>
+            <a href="/forum">Fórum</a>
+        </nav>
+        <div id="search-container" class="topbar-search">
+            <label class="visually-hidden" for="global-search">Buscar usuários ou páginas</label>
+            <input id="global-search" type="search" name="q" placeholder="Buscar usuários ou páginas..." autocomplete="off"
+                hx-get="/busca" hx-trigger="input changed delay:350ms, search" hx-target="#search-results">
+            <div id="search-results"></div>
         </div>
         <div class="topbar-right">
-            <a href="/dashboard" class="topbar-logo-link" aria-label="Página inicial do WikiDev">
-                <img src="/static/wikidev_logo.png" alt="Logo do WikiDev" class="topbar-logo">
-            </a>
             <button type="button" class="theme-toggle" aria-label="Alternar tema">
                 <img src="/static/sun_icon.png" alt="" class="theme-icon">
             </button>
+            <a href="/profile" class="botao-user">{{ usuario.display_name or usuario.username }}</a>
         </div>
     </header>
 

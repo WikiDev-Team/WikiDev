@@ -191,143 +191,20 @@ def test_visibility_edit_and_friendship_revocation(client: TestClient, engine):
         assert session.get(Friendship, friendship_id) is None
         assert session.get(PageShare, (viewer_id, bob_id)) is None
 
-
-def test_folder_visibility_and_friendship_revocation(
+def test_page_sharing_forms_use_one_permission_per_friend(
     client: TestClient,
     engine,
 ):
     alice_id, alice_token = _create_authenticated_user(
         client,
         engine,
-        "alice_folder_share",
+        "alice_sharing_form",
     )
 
-    bob_id, bob_token = _create_authenticated_user(
+    bob_id, _ = _create_authenticated_user(
         client,
         engine,
-        "bob_folder_share",
-    )
-
-    _, charlie_token = _create_authenticated_user(
-        client,
-        engine,
-        "charlie_folder_share",
-    )
-
-    with Session(engine) as session:
-        friendship = Friendship(
-            requester_id=alice_id,
-            addressee_id=bob_id,
-            status=FriendshipStatus.ACCEPTED,
-        )
-        session.add(friendship)
-        session.commit()
-        session.refresh(friendship)
-        friendship_id = friendship.id
-
-    _login_as(client, alice_token)
-
-    private_id = _create_folder(
-        client,
-        "Private folder test",
-        "private",
-    )
-
-    friends_id = _create_folder(
-        client,
-        "Friends folder test",
-        "friends",
-    )
-
-    custom_id = _create_folder(
-        client,
-        "Custom folder test",
-        "custom",
-        viewers=[bob_id],
-    )
-
-    public_id = _create_folder(
-        client,
-        "Public folder test",
-        "public",
-    )
-
-    with Session(engine) as session:
-        assert session.get(
-            FolderShare,
-            (custom_id, bob_id),
-        ) is not None
-
-    _login_as(client, bob_token)
-
-    assert client.get(
-        f"/folders/{private_id}"
-    ).status_code == 403
-
-    assert client.get(
-        f"/folders/{friends_id}"
-    ).status_code == 200
-
-    assert client.get(
-        f"/folders/{custom_id}"
-    ).status_code == 200
-
-    assert client.get(
-        f"/folders/{public_id}"
-    ).status_code == 200
-
-    _login_as(client, charlie_token)
-
-    assert client.get(
-        f"/folders/{friends_id}"
-    ).status_code == 403
-
-    assert client.get(
-        f"/folders/{custom_id}"
-    ).status_code == 403
-
-    assert client.get(
-        f"/folders/{public_id}"
-    ).status_code == 200
-
-    _login_as(client, bob_token)
-
-    removed = client.post(
-        f"/friendships/{friendship_id}/remove",
-        data={"return_to": "/friends"},
-        follow_redirects=False,
-    )
-
-    assert removed.status_code == 303
-
-    assert client.get(
-        f"/folders/{friends_id}"
-    ).status_code == 403
-
-    assert client.get(
-        f"/folders/{custom_id}"
-    ).status_code == 403
-
-    with Session(engine) as session:
-        assert session.get(
-            FolderShare,
-            (custom_id, bob_id),
-        ) is None
-
-def test_folder_visibility_respects_parent_folders(
-    client: TestClient,
-    engine,
-):
-    alice_id, alice_token = _create_authenticated_user(
-        client,
-        engine,
-        "alice_folder_parent",
-    )
-
-    bob_id, bob_token = _create_authenticated_user(
-        client,
-        engine,
-        "bob_folder_parent",
+        "bob_sharing_form",
     )
 
     with Session(engine) as session:
@@ -342,12 +219,101 @@ def test_folder_visibility_respects_parent_folders(
 
     _login_as(client, alice_token)
 
-    private_parent = _create_folder(
+    create_form = client.get("/pages/new")
+
+    assert create_form.status_code == 200
+    assert "data-page-sharing-form" in create_form.text
+    assert "data-page-visibility" in create_form.text
+    assert "data-page-sharing" in create_form.text
+    assert "data-friend-permission" in create_form.text
+    assert "Sem acesso" in create_form.text
+    assert "Pode visualizar" in create_form.text
+    assert "Pode editar" in create_form.text
+    assert 'type="checkbox"' not in create_form.text
+
+    page_id = _create_page(
         client,
-        "Private parent",
-        "private",
+        "Página com compartilhamento",
+        "custom",
+        editors=[bob_id],
     )
 
+    edit_form = client.get(
+        f"/pages/{page_id}/metadata/edit"
+    )
+
+    assert edit_form.status_code == 200
+    assert "data-page-sharing-form" in edit_form.text
+    assert "data-friend-permission" in edit_form.text
+    assert 'value="edit"' in edit_form.text
+    assert 'type="checkbox"' not in edit_form.text
+
+def test_folder_visibility_and_friendship_revocation(client: TestClient, engine):
+    alice_id, alice_token = _create_authenticated_user(client, engine, "alice_folder_share")
+    bob_id, bob_token = _create_authenticated_user(client, engine, "bob_folder_share")
+    _, charlie_token = _create_authenticated_user(client, engine, "charlie_folder_share")
+
+    with Session(engine) as session:
+        friendship = Friendship(
+            requester_id=alice_id,
+            addressee_id=bob_id,
+            status=FriendshipStatus.ACCEPTED,
+        )
+        session.add(friendship)
+        session.commit()
+        session.refresh(friendship)
+        friendship_id = friendship.id
+
+    _login_as(client, alice_token)
+    private_id = _create_folder(client, "Private folder test", "private")
+    friends_id = _create_folder(client, "Friends folder test", "friends")
+    custom_id = _create_folder(client, "Custom folder test", "custom", viewers=[bob_id])
+    public_id = _create_folder(client, "Public folder test", "public")
+
+    with Session(engine) as session:
+        assert session.get(FolderShare, (custom_id, bob_id)) is not None
+
+    _login_as(client, bob_token)
+    assert client.get(f"/folders/{private_id}").status_code == 403
+    assert client.get(f"/folders/{friends_id}").status_code == 200
+    assert client.get(f"/folders/{custom_id}").status_code == 200
+    assert client.get(f"/folders/{public_id}").status_code == 200
+
+    _login_as(client, charlie_token)
+    assert client.get(f"/folders/{friends_id}").status_code == 403
+    assert client.get(f"/folders/{custom_id}").status_code == 403
+    assert client.get(f"/folders/{public_id}").status_code == 200
+
+    _login_as(client, bob_token)
+    removed = client.post(
+        f"/friendships/{friendship_id}/remove",
+        data={"return_to": "/friends"},
+        follow_redirects=False,
+    )
+    assert removed.status_code == 303
+    assert client.get(f"/folders/{friends_id}").status_code == 403
+    assert client.get(f"/folders/{custom_id}").status_code == 403
+
+    with Session(engine) as session:
+        assert session.get(FolderShare, (custom_id, bob_id)) is None
+
+
+def test_folder_visibility_respects_parent_folders(client: TestClient, engine):
+    alice_id, alice_token = _create_authenticated_user(client, engine, "alice_folder_parent")
+    bob_id, bob_token = _create_authenticated_user(client, engine, "bob_folder_parent")
+
+    with Session(engine) as session:
+        session.add(
+            Friendship(
+                requester_id=alice_id,
+                addressee_id=bob_id,
+                status=FriendshipStatus.ACCEPTED,
+            )
+        )
+        session.commit()
+
+    _login_as(client, alice_token)
+    private_parent = _create_folder(client, "Private parent", "private")
     blocked_child = _create_folder(
         client,
         "Shared child under private parent",
@@ -355,14 +321,7 @@ def test_folder_visibility_respects_parent_folders(
         viewers=[bob_id],
         parent_folder_id=private_parent,
     )
-
-    shared_parent = _create_folder(
-        client,
-        "Shared parent",
-        "custom",
-        viewers=[bob_id],
-    )
-
+    shared_parent = _create_folder(client, "Shared parent", "custom", viewers=[bob_id])
     visible_child = _create_folder(
         client,
         "Public child under shared parent",
@@ -371,37 +330,16 @@ def test_folder_visibility_respects_parent_folders(
     )
 
     _login_as(client, bob_token)
+    assert client.get(f"/folders/{blocked_child}").status_code == 403
+    assert client.get(f"/folders/{shared_parent}").status_code == 200
+    assert client.get(f"/folders/{visible_child}").status_code == 200
 
-    assert client.get(
-        f"/folders/{blocked_child}"
-    ).status_code == 403
 
-    assert client.get(
-        f"/folders/{shared_parent}"
-    ).status_code == 200
-
-    assert client.get(
-        f"/folders/{visible_child}"
-    ).status_code == 200
-
-def test_update_folder_without_shared_users(
-    client: TestClient,
-    engine,
-):
-    _, alice_token = _create_authenticated_user(
-        client,
-        engine,
-        "alice_folder_update",
-    )
-
+def test_update_folder_without_shared_users(client: TestClient, engine):
+    _, alice_token = _create_authenticated_user(client, engine, "alice_folder_update")
     _login_as(client, alice_token)
 
-    folder_id = _create_folder(
-        client,
-        "Folder without shares",
-        "private",
-    )
-
+    folder_id = _create_folder(client, "Folder without shares", "private")
     response = client.patch(
         f"/folders/{folder_id}/ui",
         data={
@@ -411,5 +349,41 @@ def test_update_folder_without_shared_users(
             "parent_folder_id": "",
         },
     )
-
     assert response.status_code == 200, response.text
+
+
+def test_page_sharing_forms_use_one_permission_per_friend(client: TestClient, engine):
+    alice_id, alice_token = _create_authenticated_user(client, engine, "alice_sharing_form")
+    bob_id, _ = _create_authenticated_user(client, engine, "bob_sharing_form")
+
+    with Session(engine) as session:
+        session.add(
+            Friendship(
+                requester_id=alice_id,
+                addressee_id=bob_id,
+                status=FriendshipStatus.ACCEPTED,
+            )
+        )
+        session.commit()
+
+    _login_as(client, alice_token)
+
+    create_form = client.get("/pages/new")
+    assert create_form.status_code == 200
+    assert "data-page-sharing-form" in create_form.text
+    assert "data-page-visibility" in create_form.text
+    assert "data-page-sharing" in create_form.text
+    assert "data-friend-permission" in create_form.text
+    assert "Sem acesso" in create_form.text
+    assert "Pode visualizar" in create_form.text
+    assert "Pode editar" in create_form.text
+    assert 'type="checkbox"' not in create_form.text
+
+    page_id = _create_page(client, "Página com compartilhamento", "custom", editors=[bob_id])
+
+    edit_form = client.get(f"/pages/{page_id}/metadata/edit")
+    assert edit_form.status_code == 200
+    assert "data-page-sharing-form" in edit_form.text
+    assert "data-friend-permission" in edit_form.text
+    assert 'value="edit"' in edit_form.text
+    assert 'type="checkbox"' not in edit_form.text

@@ -5,7 +5,7 @@ from sqlmodel import Session, select
 from ..crud import create_page_block, delete_page_block, update_page_block
 from ..db import get_session
 from ..dependencies import get_current_user
-from ..models import Page, PageBlock, PageBlockCreate, PageBlockType, PageBlockUpdate, User
+from ..models import Comment, Page, PageBlock, PageBlockCreate, PageBlockType, PageBlockUpdate, User
 from ..permissions import can_edit_page, require_page_edit, require_page_view
 from ..templates import templates
 
@@ -34,6 +34,19 @@ def list_blocks(session: Session, page_id: int) -> list[PageBlock]:
     ).all()
 
 
+def block_comment_counts(session: Session, blocks: list[PageBlock]) -> dict[int, int]:
+    block_ids = [block.id for block in blocks]
+    if not block_ids:
+        return {}
+    comments = session.exec(
+        select(Comment).where(Comment.block_id.in_(block_ids), Comment.is_deleted.is_(False))
+    ).all()
+    counts = {block_id: 0 for block_id in block_ids}
+    for comment in comments:
+        counts[comment.block_id] += 1
+    return counts
+
+
 @router.get("/{page_id}/blocks-editor", response_class=HTMLResponse)
 def blocks_editor(
     request: Request,
@@ -45,12 +58,14 @@ def blocks_editor(
     require_page_view(session, page, current_user)
     editable = can_edit_page(session, page, current_user)
 
+    blocks = list_blocks(session, page_id)
     return templates.TemplateResponse(
         request=request,
         name="partials/page_blocks_editor.html",
         context={
             "page": page,
-            "blocks": list_blocks(session, page_id),
+            "blocks": blocks,
+            "block_comment_counts": block_comment_counts(session, blocks),
             "can_edit": editable,
             "is_owner": page.author_id == current_user.id,
         },
@@ -100,6 +115,7 @@ def get_block_partial(
         context={
             "block": block,
             "can_edit": can_edit_page(session, page, current_user),
+            "block_comment_counts": block_comment_counts(session, [block]),
         },
     )
 
@@ -118,7 +134,7 @@ def edit_block_form(
     return templates.TemplateResponse(
         request=request,
         name="partials/page_block_form.html",
-        context={"block": block, "can_edit": True},
+        context={"block": block, "can_edit": True, "block_comment_counts": block_comment_counts(session, [block])},
     )
 
 
@@ -145,7 +161,7 @@ def update_block(
     return templates.TemplateResponse(
         request=request,
         name="partials/page_block.html",
-        context={"block": block, "can_edit": True},
+        context={"block": block, "can_edit": True, "block_comment_counts": block_comment_counts(session, [block])},
     )
 
 
