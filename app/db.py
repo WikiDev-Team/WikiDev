@@ -50,16 +50,16 @@ def _migrate_sqlite_schema() -> None:
                 connection.execute(
                     text(
                         "ALTER TABLE page "
-                        "ADD COLUMN edit_policy VARCHAR(20) NOT NULL DEFAULT 'owner'"
+                        "ADD COLUMN edit_policy VARCHAR(20) NOT NULL DEFAULT 'OWNER'"
                     )
                 )
                 connection.execute(
                     text(
-                        "UPDATE page SET edit_policy = 'custom' "
-                        "WHERE visibility = 'custom' AND EXISTS ("
+                        "UPDATE page SET edit_policy = 'CUSTOM' "
+                        "WHERE visibility = 'CUSTOM' AND EXISTS ("
                         "SELECT 1 FROM pageshare "
                         "WHERE pageshare.page_id = page.id "
-                        "AND pageshare.permission = 'edit'"
+                        "AND pageshare.permission = 'EDIT'"
                         ")"
                     )
                 )
@@ -83,7 +83,7 @@ def _migrate_sqlite_schema() -> None:
                 connection.execute(
                     text(
                         "ALTER TABLE folder "
-                        "ADD COLUMN edit_policy VARCHAR(20) NOT NULL DEFAULT 'owner'"
+                        "ADD COLUMN edit_policy VARCHAR(20) NOT NULL DEFAULT 'OWNER'"
                     )
                 )
             connection.execute(
@@ -98,7 +98,7 @@ def _migrate_sqlite_schema() -> None:
                 connection.execute(
                     text(
                         "ALTER TABLE foldershare "
-                        "ADD COLUMN permission VARCHAR(20) NOT NULL DEFAULT 'view'"
+                        "ADD COLUMN permission VARCHAR(20) NOT NULL DEFAULT 'VIEW'"
                     )
                 )
 
