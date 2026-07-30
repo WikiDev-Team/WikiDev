@@ -16,6 +16,7 @@ labels_grafico = [
 valores_sloc = []
 valores_cc = []
 valores_halstead = []
+contagem_funcs = []
 
 for cp in checkpoints:
     # 1. Linhas de Código (SLOC) - Arquivos raw-*.json
@@ -42,8 +43,10 @@ for cp in checkpoints:
                     num_funcs += 1
             cc_media = cc_total / num_funcs if num_funcs > 0 else 0
             valores_cc.append(cc_media)
+            contagem_funcs.append(num_funcs)
     else:
         valores_cc.append(None)
+        contagem_funcs.append(None)
 
     # 3. Esforço de Halstead - Arquivos hal-*.json
     arq_hal = f"{cp}/hal-{cp}.json"
@@ -51,7 +54,8 @@ for cp in checkpoints:
         with open(arq_hal, 'r') as f:
             dados_hal = json.load(f)
             esforco_total = sum(arq["total"]["effort"] for arq in dados_hal.values())
-            valores_halstead.append(esforco_total)
+            n = contagem_funcs[-1]
+            valores_halstead.append(esforco_total / n if n else 0)
     else:
         valores_halstead.append(None)
 
@@ -74,8 +78,8 @@ axs[1].tick_params(axis='x', rotation=45)
 
 # Gráfico 3: Esforço de Halstead
 axs[2].plot(labels_grafico, valores_halstead, marker='D', color='#9467bd', linewidth=2)
-axs[2].set_title('Esforço Total de Halstead')
-axs[2].set_ylabel('Esforço Cognitivo')
+axs[2].set_title('Esforço de Halstead por função')
+axs[2].set_ylabel('Esforço cognitivo médio por função')
 axs[2].grid(True, linestyle='--', alpha=0.7)
 axs[2].tick_params(axis='x', rotation=45)
 
