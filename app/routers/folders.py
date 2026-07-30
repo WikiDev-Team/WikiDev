@@ -8,6 +8,7 @@ from ..crud import create_folder, create_page, update_folder
 from ..db import get_session
 from ..dependencies import get_current_user
 from ..models import (
+    EditPolicy,
     Folder,
     FolderShare,
     FolderCreate,
@@ -22,12 +23,15 @@ from ..models import (
 )
 from ..permissions import (
     accessible_folders,
+    can_edit_folder,
+    can_manage_folder,
     can_view_folder,
     can_view_page,
     get_folder_share_user_ids,
     get_friend_users,
     replace_folder_shares,
     require_folder_edit,
+    require_folder_owner,
     require_folder_view,
     require_page_view,
 )
@@ -77,7 +81,7 @@ def _validate_parent(
     if parent_folder_id is None:
         return
     parent = _folder_or_404(session, parent_folder_id)
-    require_folder_edit(parent, current_user)
+    require_folder_owner(parent, current_user)
 
     visited: set[int] = set()
     cursor: Folder | None = parent
@@ -112,7 +116,8 @@ def _folder_panel_context(session: Session, folder: Folder, current_user: User) 
         "folder_pages": visible_pages,
         "attachable_pages": attachable_pages,
         "subfolders": subfolders,
-        "can_edit": folder.author_id == current_user.id,
+        "can_edit": can_edit_folder(session, folder, current_user),
+        "can_manage": can_manage_folder(folder, current_user),
     }
 
 
@@ -138,6 +143,7 @@ def new_folder_form(
                 current_user.id,
             ),
             "shared_user_ids": set(),
+            "editor_user_ids": set(),
         },
     )
 
@@ -150,8 +156,13 @@ def create_folder_ui(
     visibility: FolderVisibility = Form(
         FolderVisibility.PRIVATE
     ),
+    edit_policy: EditPolicy = Form(EditPolicy.OWNER),
     parent_folder_id: str = Form(""),
     shared_user_ids: Annotated[
+        list[int] | None,
+        Form(),
+    ] = None,
+    editor_user_ids: Annotated[
         list[int] | None,
         Form(),
     ] = None,
@@ -161,12 +172,17 @@ def create_folder_ui(
     
     parsed_parent = _parse_optional_id(parent_folder_id, field_name="Pasta pai")
     _validate_parent(session, parsed_parent, current_user)
+    if visibility == FolderVisibility.PRIVATE:
+        edit_policy = EditPolicy.OWNER
+    elif editor_user_ids and edit_policy == EditPolicy.OWNER:
+        edit_policy = EditPolicy.CUSTOM
     folder = create_folder(
         session,
         FolderCreate(
             name=_clean_folder_name(name),
             description=description.strip(),
             visibility=visibility,
+            edit_policy=edit_policy,
             author_id=current_user.id,
             parent_folder_id=parsed_parent,
         ),
@@ -176,6 +192,7 @@ def create_folder_ui(
         folder,
         current_user.id,
         shared_user_ids or [],
+        editor_user_ids or [],
     )
     session.commit()
 
@@ -215,7 +232,7 @@ def edit_folder_form(
     current_user: User = Depends(get_current_user),
 ):
     folder = _folder_or_404(session, folder_id)
-    require_folder_edit(folder, current_user)
+    require_folder_owner(folder, current_user)
     owned_folders = session.exec(
         select(Folder).where(Folder.author_id == current_user.id).order_by(Folder.name)
     ).all()
@@ -234,10 +251,8 @@ def edit_folder_form(
                 session,
                 current_user.id,
             ),
-            "shared_user_ids": get_folder_share_user_ids(
-                session,
-                folder.id,
-            ),
+            "shared_user_ids": get_folder_share_user_ids(session, folder.id)[0],
+            "editor_user_ids": get_folder_share_user_ids(session, folder.id)[1],
         },
     )
 
@@ -249,12 +264,15 @@ def update_folder_ui(
     name: str = Form(...),
     description: str = Form(""),
     visibility: FolderVisibility = Form(FolderVisibility.PRIVATE),
+    edit_policy: EditPolicy = Form(EditPolicy.OWNER),
     parent_folder_id: str = Form(""),
+    shared_user_ids: Annotated[list[int] | None, Form()] = None,
+    editor_user_ids: Annotated[list[int] | None, Form()] = None,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
     folder = _folder_or_404(session, folder_id)
-    require_folder_edit(folder, current_user)
+    require_folder_owner(folder, current_user)
     parsed_parent = _parse_optional_id(parent_folder_id, field_name="Pasta pai")
     _validate_parent(
         session,
@@ -269,20 +287,23 @@ def update_folder_ui(
             name=_clean_folder_name(name),
             description=description.strip(),
             visibility=visibility,
+            edit_policy=(
+                EditPolicy.OWNER
+                if visibility == FolderVisibility.PRIVATE
+                else EditPolicy.CUSTOM
+                if editor_user_ids and edit_policy == EditPolicy.OWNER
+                else edit_policy
+            ),
             parent_folder_id=parsed_parent,
         ),
     )
-
-    shared_user_ids: Annotated[
-        list[int] | None,
-        Form(),
-    ] = None,
 
     replace_folder_shares(
         session,
         folder,
         current_user.id,
         shared_user_ids or [],
+        editor_user_ids or [],
     )
     session.commit() 
 
@@ -304,7 +325,7 @@ def delete_folder_ui(
     current_user: User = Depends(get_current_user),
 ):
     folder = _folder_or_404(session, folder_id)
-    require_folder_edit(folder, current_user)
+    require_folder_owner(folder, current_user)
     for page in session.exec(select(Page).where(Page.folder_id == folder_id)).all():
         page.folder_id = None
         session.add(page)
@@ -339,7 +360,7 @@ def attach_page_ui(
 ):
     folder = _folder_or_404(session, folder_id)
     page = _page_or_404(session, page_id)
-    require_folder_edit(folder, current_user)
+    require_folder_edit(session, folder, current_user)
     require_page_view(session, page, current_user)
     page.folder_id = folder.id
     session.add(page)
@@ -362,7 +383,7 @@ def detach_page_ui(
 ):
     folder = _folder_or_404(session, folder_id)
     page = _page_or_404(session, page_id)
-    require_folder_edit(folder, current_user)
+    require_folder_edit(session, folder, current_user)
     if page.folder_id != folder.id:
         raise HTTPException(status_code=409, detail="A página não está nesta pasta")
     page.folder_id = None
@@ -401,7 +422,16 @@ def add_folder(
     current_user: User = Depends(get_current_user),
 ):
     _validate_parent(session, payload.parent_folder_id, current_user)
-    safe_payload = payload.model_copy(update={"author_id": current_user.id})
+    safe_payload = payload.model_copy(
+        update={
+            "author_id": current_user.id,
+            "edit_policy": (
+                EditPolicy.OWNER
+                if payload.visibility == FolderVisibility.PRIVATE
+                else payload.edit_policy
+            ),
+        }
+    )
     return create_folder(session, safe_payload)
 
 
@@ -442,7 +472,7 @@ def create_page_in_folder(
     current_user: User = Depends(get_current_user),
 ):
     folder = _folder_or_404(session, folder_id)
-    require_folder_edit(folder, current_user)
+    require_folder_edit(session, folder, current_user)
     updates = {"folder_id": folder.id, "author_id": current_user.id}
     # Pela API de contexto, visibilidade omitida significa "herdar a pasta".
     # A página fica pública, mas continua bloqueada enquanto qualquer pasta
@@ -463,7 +493,7 @@ def add_existing_page_to_folder(
 ):
     folder = _folder_or_404(session, folder_id)
     page = _page_or_404(session, page_id)
-    require_folder_edit(folder, current_user)
+    require_folder_edit(session, folder, current_user)
     require_page_view(session, page, current_user)
     page.folder_id = folder.id
     session.add(page)
@@ -481,7 +511,7 @@ def remove_page_from_folder(
 ):
     folder = _folder_or_404(session, folder_id)
     page = _page_or_404(session, page_id)
-    require_folder_edit(folder, current_user)
+    require_folder_edit(session, folder, current_user)
     if page.folder_id != folder.id:
         raise HTTPException(status_code=409, detail="A página não está nesta pasta")
     page.folder_id = None
@@ -497,7 +527,7 @@ def edit_folder(
     current_user: User = Depends(get_current_user),
 ):
     folder = _folder_or_404(session, folder_id)
-    require_folder_edit(folder, current_user)
+    require_folder_owner(folder, current_user)
     if "parent_folder_id" in payload.model_fields_set:
         _validate_parent(
             session,
@@ -512,13 +542,15 @@ def edit_folder(
     )
 
     if (
-        "visibility" in payload.model_fields_set
+        {"visibility", "edit_policy"} & payload.model_fields_set
         and folder.visibility != FolderVisibility.CUSTOM
+        and folder.edit_policy != EditPolicy.CUSTOM
     ):
         replace_folder_shares(
             session,
             folder,
             current_user.id,
+            [],
             [],
         )
         session.commit()
@@ -533,7 +565,7 @@ def remove_folder(
     current_user: User = Depends(get_current_user),
 ):
     folder = _folder_or_404(session, folder_id)
-    require_folder_edit(folder, current_user)
+    require_folder_owner(folder, current_user)
     for page in session.exec(select(Page).where(Page.folder_id == folder_id)).all():
         page.folder_id = None
         session.add(page)

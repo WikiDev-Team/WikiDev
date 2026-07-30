@@ -79,6 +79,28 @@ def _migrate_sqlite_schema() -> None:
             connection.execute(
                 text("CREATE INDEX IF NOT EXISTS ix_folder_visibility ON folder (visibility)")
             )
+            if "edit_policy" not in folder_columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE folder "
+                        "ADD COLUMN edit_policy VARCHAR(20) NOT NULL DEFAULT 'owner'"
+                    )
+                )
+            connection.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_folder_edit_policy ON folder (edit_policy)")
+            )
+
+        if "foldershare" in tables:
+            folder_share_columns = {
+                column["name"] for column in inspector.get_columns("foldershare")
+            }
+            if "permission" not in folder_share_columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE foldershare "
+                        "ADD COLUMN permission VARCHAR(20) NOT NULL DEFAULT 'view'"
+                    )
+                )
 
         if "comment" in tables:
             comment_columns = {column["name"] for column in inspector.get_columns("comment")}

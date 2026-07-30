@@ -238,6 +238,7 @@ class FolderBase(SQLModel):
     slug: str = Field(default="", index=True, max_length=170, unique=True)
     description: str = Field(default="")
     visibility: FolderVisibility = Field(default=FolderVisibility.PRIVATE, index=True)
+    edit_policy: EditPolicy = Field(default=EditPolicy.OWNER, index=True)
     author_id: Optional[int] = Field(default=None, foreign_key="user.id")
     parent_folder_id: Optional[int] = Field(default=None, foreign_key="folder.id")
 
@@ -267,6 +268,7 @@ class FolderUpdate(SQLModel):
     slug: Optional[str] = Field(default=None, max_length=170)
     description: Optional[str] = None
     visibility: Optional[FolderVisibility] = None
+    edit_policy: Optional[EditPolicy] = None
     parent_folder_id: Optional[int] = None
 
 class FolderShare(SQLModel, table=True):
@@ -278,6 +280,7 @@ class FolderShare(SQLModel, table=True):
         foreign_key="user.id",
         primary_key=True,
     )
+    permission: PageSharePermission = Field(default=PageSharePermission.VIEW)
     created_at: datetime = Field(
         default_factory=now_utc,
         sa_column=Column(DateTime, nullable=False),

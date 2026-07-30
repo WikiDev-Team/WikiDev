@@ -151,7 +151,7 @@ def add_page_htmx(
         folder = session.get(Folder, parsed_folder_id)
         if folder is None:
             raise HTTPException(status_code=404, detail="Pasta não encontrada")
-        require_folder_edit(folder, current_user)
+        require_folder_edit(session, folder, current_user)
 
     if visibility == PageVisibility.PRIVATE:
         edit_policy = EditPolicy.OWNER
@@ -207,7 +207,7 @@ def new_page_form(
         folder = session.get(Folder, folder_id)
         if folder is None:
             raise HTTPException(status_code=404, detail="Pasta não encontrada")
-        require_folder_edit(folder, current_user)
+        require_folder_edit(session, folder, current_user)
     return templates.TemplateResponse(
         request=request,
         name="partials/page_create.html",
@@ -275,7 +275,7 @@ def edit_page(
                 folder = session.get(Folder, parsed_folder_id)
                 if folder is None:
                     raise HTTPException(status_code=404, detail="Pasta não encontrada")
-                require_folder_edit(folder, current_user)
+                require_folder_edit(session, folder, current_user)
             updates["folder_id"] = parsed_folder_id
 
     page = update_page(session, page, PageUpdate(**updates))

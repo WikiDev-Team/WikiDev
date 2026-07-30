@@ -73,6 +73,8 @@ def _create_folder(
     name: str,
     visibility: str,
     viewers=None,
+    editors=None,
+    edit_policy="owner",
     parent_folder_id=None,
 ) -> int:
     response = client.post(
@@ -81,6 +83,7 @@ def _create_folder(
             "name": name,
             "description": "Pasta de teste",
             "visibility": visibility,
+            "edit_policy": edit_policy,
             "parent_folder_id": (
                 ""
                 if parent_folder_id is None
@@ -89,6 +92,10 @@ def _create_folder(
             "shared_user_ids": [
                 str(value)
                 for value in (viewers or [])
+            ],
+            "editor_user_ids": [
+                str(value)
+                for value in (editors or [])
             ],
         },
     )
@@ -336,6 +343,7 @@ def test_folder_visibility_and_friendship_revocation(client: TestClient, engine)
     assert client.get(f"/folders/{custom_id}").status_code == 200
     assert client.get(f"/folders/{public_id}").status_code == 200
 
+
     _login_as(client, charlie_token)
     assert client.get(f"/folders/{friends_id}").status_code == 403
     assert client.get(f"/folders/{custom_id}").status_code == 403
@@ -353,6 +361,40 @@ def test_folder_visibility_and_friendship_revocation(client: TestClient, engine)
 
     with Session(engine) as session:
         assert session.get(FolderShare, (custom_id, bob_id)) is None
+
+
+def test_folder_can_be_edited_by_selected_friend(client: TestClient, engine):
+    alice_id, alice_token = _create_authenticated_user(client, engine, "alice_folder_edit")
+    bob_id, bob_token = _create_authenticated_user(client, engine, "bob_folder_edit")
+
+    with Session(engine) as session:
+        session.add(
+            Friendship(
+                requester_id=alice_id,
+                addressee_id=bob_id,
+                status=FriendshipStatus.ACCEPTED,
+            )
+        )
+        session.commit()
+
+    _login_as(client, alice_token)
+    folder_id = _create_folder(
+        client,
+        "Pasta com editor",
+        "public",
+        editors=[bob_id],
+        edit_policy="custom",
+    )
+
+    _login_as(client, bob_token)
+    assert client.post(
+        f"/folders/{folder_id}/pages",
+        json={"title": "Página do editor", "tag_ids": []},
+    ).status_code == 201
+    assert client.patch(
+        f"/folders/{folder_id}",
+        json={"name": "Tentativa de configuração"},
+    ).status_code == 403
 
 
 def test_folder_visibility_respects_parent_folders(client: TestClient, engine):
