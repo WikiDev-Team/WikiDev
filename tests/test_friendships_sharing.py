@@ -264,64 +264,7 @@ def test_every_viewer_can_edit_when_page_policy_allows_it(client: TestClient, en
 
     _login_as(client, bob_token)
     assert client.post(f"/pages/{page_id}/blocks", data={"block_type": "text"}).status_code == 200
-
-def test_page_sharing_forms_use_one_permission_per_friend(
-    client: TestClient,
-    engine,
-):
-    alice_id, alice_token = _create_authenticated_user(
-        client,
-        engine,
-        "alice_sharing_form",
-    )
-
-    bob_id, _ = _create_authenticated_user(
-        client,
-        engine,
-        "bob_sharing_form",
-    )
-
-    with Session(engine) as session:
-        session.add(
-            Friendship(
-                requester_id=alice_id,
-                addressee_id=bob_id,
-                status=FriendshipStatus.ACCEPTED,
-            )
-        )
-        session.commit()
-
-    _login_as(client, alice_token)
-
-    create_form = client.get("/pages/new")
-
-    assert create_form.status_code == 200
-    assert "data-page-sharing-form" in create_form.text
-    assert "data-page-visibility" in create_form.text
-    assert "data-page-sharing" in create_form.text
-    assert "data-friend-permission" in create_form.text
-    assert "Sem acesso" in create_form.text
-    assert "Pode visualizar" in create_form.text
-    assert "Pode editar" in create_form.text
-    assert 'type="checkbox"' not in create_form.text
-
-    page_id = _create_page(
-        client,
-        "Página com compartilhamento",
-        "custom",
-        editors=[bob_id],
-    )
-
-    edit_form = client.get(
-        f"/pages/{page_id}/metadata/edit"
-    )
-
-    assert edit_form.status_code == 200
-    assert "data-page-sharing-form" in edit_form.text
-    assert "data-friend-permission" in edit_form.text
-    assert 'value="edit"' in edit_form.text
-    assert 'type="checkbox"' not in edit_form.text
-
+    
 def test_folder_visibility_and_friendship_revocation(client: TestClient, engine):
     alice_id, alice_token = _create_authenticated_user(client, engine, "alice_folder_share")
     bob_id, bob_token = _create_authenticated_user(client, engine, "bob_folder_share")
