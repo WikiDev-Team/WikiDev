@@ -155,6 +155,10 @@ def add_page_htmx(
 
     if visibility == PageVisibility.PRIVATE:
         edit_policy = EditPolicy.OWNER
+    elif editor_user_ids and edit_policy == EditPolicy.OWNER:
+        # Mantém compatibilidade com formulários antigos que já enviavam
+        # editores antes de a política ser um campo separado.
+        edit_policy = EditPolicy.CUSTOM
 
     page = create_page(
         session,
@@ -261,6 +265,8 @@ def edit_page(
             updates["visibility"] = visibility
         if visibility == PageVisibility.PRIVATE:
             updates["edit_policy"] = EditPolicy.OWNER
+        elif editor_user_ids and edit_policy == EditPolicy.OWNER:
+            updates["edit_policy"] = EditPolicy.CUSTOM
         elif edit_policy is not None:
             updates["edit_policy"] = edit_policy
         if folder_id is not None:

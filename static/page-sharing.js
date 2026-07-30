@@ -113,6 +113,13 @@ function initializePageSharing(root = document) {
             .querySelectorAll("[data-friend-permission]")
             .forEach((select) => {
                 select.addEventListener("change", () => {
+                    if (
+                        select.value === "edit" &&
+                        visibilitySelect?.value === "custom" &&
+                        editPolicySelect
+                    ) {
+                        editPolicySelect.value = "custom";
+                    }
                     updatePageSharingForm(form);
                 });
             });

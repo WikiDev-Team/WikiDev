@@ -53,6 +53,16 @@ def _migrate_sqlite_schema() -> None:
                         "ADD COLUMN edit_policy VARCHAR(20) NOT NULL DEFAULT 'owner'"
                     )
                 )
+                connection.execute(
+                    text(
+                        "UPDATE page SET edit_policy = 'custom' "
+                        "WHERE visibility = 'custom' AND EXISTS ("
+                        "SELECT 1 FROM pageshare "
+                        "WHERE pageshare.page_id = page.id "
+                        "AND pageshare.permission = 'edit'"
+                        ")"
+                    )
+                )
             connection.execute(
                 text("CREATE INDEX IF NOT EXISTS ix_page_edit_policy ON page (edit_policy)")
             )
