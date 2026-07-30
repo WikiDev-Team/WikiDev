@@ -212,10 +212,15 @@ def test_public_page_can_be_edited_by_selected_friend(client: TestClient, engine
     bob_id, bob_token = _create_authenticated_user(client, engine, "bob_public_edit")
     _, charlie_token = _create_authenticated_user(client, engine, "charlie_public_edit")
 
-    _login_as(client, alice_token)
-    client.post(f"/friendships/request/{bob_id}", data={"return_to": "/friends"})
-    _login_as(client, bob_token)
-    client.post(f"/friendships/respond/{alice_id}", data={"action": "accept"})
+    with Session(engine) as session:
+        session.add(
+            Friendship(
+                requester_id=alice_id,
+                addressee_id=bob_id,
+                status=FriendshipStatus.ACCEPTED,
+            )
+        )
+        session.commit()
 
     _login_as(client, alice_token)
     page_id = _create_page(
@@ -239,10 +244,15 @@ def test_every_viewer_can_edit_when_page_policy_allows_it(client: TestClient, en
     alice_id, alice_token = _create_authenticated_user(client, engine, "alice_viewer_edit")
     bob_id, bob_token = _create_authenticated_user(client, engine, "bob_viewer_edit")
 
-    _login_as(client, alice_token)
-    client.post(f"/friendships/request/{bob_id}", data={"return_to": "/friends"})
-    _login_as(client, bob_token)
-    client.post(f"/friendships/respond/{alice_id}", data={"action": "accept"})
+    with Session(engine) as session:
+        session.add(
+            Friendship(
+                requester_id=alice_id,
+                addressee_id=bob_id,
+                status=FriendshipStatus.ACCEPTED,
+            )
+        )
+        session.commit()
 
     _login_as(client, alice_token)
     page_id = _create_page(
