@@ -9,6 +9,7 @@ from ..db import get_session
 from ..dependencies import get_current_user
 from ..models import (
     Folder,
+    EditPolicy,
     Page,
     PageBlock,
     PageCreate,
@@ -133,6 +134,7 @@ def add_page_htmx(
     page_type: PageType = Form(PageType.NOTE),
     status: PageStatus = Form(PageStatus.DRAFT),
     visibility: PageVisibility = Form(PageVisibility.PRIVATE),
+    edit_policy: EditPolicy = Form(EditPolicy.OWNER),
     tag_ids: str = Form(""),
     folder_id: str = Form(""),
     shared_user_ids: list[int] | None = Form(None),
@@ -151,6 +153,9 @@ def add_page_htmx(
             raise HTTPException(status_code=404, detail="Pasta não encontrada")
         require_folder_edit(folder, current_user)
 
+    if visibility == PageVisibility.PRIVATE:
+        edit_policy = EditPolicy.OWNER
+
     page = create_page(
         session,
         PageCreate(
@@ -159,6 +164,7 @@ def add_page_htmx(
             page_type=page_type,
             status=status,
             visibility=visibility,
+            edit_policy=edit_policy,
             author_id=current_user.id,
             folder_id=parsed_folder_id,
             tag_ids=_parse_tag_ids(tag_ids),
@@ -229,6 +235,7 @@ def edit_page(
     page_type: PageType = Form(PageType.NOTE),
     status: PageStatus = Form(PageStatus.DRAFT),
     visibility: PageVisibility | None = Form(None),
+    edit_policy: EditPolicy | None = Form(None),
     folder_id: str | None = Form(None),
     shared_user_ids: list[int] | None = Form(None),
     editor_user_ids: list[int] | None = Form(None),
@@ -252,6 +259,10 @@ def edit_page(
     if is_owner:
         if visibility is not None:
             updates["visibility"] = visibility
+        if visibility == PageVisibility.PRIVATE:
+            updates["edit_policy"] = EditPolicy.OWNER
+        elif edit_policy is not None:
+            updates["edit_policy"] = edit_policy
         if folder_id is not None:
             parsed_folder_id = _parse_folder_id(folder_id)
             if parsed_folder_id is not None:

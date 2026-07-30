@@ -59,6 +59,12 @@ class PageSharePermission(str, Enum):
     EDIT = "edit"
 
 
+class EditPolicy(str, Enum):
+    OWNER = "owner"
+    VIEWERS = "viewers"
+    CUSTOM = "custom"
+
+
 class FolderVisibility(str, Enum):
     PRIVATE = "private"
     FRIENDS = "friends"
@@ -289,6 +295,7 @@ class PageBase(SQLModel):
     page_type: PageType = Field(default=PageType.PERSONAL)
     status: PageStatus = Field(default=PageStatus.DRAFT)
     visibility: PageVisibility = Field(default=PageVisibility.PRIVATE, index=True)
+    edit_policy: EditPolicy = Field(default=EditPolicy.OWNER, index=True)
     summary: str = Field(default="")
     language_id: Optional[int] = Field(default=None, foreign_key="language.id")
     author_id: Optional[int] = Field(default=None, foreign_key="user.id")
@@ -320,6 +327,7 @@ class PageUpdate(SQLModel):
     page_type: Optional[PageType] = None
     status: Optional[PageStatus] = None
     visibility: Optional[PageVisibility] = None
+    edit_policy: Optional[EditPolicy] = None
     summary: Optional[str] = None
     language_id: Optional[int] = None
     parent_page_id: Optional[int] = None

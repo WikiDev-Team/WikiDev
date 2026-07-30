@@ -14,6 +14,7 @@
             <label><span>Status</span><select name="status">{% for value, label in [('draft','Rascunho'),('published','Publicada'),('archived','Arquivada')] %}<option value="{{ value }}" {% if page.status.value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
             {% if is_owner %}
             <label><span>Quem pode ver</span><select name="visibility" data-page-visibility>{% for value, label in [('private','Somente eu'),('friends','Todos os amigos'),('public','Todos os usuários'),('custom','Amigos específicos')] %}<option value="{{ value }}" {% if page.visibility.value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+            <label><span>Quem pode editar</span><select name="edit_policy" data-page-edit-policy>{% for value, label in [('owner','Somente eu'),('viewers','Todos que podem ver'),('custom','Amigos selecionados')] %}<option value="{{ value }}" {% if page.edit_policy.value == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
             <label><span>Pasta</span><select name="folder_id"><option value="">Sem pasta</option>{% for folder in owned_folders %}<option value="{{ folder.id }}" {% if page.folder_id == folder.id %}selected{% endif %}>{{ folder.name }}</option>{% endfor %}</select></label>
             {% endif %}
         </div>
@@ -22,16 +23,16 @@
         <fieldset
             class="sharing-fieldset"
             data-page-sharing
-            {% if page.visibility.value != 'custom' %}
+            {% if page.visibility.value != 'custom' and page.edit_policy.value != 'custom' %}
             hidden
             disabled
             {% endif %}
         >
-            <legend>Compartilhamento específico</legend>
+            <legend>Permissões de amigos</legend>
 
             <p>
-                Escolha uma permissão para cada amigo.
-                Quem pode editar também pode visualizar a página.
+                Escolha quem pode visualizar e/ou editar. Quem pode editar
+                também precisa ter acesso à página.
             </p>
 
             {% if friends %}

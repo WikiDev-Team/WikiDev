@@ -13,6 +13,7 @@
             <label><span>Tipo</span><select name="page_type"><option value="personal">Pessoal</option><option value="official">Oficial</option><option value="question">Pergunta</option><option value="example">Exemplo</option><option value="note" selected>Nota</option></select></label>
             <label><span>Status</span><select name="status"><option value="draft" selected>Rascunho</option><option value="published">Publicada</option><option value="archived">Arquivada</option></select></label>
             <label><span>Quem pode ver</span><select name="visibility" data-page-visibility><option value="private" selected>Somente eu</option><option value="friends">Todos os meus amigos</option><option value="public">Todos os usuários</option><option value="custom">Amigos específicos</option></select></label>
+            <label><span>Quem pode editar</span><select name="edit_policy" data-page-edit-policy><option value="owner" selected>Somente eu</option><option value="viewers">Todos que podem ver</option><option value="custom">Amigos selecionados</option></select></label>
             <label><span>Pasta</span><select name="folder_id"><option value="">Sem pasta</option>{% for folder in owned_folders %}<option value="{{ folder.id }}" {% if selected_folder_id == folder.id %}selected{% endif %}>{{ folder.name }}</option>{% endfor %}</select></label>
             <label><span>IDs de tags</span><input type="text" name="tag_ids" placeholder="Ex.: 1, 4, 7"></label>
         </div>
@@ -23,11 +24,11 @@
             hidden
             disabled
         >
-            <legend>Compartilhar com amigos específicos</legend>
+            <legend>Permissões de amigos</legend>
 
             <p>
-                Escolha uma permissão para cada amigo.
-                Quem pode editar também pode visualizar a página.
+                Escolha quem pode visualizar e/ou editar. Quem pode editar
+                também precisa ter acesso à página.
             </p>
 
             {% if friends %}

@@ -46,6 +46,16 @@ def _migrate_sqlite_schema() -> None:
             connection.execute(
                 text("CREATE INDEX IF NOT EXISTS ix_page_visibility ON page (visibility)")
             )
+            if "edit_policy" not in page_columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE page "
+                        "ADD COLUMN edit_policy VARCHAR(20) NOT NULL DEFAULT 'owner'"
+                    )
+                )
+            connection.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_page_edit_policy ON page (edit_policy)")
+            )
 
         if "folder" in tables:
             folder_columns = {column["name"] for column in inspector.get_columns("folder")}

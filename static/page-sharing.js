@@ -1,4 +1,4 @@
-function updateFriendPermission(select, customVisibility) {
+function updateFriendPermission(select, customVisibility, customEditPolicy) {
     const row = select.closest("[data-friend-permission-row]");
 
     if (!row) {
@@ -15,7 +15,7 @@ function updateFriendPermission(select, customVisibility) {
 
     const permission = select.value;
 
-    select.disabled = !customVisibility;
+    select.disabled = !customVisibility && !customEditPolicy;
 
     if (viewInput) {
         viewInput.disabled =
@@ -25,7 +25,7 @@ function updateFriendPermission(select, customVisibility) {
 
     if (editInput) {
         editInput.disabled =
-            !customVisibility ||
+            !customEditPolicy ||
             permission !== "edit";
     }
 }
@@ -35,26 +35,37 @@ function updatePageSharingForm(form) {
         "[data-page-visibility]"
     );
 
+    const editPolicySelect = form.querySelector(
+        "[data-page-edit-policy]"
+    );
+
     const sharingFieldset = form.querySelector(
         "[data-page-sharing]"
     );
 
-    if (!visibilitySelect || !sharingFieldset) {
+    if (!visibilitySelect || !editPolicySelect || !sharingFieldset) {
         return;
     }
 
     const customVisibility =
         visibilitySelect.value === "custom";
+    const isPrivate = visibilitySelect.value === "private";
+    const customEditPolicy = editPolicySelect.value === "custom";
 
-    sharingFieldset.hidden = !customVisibility;
-    sharingFieldset.disabled = !customVisibility;
+    if (isPrivate) {
+        editPolicySelect.value = "owner";
+    }
+    editPolicySelect.disabled = isPrivate;
+    sharingFieldset.hidden = !customVisibility && !customEditPolicy;
+    sharingFieldset.disabled = !customVisibility && !customEditPolicy;
 
     sharingFieldset
         .querySelectorAll("[data-friend-permission]")
         .forEach((select) => {
             updateFriendPermission(
                 select,
-                customVisibility
+                customVisibility,
+                customEditPolicy
             );
         });
 }
@@ -86,8 +97,15 @@ function initializePageSharing(root = document) {
         const visibilitySelect = form.querySelector(
             "[data-page-visibility]"
         );
+        const editPolicySelect = form.querySelector(
+            "[data-page-edit-policy]"
+        );
 
         visibilitySelect?.addEventListener("change", () => {
+            updatePageSharingForm(form);
+        });
+
+        editPolicySelect?.addEventListener("change", () => {
             updatePageSharingForm(form);
         });
 

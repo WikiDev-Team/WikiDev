@@ -41,7 +41,14 @@ def _login_as(client: TestClient, raw_token: str) -> None:
     client.cookies.set("session_token", raw_token)
 
 
-def _create_page(client: TestClient, title: str, visibility: str, viewers=None, editors=None) -> int:
+def _create_page(
+    client: TestClient,
+    title: str,
+    visibility: str,
+    viewers=None,
+    editors=None,
+    edit_policy="owner",
+) -> int:
     response = client.post(
         "/pages/",
         data={
@@ -50,6 +57,7 @@ def _create_page(client: TestClient, title: str, visibility: str, viewers=None, 
             "page_type": "note",
             "status": "draft",
             "visibility": visibility,
+            "edit_policy": edit_policy,
             "tag_ids": "",
             "shared_user_ids": [str(value) for value in (viewers or [])],
             "editor_user_ids": [str(value) for value in (editors or [])],
@@ -190,6 +198,55 @@ def test_visibility_edit_and_friendship_revocation(client: TestClient, engine):
     with Session(engine) as session:
         assert session.get(Friendship, friendship_id) is None
         assert session.get(PageShare, (viewer_id, bob_id)) is None
+
+
+def test_public_page_can_be_edited_by_selected_friend(client: TestClient, engine):
+    alice_id, alice_token = _create_authenticated_user(client, engine, "alice_public_edit")
+    bob_id, bob_token = _create_authenticated_user(client, engine, "bob_public_edit")
+    _, charlie_token = _create_authenticated_user(client, engine, "charlie_public_edit")
+
+    _login_as(client, alice_token)
+    client.post(f"/friendships/request/{bob_id}", data={"return_to": "/friends"})
+    _login_as(client, bob_token)
+    client.post(f"/friendships/respond/{alice_id}", data={"action": "accept"})
+
+    _login_as(client, alice_token)
+    page_id = _create_page(
+        client,
+        "Pública com editor selecionado",
+        "public",
+        editors=[bob_id],
+        edit_policy="custom",
+    )
+
+    _login_as(client, bob_token)
+    assert client.get(f"/pages/{page_id}/blocks-editor").status_code == 200
+    assert client.post(f"/pages/{page_id}/blocks", data={"block_type": "text"}).status_code == 200
+
+    _login_as(client, charlie_token)
+    assert client.get(f"/pages/{page_id}/blocks-editor").status_code == 200
+    assert client.post(f"/pages/{page_id}/blocks", data={"block_type": "text"}).status_code == 403
+
+
+def test_every_viewer_can_edit_when_page_policy_allows_it(client: TestClient, engine):
+    alice_id, alice_token = _create_authenticated_user(client, engine, "alice_viewer_edit")
+    bob_id, bob_token = _create_authenticated_user(client, engine, "bob_viewer_edit")
+
+    _login_as(client, alice_token)
+    client.post(f"/friendships/request/{bob_id}", data={"return_to": "/friends"})
+    _login_as(client, bob_token)
+    client.post(f"/friendships/respond/{alice_id}", data={"action": "accept"})
+
+    _login_as(client, alice_token)
+    page_id = _create_page(
+        client,
+        "Amigos podem editar",
+        "friends",
+        edit_policy="viewers",
+    )
+
+    _login_as(client, bob_token)
+    assert client.post(f"/pages/{page_id}/blocks", data={"block_type": "text"}).status_code == 200
 
 def test_page_sharing_forms_use_one_permission_per_friend(
     client: TestClient,

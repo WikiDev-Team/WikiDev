@@ -7,6 +7,7 @@ from sqlalchemy import delete, or_
 from sqlmodel import Session, select
 
 from .models import (
+    EditPolicy,
     Folder,
     FolderShare,
     FolderVisibility,
@@ -186,7 +187,11 @@ def can_edit_page(session: Session, page: Page, user: User) -> bool:
         return True
     if not _folder_allows_page(session, page, user):
         return False
-    if page.visibility != PageVisibility.CUSTOM:
+    if not can_view_page(session, page, user):
+        return False
+    if page.edit_policy == EditPolicy.VIEWERS:
+        return True
+    if page.edit_policy != EditPolicy.CUSTOM:
         return False
     share = get_page_share(session, page.id, user.id)
     return share is not None and share.permission == PageSharePermission.EDIT
@@ -342,13 +347,16 @@ def replace_page_shares(
     editor_ids: Iterable[int],
 ) -> None:
     session.exec(delete(PageShare).where(PageShare.page_id == page.id))
-    if page.visibility != PageVisibility.CUSTOM:
+    if page.visibility != PageVisibility.CUSTOM and page.edit_policy != EditPolicy.CUSTOM:
         return
 
     friend_ids = get_friend_ids(session, owner_id)
     requested_viewers = {int(user_id) for user_id in viewer_ids}
     requested_editors = {int(user_id) for user_id in editor_ids}
-    requested_viewers.update(requested_editors)
+    if page.visibility == PageVisibility.CUSTOM:
+        requested_viewers.update(requested_editors)
+    else:
+        requested_viewers = requested_editors
 
     allowed_viewers = requested_viewers & friend_ids
     allowed_editors = requested_editors & allowed_viewers
