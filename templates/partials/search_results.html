@@ -12,5 +12,11 @@
         <ul>{% for p in paginas %}<li><a class="search-page" href="/dashboard?open_page={{ p.id }}"><span><strong>{{ p.title }}</strong>{% if p.author %}<small>@{{ p.author.username }}</small>{% endif %}</span><span class="visibility-badge visibility-{{ p.visibility.value }}">{% if p.visibility.value == 'private' %}Somente eu{% elif p.visibility.value == 'friends' %}Amigos{% elif p.visibility.value == 'custom' %}Selecionados{% else %}Público{% endif %}</span></a></li>{% endfor %}</ul>
         {% else %}<span class="search-empty">Nenhuma página.</span>{% endif %}
     </div>
+    <div class="search-group">
+        <h4>Pastas disponíveis para você</h4>
+        {% if pastas %}
+        <ul>{% for folder in pastas %}<li><a class="search-folder" href="/dashboard?open_folder={{ folder.id }}"><span><strong>📁 {{ folder.name }}</strong>{% if folder.author %}<small>@{{ folder.author.username }}</small>{% endif %}</span><span class="visibility-badge visibility-{{ folder.visibility.value }}">{% if folder.visibility.value == 'private' %}Somente eu{% elif folder.visibility.value == 'friends' %}Amigos{% elif folder.visibility.value == 'custom' %}Selecionados{% else %}Público{% endif %}</span></a></li>{% endfor %}</ul>
+        {% else %}<span class="search-empty">Nenhuma pasta.</span>{% endif %}
+    </div>
 </div>
 {% endif %}
