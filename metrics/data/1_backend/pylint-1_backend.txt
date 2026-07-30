@@ -1,0 +1,179 @@
+************* Module app.db
+app/db.py:4:0: W0611: Unused Path imported from pathlib (unused-import)
+************* Module app.main
+app/main.py:56:21: C2801: Unnecessarily calls dunder method __len__. Use len built-in function. (unnecessary-dunder-call)
+app/main.py:57:25: C2801: Unnecessarily calls dunder method __len__. Use len built-in function. (unnecessary-dunder-call)
+app/main.py:58:20: C2801: Unnecessarily calls dunder method __len__. Use len built-in function. (unnecessary-dunder-call)
+app/main.py:59:21: C2801: Unnecessarily calls dunder method __len__. Use len built-in function. (unnecessary-dunder-call)
+************* Module app.models
+app/models.py:50:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:51:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:86:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:87:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:122:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:123:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:157:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:158:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:203:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:204:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:238:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:239:0: C0301: Line too long (101/100) (line-too-long)
+************* Module app.crud
+app/crud.py:22:0: C0301: Line too long (102/100) (line-too-long)
+app/crud.py:6:0: W0404: Reimport 'Session' (imported line 2) (reimported)
+app/crud.py:6:0: W0404: Reimport 'select' (imported line 2) (reimported)
+app/crud.py:37:4: C0415: Import outside toplevel (datetime.datetime) (import-outside-toplevel)
+app/crud.py:4:0: C0411: standard import "typing.Iterable" should be placed before third party imports "sqlmodel.Session", "sqlalchemy.delete" (wrong-import-order)
+app/crud.py:6:0: C0412: Imports from package sqlmodel are not grouped (ungrouped-imports)
+app/crud.py:7:0: C0412: Imports from package sqlalchemy are not grouped (ungrouped-imports)
+app/crud.py:4:0: W0611: Unused Iterable imported from typing (unused-import)
+app/crud.py:4:0: W0611: Unused Optional imported from typing (unused-import)
+app/crud.py:4:0: W0611: Unused Type imported from typing (unused-import)
+app/crud.py:4:0: W0611: Unused Any imported from typing (unused-import)
+app/crud.py:7:0: W0611: Unused selectinload imported from sqlalchemy.orm (unused-import)
+************* Module app.routers.languages
+app/routers/languages.py:30:0: C0301: Line too long (102/100) (line-too-long)
+************* Module app.routers.pages
+app/routers/pages.py:1:0: W0611: Unused Query imported from fastapi (unused-import)
+************* Module app.routers.examples
+app/routers/examples.py:33:0: C0301: Line too long (103/100) (line-too-long)
+
+
+Report
+======
+535 statements analysed.
+
+Statistics by type
+------------------
+
++---------+-------+-----------+-----------+------------+---------+
+|type     |number |old number |difference |%documented |%badname |
++=========+=======+===========+===========+============+=========+
+|module   |13     |NC         |NC         |15.38       |0.00     |
++---------+-------+-----------+-----------+------------+---------+
+|class    |33     |NC         |NC         |0.00        |0.00     |
++---------+-------+-----------+-----------+------------+---------+
+|method   |0      |NC         |NC         |0           |0        |
++---------+-------+-----------+-----------+------------+---------+
+|function |52     |NC         |NC         |3.85        |0.00     |
++---------+-------+-----------+-----------+------------+---------+
+
+
+
+External dependencies
+---------------------
+::
+
+    app 
+      \-crud (app.routers.comments,app.routers.examples,app.routers.languages,app.routers.pages,app.routers.tags,app.routers.users)
+      \-db (app.main,app.routers.comments,app.routers.examples,app.routers.languages,app.routers.pages,app.routers.tags,app.routers.users)
+      \-models (app.crud,app.main,app.routers.comments,app.routers.examples,app.routers.languages,app.routers.pages,app.routers.tags,app.routers.users,app.schemas)
+      \-routers 
+        \-comments (app.main)
+        \-examples (app.main)
+        \-languages (app.main)
+        \-pages (app.main)
+        \-tags (app.main)
+        \-users (app.main)
+
+
+
+885 lines have been analyzed
+
+Raw metrics
+-----------
+
++----------+-------+------+---------+-----------+
+|type      |number |%     |previous |difference |
++==========+=======+======+=========+===========+
+|code      |637    |71.98 |NC       |NC         |
++----------+-------+------+---------+-----------+
+|docstring |14     |1.58  |NC       |NC         |
++----------+-------+------+---------+-----------+
+|comment   |15     |1.69  |NC       |NC         |
++----------+-------+------+---------+-----------+
+|empty     |219    |24.75 |NC       |NC         |
++----------+-------+------+---------+-----------+
+
+
+
+Duplication
+-----------
+
++-------------------------+------+---------+-----------+
+|                         |now   |previous |difference |
++=========================+======+=========+===========+
+|nb duplicated lines      |0     |NC       |NC         |
++-------------------------+------+---------+-----------+
+|percent duplicated lines |0.000 |NC       |NC         |
++-------------------------+------+---------+-----------+
+
+
+
+Messages by category
+--------------------
+
++-----------+-------+---------+-----------+
+|type       |number |previous |difference |
++===========+=======+=========+===========+
+|convention |23     |NC       |NC         |
++-----------+-------+---------+-----------+
+|refactor   |0      |NC       |NC         |
++-----------+-------+---------+-----------+
+|warning    |9      |NC       |NC         |
++-----------+-------+---------+-----------+
+|error      |0      |NC       |NC         |
++-----------+-------+---------+-----------+
+
+
+
+% errors / warnings by module
+-----------------------------
+
++----------------------+------+--------+---------+-----------+
+|module                |error |warning |refactor |convention |
++======================+======+========+=========+===========+
+|app.crud              |0.00  |77.78   |0.00     |21.74      |
++----------------------+------+--------+---------+-----------+
+|app.routers.pages     |0.00  |11.11   |0.00     |0.00       |
++----------------------+------+--------+---------+-----------+
+|app.db                |0.00  |11.11   |0.00     |0.00       |
++----------------------+------+--------+---------+-----------+
+|app.models            |0.00  |0.00    |0.00     |52.17      |
++----------------------+------+--------+---------+-----------+
+|app.main              |0.00  |0.00    |0.00     |17.39      |
++----------------------+------+--------+---------+-----------+
+|app.routers.languages |0.00  |0.00    |0.00     |4.35       |
++----------------------+------+--------+---------+-----------+
+|app.routers.examples  |0.00  |0.00    |0.00     |4.35       |
++----------------------+------+--------+---------+-----------+
+
+
+
+Messages
+--------
+
++------------------------+------------+
+|message id              |occurrences |
++========================+============+
+|line-too-long           |18          |
++------------------------+------------+
+|unnecessary-dunder-call |8           |
++------------------------+------------+
+|unused-import           |7           |
++------------------------+------------+
+|ungrouped-imports       |2           |
++------------------------+------------+
+|reimported              |2           |
++------------------------+------------+
+|wrong-import-order      |1           |
++------------------------+------------+
+|import-outside-toplevel |1           |
++------------------------+------------+
+
+
+
+
+-----------------------------------
+Your code has been rated at 9.40/10
+

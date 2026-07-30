@@ -1,0 +1,214 @@
+************* Module app.security
+app/security.py:19:0: C0303: Trailing whitespace (trailing-whitespace)
+app/security.py:21:0: C0303: Trailing whitespace (trailing-whitespace)
+app/security.py:27:0: C0304: Final newline missing (missing-final-newline)
+app/security.py:3:0: C0411: standard import "secrets" should be placed before third party import "bcrypt" (wrong-import-order)
+************* Module app.db
+app/db.py:4:0: W0611: Unused Path imported from pathlib (unused-import)
+************* Module app.main
+app/main.py:38:0: C0303: Trailing whitespace (trailing-whitespace)
+app/main.py:61:24: C0303: Trailing whitespace (trailing-whitespace)
+app/main.py:62:26: C0303: Trailing whitespace (trailing-whitespace)
+app/main.py:76:21: C2801: Unnecessarily calls dunder method __len__. Use len built-in function. (unnecessary-dunder-call)
+app/main.py:77:25: C2801: Unnecessarily calls dunder method __len__. Use len built-in function. (unnecessary-dunder-call)
+app/main.py:78:20: C2801: Unnecessarily calls dunder method __len__. Use len built-in function. (unnecessary-dunder-call)
+app/main.py:79:21: C2801: Unnecessarily calls dunder method __len__. Use len built-in function. (unnecessary-dunder-call)
+app/main.py:4:0: C0412: Imports from package fastapi are not grouped (ungrouped-imports)
+************* Module app.models
+app/models.py:50:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:51:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:86:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:87:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:122:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:123:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:157:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:158:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:203:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:204:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:238:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:239:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:266:0: C0304: Final newline missing (missing-final-newline)
+************* Module app.dependecies
+app/dependecies.py:12:0: C0303: Trailing whitespace (trailing-whitespace)
+app/dependecies.py:14:75: C0303: Trailing whitespace (trailing-whitespace)
+app/dependecies.py:15:0: C0303: Trailing whitespace (trailing-whitespace)
+app/dependecies.py:18:0: C0304: Final newline missing (missing-final-newline)
+************* Module app.crud
+app/crud.py:22:0: C0301: Line too long (102/100) (line-too-long)
+app/crud.py:6:0: W0404: Reimport 'Session' (imported line 2) (reimported)
+app/crud.py:6:0: W0404: Reimport 'select' (imported line 2) (reimported)
+app/crud.py:37:4: C0415: Import outside toplevel (datetime.datetime) (import-outside-toplevel)
+app/crud.py:4:0: C0411: standard import "typing.Iterable" should be placed before third party imports "sqlmodel.Session", "sqlalchemy.delete" (wrong-import-order)
+app/crud.py:6:0: C0412: Imports from package sqlmodel are not grouped (ungrouped-imports)
+app/crud.py:7:0: C0412: Imports from package sqlalchemy are not grouped (ungrouped-imports)
+app/crud.py:4:0: W0611: Unused Iterable imported from typing (unused-import)
+app/crud.py:4:0: W0611: Unused Optional imported from typing (unused-import)
+app/crud.py:4:0: W0611: Unused Type imported from typing (unused-import)
+app/crud.py:4:0: W0611: Unused Any imported from typing (unused-import)
+app/crud.py:7:0: W0611: Unused selectinload imported from sqlalchemy.orm (unused-import)
+************* Module app.routers.languages
+app/routers/languages.py:30:0: C0301: Line too long (102/100) (line-too-long)
+************* Module app.routers.pages
+app/routers/pages.py:1:0: W0611: Unused Query imported from fastapi (unused-import)
+************* Module app.routers.examples
+app/routers/examples.py:33:0: C0301: Line too long (103/100) (line-too-long)
+************* Module app.routers.auth
+app/routers/auth.py:21:0: C0301: Line too long (116/100) (line-too-long)
+app/routers/auth.py:23:0: C0303: Trailing whitespace (trailing-whitespace)
+app/routers/auth.py:29:0: C0303: Trailing whitespace (trailing-whitespace)
+app/routers/auth.py:36:22: C0303: Trailing whitespace (trailing-whitespace)
+app/routers/auth.py:40:0: C0303: Trailing whitespace (trailing-whitespace)
+app/routers/auth.py:42:0: C0304: Final newline missing (missing-final-newline)
+app/routers/auth.py:2:0: W0611: Unused Response imported from fastapi (unused-import)
+
+
+Report
+======
+615 statements analysed.
+
+Statistics by type
+------------------
+
++---------+-------+-----------+-----------+------------+---------+
+|type     |number |old number |difference |%documented |%badname |
++=========+=======+===========+===========+============+=========+
+|module   |16     |13         |+3.00      |12.50       |0.00     |
++---------+-------+-----------+-----------+------------+---------+
+|class    |33     |33         |=          |0.00        |0.00     |
++---------+-------+-----------+-----------+------------+---------+
+|method   |0      |NC         |NC         |0           |0        |
++---------+-------+-----------+-----------+------------+---------+
+|function |58     |52         |+6.00      |8.62        |0.00     |
++---------+-------+-----------+-----------+------------+---------+
+
+
+
+External dependencies
+---------------------
+::
+
+    app 
+      \-crud (app.routers.comments,app.routers.examples,app.routers.languages,app.routers.pages,app.routers.tags,app.routers.users)
+      \-db (app.dependecies,app.main,app.routers.auth,app.routers.comments,app.routers.examples,app.routers.languages,app.routers.pages,app.routers.tags,app.routers.users)
+      \-models (app.crud,app.dependecies,app.main,app.routers.auth,app.routers.comments,app.routers.examples,app.routers.languages,app.routers.pages,app.routers.tags,app.routers.users,app.schemas)
+      \-routers 
+      | \-auth (app.main)
+      | \-comments (app.main)
+      | \-examples (app.main)
+      | \-languages (app.main)
+      | \-pages (app.main)
+      | \-tags (app.main)
+      | \-users (app.main)
+      \-security (app.routers.auth)
+
+
+
+1003 lines have been analyzed
+
+Raw metrics
+-----------
+
++----------+-------+------+---------+-----------+
+|type      |number |%     |previous |difference |
++==========+=======+======+=========+===========+
+|code      |740    |73.78 |NC       |NC         |
++----------+-------+------+---------+-----------+
+|docstring |13     |1.30  |NC       |NC         |
++----------+-------+------+---------+-----------+
+|comment   |7      |0.70  |NC       |NC         |
++----------+-------+------+---------+-----------+
+|empty     |243    |24.23 |NC       |NC         |
++----------+-------+------+---------+-----------+
+
+
+
+Duplication
+-----------
+
++-------------------------+------+---------+-----------+
+|                         |now   |previous |difference |
++=========================+======+=========+===========+
+|nb duplicated lines      |0     |0        |0          |
++-------------------------+------+---------+-----------+
+|percent duplicated lines |0.000 |0.000    |=          |
++-------------------------+------+---------+-----------+
+
+
+
+Messages by category
+--------------------
+
++-----------+-------+---------+-----------+
+|type       |number |previous |difference |
++===========+=======+=========+===========+
+|convention |42     |23       |23         |
++-----------+-------+---------+-----------+
+|refactor   |0      |0        |0          |
++-----------+-------+---------+-----------+
+|warning    |10     |9        |9          |
++-----------+-------+---------+-----------+
+|error      |0      |0        |0          |
++-----------+-------+---------+-----------+
+
+
+
+% errors / warnings by module
+-----------------------------
+
++----------------------+------+--------+---------+-----------+
+|module                |error |warning |refactor |convention |
++======================+======+========+=========+===========+
+|app.crud              |0.00  |70.00   |0.00     |11.90      |
++----------------------+------+--------+---------+-----------+
+|app.routers.auth      |0.00  |10.00   |0.00     |14.29      |
++----------------------+------+--------+---------+-----------+
+|app.routers.pages     |0.00  |10.00   |0.00     |0.00       |
++----------------------+------+--------+---------+-----------+
+|app.db                |0.00  |10.00   |0.00     |0.00       |
++----------------------+------+--------+---------+-----------+
+|app.models            |0.00  |0.00    |0.00     |30.95      |
++----------------------+------+--------+---------+-----------+
+|app.main              |0.00  |0.00    |0.00     |19.05      |
++----------------------+------+--------+---------+-----------+
+|app.security          |0.00  |0.00    |0.00     |9.52       |
++----------------------+------+--------+---------+-----------+
+|app.dependecies       |0.00  |0.00    |0.00     |9.52       |
++----------------------+------+--------+---------+-----------+
+|app.routers.languages |0.00  |0.00    |0.00     |2.38       |
++----------------------+------+--------+---------+-----------+
+|app.routers.examples  |0.00  |0.00    |0.00     |2.38       |
++----------------------+------+--------+---------+-----------+
+
+
+
+Messages
+--------
+
++------------------------+------------+
+|message id              |occurrences |
++========================+============+
+|trailing-whitespace     |27          |
++------------------------+------------+
+|line-too-long           |19          |
++------------------------+------------+
+|unused-import           |9           |
++------------------------+------------+
+|missing-final-newline   |9           |
++------------------------+------------+
+|unnecessary-dunder-call |4           |
++------------------------+------------+
+|wrong-import-order      |3           |
++------------------------+------------+
+|ungrouped-imports       |3           |
++------------------------+------------+
+|reimported              |2           |
++------------------------+------------+
+|import-outside-toplevel |1           |
++------------------------+------------+
+
+
+
+
+------------------------------------------------------------------
+Your code has been rated at 9.15/10 (previous run: 9.40/10, -0.25)
+
