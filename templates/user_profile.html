@@ -83,6 +83,27 @@
         </section>
 
         <section class="profile-pages-section">
+            <h2>{% if is_owner %}Minhas pastas{% else %}Pastas compartilhadas com você{% endif %}</h2>
+            {% if visible_folders %}
+                <div class="profile-page-list">
+                    {% for folder in visible_folders %}
+                        <a href="/dashboard?open_folder={{ folder.id }}" class="profile-page-card">
+                            <span>
+                                <strong>📁 {{ folder.name }}</strong>
+                                {% if folder.description %}<small>{{ folder.description }}</small>{% endif %}
+                            </span>
+                            <span class="visibility-badge visibility-{{ folder.visibility.value }}">
+                                {% if folder.visibility.value == 'private' %}Somente eu{% elif folder.visibility.value == 'friends' %}Amigos{% elif folder.visibility.value == 'custom' %}Selecionados{% else %}Público{% endif %}
+                            </span>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="empty-state">Nenhuma pasta disponível para você.</p>
+            {% endif %}
+        </section>
+
+        <section class="profile-pages-section">
             <h2>{% if is_owner %}Minhas páginas{% else %}Páginas compartilhadas com você{% endif %}</h2>
             {% if visible_pages %}
                 <div class="profile-page-list">
