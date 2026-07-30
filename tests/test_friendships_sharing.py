@@ -41,7 +41,14 @@ def _login_as(client: TestClient, raw_token: str) -> None:
     client.cookies.set("session_token", raw_token)
 
 
-def _create_page(client: TestClient, title: str, visibility: str, viewers=None, editors=None) -> int:
+def _create_page(
+    client: TestClient,
+    title: str,
+    visibility: str,
+    viewers=None,
+    editors=None,
+    edit_policy="owner",
+) -> int:
     response = client.post(
         "/pages/",
         data={
@@ -50,6 +57,7 @@ def _create_page(client: TestClient, title: str, visibility: str, viewers=None, 
             "page_type": "note",
             "status": "draft",
             "visibility": visibility,
+            "edit_policy": edit_policy,
             "tag_ids": "",
             "shared_user_ids": [str(value) for value in (viewers or [])],
             "editor_user_ids": [str(value) for value in (editors or [])],
@@ -65,6 +73,8 @@ def _create_folder(
     name: str,
     visibility: str,
     viewers=None,
+    editors=None,
+    edit_policy="owner",
     parent_folder_id=None,
 ) -> int:
     response = client.post(
@@ -73,6 +83,7 @@ def _create_folder(
             "name": name,
             "description": "Pasta de teste",
             "visibility": visibility,
+            "edit_policy": edit_policy,
             "parent_folder_id": (
                 ""
                 if parent_folder_id is None
@@ -81,6 +92,10 @@ def _create_folder(
             "shared_user_ids": [
                 str(value)
                 for value in (viewers or [])
+            ],
+            "editor_user_ids": [
+                str(value)
+                for value in (editors or [])
             ],
         },
     )
@@ -191,21 +206,11 @@ def test_visibility_edit_and_friendship_revocation(client: TestClient, engine):
         assert session.get(Friendship, friendship_id) is None
         assert session.get(PageShare, (viewer_id, bob_id)) is None
 
-def test_page_sharing_forms_use_one_permission_per_friend(
-    client: TestClient,
-    engine,
-):
-    alice_id, alice_token = _create_authenticated_user(
-        client,
-        engine,
-        "alice_sharing_form",
-    )
 
-    bob_id, _ = _create_authenticated_user(
-        client,
-        engine,
-        "bob_sharing_form",
-    )
+def test_public_page_can_be_edited_by_selected_friend(client: TestClient, engine):
+    alice_id, alice_token = _create_authenticated_user(client, engine, "alice_public_edit")
+    bob_id, bob_token = _create_authenticated_user(client, engine, "bob_public_edit")
+    _, charlie_token = _create_authenticated_user(client, engine, "charlie_public_edit")
 
     with Session(engine) as session:
         session.add(
@@ -218,36 +223,48 @@ def test_page_sharing_forms_use_one_permission_per_friend(
         session.commit()
 
     _login_as(client, alice_token)
-
-    create_form = client.get("/pages/new")
-
-    assert create_form.status_code == 200
-    assert "data-page-sharing-form" in create_form.text
-    assert "data-page-visibility" in create_form.text
-    assert "data-page-sharing" in create_form.text
-    assert "data-friend-permission" in create_form.text
-    assert "Sem acesso" in create_form.text
-    assert "Pode visualizar" in create_form.text
-    assert "Pode editar" in create_form.text
-    assert 'type="checkbox"' not in create_form.text
-
     page_id = _create_page(
         client,
-        "Página com compartilhamento",
-        "custom",
+        "Pública com editor selecionado",
+        "public",
         editors=[bob_id],
+        edit_policy="custom",
     )
 
-    edit_form = client.get(
-        f"/pages/{page_id}/metadata/edit"
+    _login_as(client, bob_token)
+    assert client.get(f"/pages/{page_id}/blocks-editor").status_code == 200
+    assert client.post(f"/pages/{page_id}/blocks", data={"block_type": "text"}).status_code == 200
+
+    _login_as(client, charlie_token)
+    assert client.get(f"/pages/{page_id}/blocks-editor").status_code == 200
+    assert client.post(f"/pages/{page_id}/blocks", data={"block_type": "text"}).status_code == 403
+
+
+def test_every_viewer_can_edit_when_page_policy_allows_it(client: TestClient, engine):
+    alice_id, alice_token = _create_authenticated_user(client, engine, "alice_viewer_edit")
+    bob_id, bob_token = _create_authenticated_user(client, engine, "bob_viewer_edit")
+
+    with Session(engine) as session:
+        session.add(
+            Friendship(
+                requester_id=alice_id,
+                addressee_id=bob_id,
+                status=FriendshipStatus.ACCEPTED,
+            )
+        )
+        session.commit()
+
+    _login_as(client, alice_token)
+    page_id = _create_page(
+        client,
+        "Amigos podem editar",
+        "friends",
+        edit_policy="viewers",
     )
 
-    assert edit_form.status_code == 200
-    assert "data-page-sharing-form" in edit_form.text
-    assert "data-friend-permission" in edit_form.text
-    assert 'value="edit"' in edit_form.text
-    assert 'type="checkbox"' not in edit_form.text
-
+    _login_as(client, bob_token)
+    assert client.post(f"/pages/{page_id}/blocks", data={"block_type": "text"}).status_code == 200
+    
 def test_folder_visibility_and_friendship_revocation(client: TestClient, engine):
     alice_id, alice_token = _create_authenticated_user(client, engine, "alice_folder_share")
     bob_id, bob_token = _create_authenticated_user(client, engine, "bob_folder_share")
@@ -279,6 +296,7 @@ def test_folder_visibility_and_friendship_revocation(client: TestClient, engine)
     assert client.get(f"/folders/{custom_id}").status_code == 200
     assert client.get(f"/folders/{public_id}").status_code == 200
 
+
     _login_as(client, charlie_token)
     assert client.get(f"/folders/{friends_id}").status_code == 403
     assert client.get(f"/folders/{custom_id}").status_code == 403
@@ -296,6 +314,40 @@ def test_folder_visibility_and_friendship_revocation(client: TestClient, engine)
 
     with Session(engine) as session:
         assert session.get(FolderShare, (custom_id, bob_id)) is None
+
+
+def test_folder_can_be_edited_by_selected_friend(client: TestClient, engine):
+    alice_id, alice_token = _create_authenticated_user(client, engine, "alice_folder_edit")
+    bob_id, bob_token = _create_authenticated_user(client, engine, "bob_folder_edit")
+
+    with Session(engine) as session:
+        session.add(
+            Friendship(
+                requester_id=alice_id,
+                addressee_id=bob_id,
+                status=FriendshipStatus.ACCEPTED,
+            )
+        )
+        session.commit()
+
+    _login_as(client, alice_token)
+    folder_id = _create_folder(
+        client,
+        "Pasta com editor",
+        "public",
+        editors=[bob_id],
+        edit_policy="custom",
+    )
+
+    _login_as(client, bob_token)
+    assert client.post(
+        f"/folders/{folder_id}/pages",
+        json={"title": "Página do editor", "tag_ids": []},
+    ).status_code == 201
+    assert client.patch(
+        f"/folders/{folder_id}",
+        json={"name": "Tentativa de configuração"},
+    ).status_code == 403
 
 
 def test_folder_visibility_respects_parent_folders(client: TestClient, engine):

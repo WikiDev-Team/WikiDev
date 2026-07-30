@@ -59,6 +59,12 @@ class PageSharePermission(str, Enum):
     EDIT = "edit"
 
 
+class EditPolicy(str, Enum):
+    OWNER = "owner"
+    VIEWERS = "viewers"
+    CUSTOM = "custom"
+
+
 class FolderVisibility(str, Enum):
     PRIVATE = "private"
     FRIENDS = "friends"
@@ -232,6 +238,7 @@ class FolderBase(SQLModel):
     slug: str = Field(default="", index=True, max_length=170, unique=True)
     description: str = Field(default="")
     visibility: FolderVisibility = Field(default=FolderVisibility.PRIVATE, index=True)
+    edit_policy: EditPolicy = Field(default=EditPolicy.OWNER, index=True)
     author_id: Optional[int] = Field(default=None, foreign_key="user.id")
     parent_folder_id: Optional[int] = Field(default=None, foreign_key="folder.id")
 
@@ -261,6 +268,7 @@ class FolderUpdate(SQLModel):
     slug: Optional[str] = Field(default=None, max_length=170)
     description: Optional[str] = None
     visibility: Optional[FolderVisibility] = None
+    edit_policy: Optional[EditPolicy] = None
     parent_folder_id: Optional[int] = None
 
 class FolderShare(SQLModel, table=True):
@@ -272,6 +280,7 @@ class FolderShare(SQLModel, table=True):
         foreign_key="user.id",
         primary_key=True,
     )
+    permission: PageSharePermission = Field(default=PageSharePermission.VIEW)
     created_at: datetime = Field(
         default_factory=now_utc,
         sa_column=Column(DateTime, nullable=False),
@@ -289,6 +298,7 @@ class PageBase(SQLModel):
     page_type: PageType = Field(default=PageType.PERSONAL)
     status: PageStatus = Field(default=PageStatus.DRAFT)
     visibility: PageVisibility = Field(default=PageVisibility.PRIVATE, index=True)
+    edit_policy: EditPolicy = Field(default=EditPolicy.OWNER, index=True)
     summary: str = Field(default="")
     language_id: Optional[int] = Field(default=None, foreign_key="language.id")
     author_id: Optional[int] = Field(default=None, foreign_key="user.id")
@@ -320,6 +330,7 @@ class PageUpdate(SQLModel):
     page_type: Optional[PageType] = None
     status: Optional[PageStatus] = None
     visibility: Optional[PageVisibility] = None
+    edit_policy: Optional[EditPolicy] = None
     summary: Optional[str] = None
     language_id: Optional[int] = None
     parent_page_id: Optional[int] = None

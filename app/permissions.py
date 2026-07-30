@@ -7,6 +7,7 @@ from sqlalchemy import delete, or_
 from sqlmodel import Session, select
 
 from .models import (
+    EditPolicy,
     Folder,
     FolderShare,
     FolderVisibility,
@@ -156,7 +157,20 @@ def can_view_folder(
     return False
 
 
-def can_edit_folder(folder: Folder, user: User) -> bool:
+def can_edit_folder(session: Session, folder: Folder, user: User) -> bool:
+    if folder.author_id == user.id:
+        return True
+    if not can_view_folder(session, folder, user):
+        return False
+    if folder.edit_policy == EditPolicy.VIEWERS:
+        return True
+    if folder.edit_policy != EditPolicy.CUSTOM:
+        return False
+    share = get_folder_share(session, folder.id, user.id)
+    return share is not None and share.permission == PageSharePermission.EDIT
+
+
+def can_manage_folder(folder: Folder, user: User) -> bool:
     return folder.author_id == user.id
 
 
@@ -186,7 +200,11 @@ def can_edit_page(session: Session, page: Page, user: User) -> bool:
         return True
     if not _folder_allows_page(session, page, user):
         return False
-    if page.visibility != PageVisibility.CUSTOM:
+    if not can_view_page(session, page, user):
+        return False
+    if page.edit_policy == EditPolicy.VIEWERS:
+        return True
+    if page.edit_policy != EditPolicy.CUSTOM:
         return False
     share = get_page_share(session, page.id, user.id)
     return share is not None and share.permission == PageSharePermission.EDIT
@@ -197,9 +215,14 @@ def require_folder_view(session: Session, folder: Folder, user: User) -> None:
         raise HTTPException(status_code=403, detail="Você não pode acessar esta pasta")
 
 
-def require_folder_edit(folder: Folder, user: User) -> None:
-    if not can_edit_folder(folder, user):
+def require_folder_edit(session: Session, folder: Folder, user: User) -> None:
+    if not can_edit_folder(session, folder, user):
         raise HTTPException(status_code=403, detail="Você não pode alterar esta pasta")
+
+
+def require_folder_owner(folder: Folder, user: User) -> None:
+    if not can_manage_folder(folder, user):
+        raise HTTPException(status_code=403, detail="Somente o autor pode configurar esta pasta")
 
 
 def require_page_view(session: Session, page: Page, user: User) -> None:
@@ -262,17 +285,23 @@ def accessible_folders(session: Session, user: User) -> list[Folder]:
 def get_folder_share_user_ids(
     session: Session,
     folder_id: int,
-) -> set[int]:
+) -> tuple[set[int], set[int]]:
     shares = session.exec(
         select(FolderShare).where(
             FolderShare.folder_id == folder_id
         )
     ).all()
 
-    return {
+    viewers = {
         share.user_id
         for share in shares
     }
+    editors = {
+        share.user_id
+        for share in shares
+        if share.permission == PageSharePermission.EDIT
+    }
+    return viewers, editors
 
 
 def replace_folder_shares(
@@ -280,6 +309,7 @@ def replace_folder_shares(
     folder: Folder,
     owner_id: int,
     viewer_ids: Iterable[int] | None,
+    editor_ids: Iterable[int] | None,
 ) -> None:
     if folder.id is None:
         return
@@ -290,7 +320,7 @@ def replace_folder_shares(
         )
     )
 
-    if folder.visibility != FolderVisibility.CUSTOM:
+    if folder.visibility != FolderVisibility.CUSTOM and folder.edit_policy != EditPolicy.CUSTOM:
         return
 
     friend_ids = get_friend_ids(
@@ -312,13 +342,25 @@ def replace_folder_shares(
 
         requested_viewers.add(int(user_id))
 
+    requested_editors = {int(user_id) for user_id in editor_ids or []}
+    if folder.visibility == FolderVisibility.CUSTOM:
+        requested_viewers.update(requested_editors)
+    else:
+        requested_viewers = requested_editors
+
     allowed_viewers = requested_viewers & friend_ids
+    allowed_editors = requested_editors & allowed_viewers
 
     for user_id in sorted(allowed_viewers):
         session.add(
             FolderShare(
                 folder_id=folder.id,
                 user_id=user_id,
+                permission=(
+                    PageSharePermission.EDIT
+                    if user_id in allowed_editors
+                    else PageSharePermission.VIEW
+                ),
                 updated_at=now_utc(),
             )
         )
@@ -342,13 +384,16 @@ def replace_page_shares(
     editor_ids: Iterable[int],
 ) -> None:
     session.exec(delete(PageShare).where(PageShare.page_id == page.id))
-    if page.visibility != PageVisibility.CUSTOM:
+    if page.visibility != PageVisibility.CUSTOM and page.edit_policy != EditPolicy.CUSTOM:
         return
 
     friend_ids = get_friend_ids(session, owner_id)
     requested_viewers = {int(user_id) for user_id in viewer_ids}
     requested_editors = {int(user_id) for user_id in editor_ids}
-    requested_viewers.update(requested_editors)
+    if page.visibility == PageVisibility.CUSTOM:
+        requested_viewers.update(requested_editors)
+    else:
+        requested_viewers = requested_editors
 
     allowed_viewers = requested_viewers & friend_ids
     allowed_editors = requested_editors & allowed_viewers

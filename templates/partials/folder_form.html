@@ -85,6 +85,18 @@
             </label>
 
             <label>
+                <span>Quem pode editar</span>
+
+                <select name="edit_policy" data-folder-edit-policy>
+                    {% for value, label in [('owner', 'Somente eu'), ('viewers', 'Todos que podem ver'), ('custom', 'Amigos selecionados')] %}
+                    <option value="{{ value }}" {% if (not folder and value == 'owner') or (folder and folder.edit_policy.value == value) %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
                 <span>Pasta superior</span>
 
                 <select name="parent_folder_id">
@@ -114,24 +126,24 @@
         <fieldset
             class="sharing-fieldset"
             data-folder-sharing
-            {% if not folder or folder.visibility.value != 'custom' %}
+            {% if not folder or (folder.visibility.value != 'custom' and folder.edit_policy.value != 'custom') %}
             hidden
             disabled
             {% endif %}
         >
             <legend>
-                Compartilhar com amigos específicos
+                Permissões de amigos
             </legend>
 
             <p>
-                Selecione os amigos que poderão visualizar
-                esta pasta.
+                Escolha quem pode visualizar e/ou editar. Quem pode editar
+                também precisa ter acesso à pasta.
             </p>
 
             {% if friends %}
             <div class="sharing-grid">
                 {% for friend in friends %}
-                <label class="sharing-row">
+                <div class="sharing-row" data-folder-permission-row>
                     <span>
                         <strong>
                             {{ friend.display_name or friend.username }}
@@ -139,18 +151,14 @@
                         @{{ friend.username }}
                     </span>
 
-                    <span>
-                        <input
-                            type="checkbox"
-                            name="shared_user_ids"
-                            value="{{ friend.id }}"
-                            {% if friend.id in shared_user_ids %}
-                            checked
-                            {% endif %}
-                        >
-                        Pode visualizar
-                    </span>
-                </label>
+                    <select data-folder-permission aria-label="Permissão para @{{ friend.username }}">
+                        <option value="none" {% if friend.id not in shared_user_ids %}selected{% endif %}>Sem acesso</option>
+                        <option value="view" {% if friend.id in shared_user_ids and friend.id not in editor_user_ids %}selected{% endif %}>Pode visualizar</option>
+                        <option value="edit" {% if friend.id in editor_user_ids %}selected{% endif %}>Pode editar</option>
+                    </select>
+                    <input type="hidden" name="shared_user_ids" value="{{ friend.id }}" disabled>
+                    <input type="hidden" name="editor_user_ids" value="{{ friend.id }}" disabled>
+                </div>
                 {% endfor %}
             </div>
             {% else %}

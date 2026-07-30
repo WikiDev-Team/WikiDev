@@ -46,6 +46,26 @@ def _migrate_sqlite_schema() -> None:
             connection.execute(
                 text("CREATE INDEX IF NOT EXISTS ix_page_visibility ON page (visibility)")
             )
+            if "edit_policy" not in page_columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE page "
+                        "ADD COLUMN edit_policy VARCHAR(20) NOT NULL DEFAULT 'OWNER'"
+                    )
+                )
+                connection.execute(
+                    text(
+                        "UPDATE page SET edit_policy = 'CUSTOM' "
+                        "WHERE visibility = 'CUSTOM' AND EXISTS ("
+                        "SELECT 1 FROM pageshare "
+                        "WHERE pageshare.page_id = page.id "
+                        "AND pageshare.permission = 'EDIT'"
+                        ")"
+                    )
+                )
+            connection.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_page_edit_policy ON page (edit_policy)")
+            )
 
         if "folder" in tables:
             folder_columns = {column["name"] for column in inspector.get_columns("folder")}
@@ -59,6 +79,28 @@ def _migrate_sqlite_schema() -> None:
             connection.execute(
                 text("CREATE INDEX IF NOT EXISTS ix_folder_visibility ON folder (visibility)")
             )
+            if "edit_policy" not in folder_columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE folder "
+                        "ADD COLUMN edit_policy VARCHAR(20) NOT NULL DEFAULT 'OWNER'"
+                    )
+                )
+            connection.execute(
+                text("CREATE INDEX IF NOT EXISTS ix_folder_edit_policy ON folder (edit_policy)")
+            )
+
+        if "foldershare" in tables:
+            folder_share_columns = {
+                column["name"] for column in inspector.get_columns("foldershare")
+            }
+            if "permission" not in folder_share_columns:
+                connection.execute(
+                    text(
+                        "ALTER TABLE foldershare "
+                        "ADD COLUMN permission VARCHAR(20) NOT NULL DEFAULT 'VIEW'"
+                    )
+                )
 
         if "comment" in tables:
             comment_columns = {column["name"] for column in inspector.get_columns("comment")}

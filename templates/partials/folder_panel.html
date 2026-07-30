@@ -15,7 +15,7 @@
             <h1>{{ folder.name }}</h1>
             {% if folder.description %}<p>{{ folder.description }}</p>{% endif %}
         </div>
-        {% if can_edit %}<div class="workspace-actions"><button type="button" class="secondary-action" hx-get="/folders/{{ folder.id }}/edit-form" hx-target="#page-editor-container">Editar</button><button type="button" class="primary-action" hx-get="/pages/new?folder_id={{ folder.id }}" hx-target="#page-editor-container">Nova página</button></div>{% endif %}
+        {% if can_manage or can_edit %}<div class="workspace-actions">{% if can_manage %}<button type="button" class="secondary-action" hx-get="/folders/{{ folder.id }}/edit-form" hx-target="#page-editor-container">Configurar pasta</button>{% endif %}{% if can_edit %}<button type="button" class="primary-action" hx-get="/pages/new?folder_id={{ folder.id }}" hx-target="#page-editor-container">Nova página</button>{% endif %}</div>{% endif %}
     </header>
 
     {% if subfolders %}<div class="content-section"><h2>Subpastas</h2><div class="resource-grid">{% for item in subfolders %}<button class="resource-card" hx-get="/folders/{{ item.id }}/panel" hx-target="#page-editor-container"><strong>📁 {{ item.name }}</strong><span>{{ item.description or 'Sem descrição' }}</span></button>{% endfor %}</div></div>{% endif %}
