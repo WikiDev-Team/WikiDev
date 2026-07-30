@@ -1,0 +1,167 @@
+************* Module app.db
+app/db.py:4:0: W0611: Unused Path imported from pathlib (unused-import)
+************* Module app.main
+app/main.py:44:0: C0301: Line too long (103/100) (line-too-long)
+************* Module app.models
+app/models.py:51:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:52:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:85:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:86:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:121:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:122:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:152:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:153:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:192:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:193:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:236:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:237:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:270:0: C0301: Line too long (101/100) (line-too-long)
+app/models.py:271:0: C0301: Line too long (101/100) (line-too-long)
+************* Module app.crud
+app/crud.py:20:0: C0301: Line too long (102/100) (line-too-long)
+app/crud.py:35:4: C0415: Import outside toplevel (datetime.datetime) (import-outside-toplevel)
+app/crud.py:4:0: C0411: standard import "typing.Optional" should be placed before third party imports "sqlmodel.Session", "sqlalchemy.delete" (wrong-import-order)
+app/crud.py:4:0: W0611: Unused Optional imported from typing (unused-import)
+************* Module app.routers.languages
+app/routers/languages.py:30:0: C0301: Line too long (102/100) (line-too-long)
+************* Module app.routers.pages
+app/routers/pages.py:12:0: R0917: Too many positional arguments (7/5) (too-many-positional-arguments)
+************* Module app.routers.examples
+app/routers/examples.py:33:0: C0301: Line too long (103/100) (line-too-long)
+
+
+Report
+======
+630 statements analysed.
+
+Statistics by type
+------------------
+
++---------+-------+-----------+-----------+------------+---------+
+|type     |number |old number |difference |%documented |%badname |
++=========+=======+===========+===========+============+=========+
+|module   |14     |NC         |NC         |14.29       |0.00     |
++---------+-------+-----------+-----------+------------+---------+
+|class    |38     |NC         |NC         |0.00        |0.00     |
++---------+-------+-----------+-----------+------------+---------+
+|method   |0      |NC         |NC         |0           |0        |
++---------+-------+-----------+-----------+------------+---------+
+|function |60     |NC         |NC         |21.67       |0.00     |
++---------+-------+-----------+-----------+------------+---------+
+
+
+
+External dependencies
+---------------------
+::
+
+    app 
+      \-crud (app.routers.comments,app.routers.examples,app.routers.folders,app.routers.languages,app.routers.pages,app.routers.tags,app.routers.users)
+      \-db (app.main,app.routers.comments,app.routers.examples,app.routers.folders,app.routers.languages,app.routers.pages,app.routers.tags,app.routers.users)
+      \-models (app.crud,app.main,app.routers.comments,app.routers.examples,app.routers.folders,app.routers.languages,app.routers.pages,app.routers.tags,app.routers.users,app.schemas)
+      \-routers 
+        \-comments (app.main)
+        \-examples (app.main)
+        \-folders (app.main)
+        \-languages (app.main)
+        \-pages (app.main)
+        \-tags (app.main)
+        \-users (app.main)
+
+
+
+1024 lines have been analyzed
+
+Raw metrics
+-----------
+
++----------+-------+------+---------+-----------+
+|type      |number |%     |previous |difference |
++==========+=======+======+=========+===========+
+|code      |742    |72.46 |NC       |NC         |
++----------+-------+------+---------+-----------+
+|docstring |27     |2.64  |NC       |NC         |
++----------+-------+------+---------+-----------+
+|comment   |14     |1.37  |NC       |NC         |
++----------+-------+------+---------+-----------+
+|empty     |241    |23.54 |NC       |NC         |
++----------+-------+------+---------+-----------+
+
+
+
+Duplication
+-----------
+
++-------------------------+------+---------+-----------+
+|                         |now   |previous |difference |
++=========================+======+=========+===========+
+|nb duplicated lines      |0     |NC       |NC         |
++-------------------------+------+---------+-----------+
+|percent duplicated lines |0.000 |NC       |NC         |
++-------------------------+------+---------+-----------+
+
+
+
+Messages by category
+--------------------
+
++-----------+-------+---------+-----------+
+|type       |number |previous |difference |
++===========+=======+=========+===========+
+|convention |20     |NC       |NC         |
++-----------+-------+---------+-----------+
+|refactor   |1      |NC       |NC         |
++-----------+-------+---------+-----------+
+|warning    |2      |NC       |NC         |
++-----------+-------+---------+-----------+
+|error      |0      |NC       |NC         |
++-----------+-------+---------+-----------+
+
+
+
+% errors / warnings by module
+-----------------------------
+
++----------------------+------+--------+---------+-----------+
+|module                |error |warning |refactor |convention |
++======================+======+========+=========+===========+
+|app.crud              |0.00  |50.00   |0.00     |15.00      |
++----------------------+------+--------+---------+-----------+
+|app.db                |0.00  |50.00   |0.00     |0.00       |
++----------------------+------+--------+---------+-----------+
+|app.routers.pages     |0.00  |0.00    |100.00   |0.00       |
++----------------------+------+--------+---------+-----------+
+|app.models            |0.00  |0.00    |0.00     |70.00      |
++----------------------+------+--------+---------+-----------+
+|app.routers.languages |0.00  |0.00    |0.00     |5.00       |
++----------------------+------+--------+---------+-----------+
+|app.routers.examples  |0.00  |0.00    |0.00     |5.00       |
++----------------------+------+--------+---------+-----------+
+|app.main              |0.00  |0.00    |0.00     |5.00       |
++----------------------+------+--------+---------+-----------+
+
+
+
+Messages
+--------
+
++------------------------------+------------+
+|message id                    |occurrences |
++==============================+============+
+|line-too-long                 |21          |
++------------------------------+------------+
+|unused-import                 |2           |
++------------------------------+------------+
+|wrong-import-order            |1           |
++------------------------------+------------+
+|too-many-positional-arguments |1           |
++------------------------------+------------+
+|import-outside-toplevel       |1           |
++------------------------------+------------+
+
+
+
+
+-----------------------------------
+Your code has been rated at 9.63/10
+
