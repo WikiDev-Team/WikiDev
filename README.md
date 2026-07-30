@@ -37,6 +37,7 @@ templates/             # páginas e fragmentos HTMX
 static/                # CSS, tema e imagens
 tests/                 # testes funcionais, segurança e CRUD
 scripts/               # seed e smoke test
+metrics/data/          # métricas e arquivos para geração de gráficos
 ```
 
 ### Visibilidade e estado
