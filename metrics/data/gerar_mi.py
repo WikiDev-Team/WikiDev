@@ -57,6 +57,15 @@ for cm in commits:
 # Configurando e gerando o gráfico
 plt.figure(figsize=(10, 6))
 
+plt.axhspan(20, 100, color='#2ca02c', alpha=0.07)
+plt.axhspan(10, 20, color='#ff7f0e', alpha=0.10)
+plt.axhspan(0, 10, color='#d62728', alpha=0.10)
+plt.axhline(20, color='gray', linestyle=':', linewidth=1)
+plt.axhline(10, color='gray', linestyle=':', linewidth=1)
+plt.text(0.02, 21, 'Rank A (manutenível)', fontsize=9, color='gray', transform=plt.gca().get_yaxis_transform())
+plt.text(0.02, 11, 'Rank B', fontsize=9, color='gray', transform=plt.gca().get_yaxis_transform())
+plt.text(0.02, 3, 'Rank C (crítico)', fontsize=9, color='gray', transform=plt.gca().get_yaxis_transform())
+
 # Linha da média (Azul)
 plt.plot(labels_grafico, valores_mi, marker='o', linestyle='-', color='#1f77b4', linewidth=2, markersize=8, label='MI Médio do Sistema')
 
@@ -72,7 +81,7 @@ plt.grid(True, linestyle='--', alpha=0.7)
 plt.xticks(rotation=45)
 
 # Adicionando a legenda para diferenciar as linhas
-plt.legend(loc='lower right', fontsize=11)
+plt.legend(loc='center right', fontsize=11)
 
 plt.tight_layout()
 
