@@ -7,18 +7,18 @@ WikiDev é uma wiki colaborativa para organizar conhecimento de programação em
 - Cadastro, login, logout e sessões por cookie `HttpOnly`.
 - Recuperação de senha por e-mail com token aleatório, armazenado somente como hash, expiração e uso único.
 - Páginas compostas por blocos de texto e código com destaque de sintaxe.
-- Pastas hierárquicas, públicas ou privadas, sem possibilidade de ciclos.
+- Pastas hierárquicas sem possibilidade de ciclos.
 - Criação de página dentro de pasta e associação ou remoção de páginas existentes.
 - Solicitações de amizade, perfis públicos e remoção de amizade.
-- Páginas privadas, públicas, para amigos ou compartilhadas com amigos específicos.
+- Páginas e pastas privadas, públicas, para amigos ou compartilhadas com amigos específicos.
 - Permissões separadas de visualização e edição, com revogação dos compartilhamentos diretos ao remover uma amizade.
+- Comentários em páginas e blocos são possíveis, possibilitando interação entre os usuários
+- Fórum de discussões, apresentando as interações mais recentes visíveis
 - Autorização no backend para páginas, pastas, blocos, comentários e exemplos.
 - Busca global que respeita as mesmas regras de privacidade.
 - Perfis e listagens públicas sem exposição do e-mail.
 - Testes automatizados, cobertura e workflow de integração contínua.
 - Docker, seed de demonstração e smoke test.
-
-> O fórum, comentários por bloco e a tela de atividades estão sendo desenvolvidos no PR #35. Consulte [`docs/merge-pr35.md`](docs/merge-pr35.md) antes de combinar as branches.
 
 ## Arquitetura
 
