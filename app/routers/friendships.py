@@ -20,6 +20,7 @@ from ..models import (
     now_utc,
 )
 from ..permissions import (
+    accessible_folders,
     friendship_state,
     get_friend_ids,
     get_friend_users,
@@ -134,6 +135,11 @@ def public_profile(
         for page in list_accessible_pages(session, current_user.id)
         if page.author_id == profile_user.id
     ]
+    visible_folders = [
+        folder
+        for folder in accessible_folders(session, current_user)
+        if folder.author_id == profile_user.id
+    ]
 
     return templates.TemplateResponse(
         request=request,
@@ -146,6 +152,7 @@ def public_profile(
             "friendship": friendship,
             "friendship_state": state,
             "visible_pages": visible_pages,
+            "visible_folders": visible_folders,
             "message": request.query_params.get("message", ""),
         },
     )
