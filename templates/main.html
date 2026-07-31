@@ -31,8 +31,8 @@
     </nav>
 
     <div id="search-container" class="topbar-search">
-        <label class="visually-hidden" for="global-search">Buscar usuários ou páginas</label>
-        <input id="global-search" type="search" name="q" placeholder="Buscar usuários ou páginas..." autocomplete="off"
+        <label class="visually-hidden" for="global-search">Buscar usuários, páginas ou pastas</label>
+        <input id="global-search" type="search" name="q" placeholder="Buscar usuários, páginas ou pastas..." autocomplete="off"
                hx-get="/busca" hx-trigger="input changed delay:350ms, search" hx-target="#search-results">
         <div id="search-results"></div>
     </div>
@@ -61,6 +61,10 @@
         {% if open_page_id %}
         <div hx-get="/pages/{{ open_page_id }}/blocks-editor" hx-trigger="load"
              hx-target="#page-editor-container" hx-swap="innerHTML" data-open-discussion="{{ open_discussion or '' }}" hidden></div>
+        <script>document.getElementById('welcome-panel').hidden = true;</script>
+        {% elif open_folder_id %}
+        <div hx-get="/folders/{{ open_folder_id }}/panel" hx-trigger="load"
+             hx-target="#page-editor-container" hx-swap="innerHTML" hidden></div>
         <script>document.getElementById('welcome-panel').hidden = true;</script>
         {% endif %}
     </main>
