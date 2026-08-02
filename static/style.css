@@ -813,6 +813,7 @@ pre.code-block.font-size-large code {
 .tree-button { width: 100%; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 8px; border: 0; border-radius: 8px; background: transparent; color: var(--text-secondary); text-align: left; cursor: pointer; }
 .tree-button:hover { color: var(--text-primary); background: rgba(139,148,158,.1); }
 .tree-label { overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.tree-owner { max-width: 95px; overflow: hidden; color: var(--text-secondary); font-size: .72rem; text-overflow: ellipsis; white-space: nowrap; }
 .visibility-dot, .status-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; }
 .visibility-dot.public { background: #3fb950; }
 .visibility-dot.private, .status-dot.draft { background: #d29922; }
