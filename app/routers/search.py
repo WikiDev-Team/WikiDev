@@ -7,7 +7,7 @@ from sqlmodel import Session, or_, select
 from ..db import get_session
 from ..dependencies import get_current_user
 from ..models import User
-from ..permissions import list_accessible_pages
+from ..permissions import accessible_folders, list_accessible_pages
 from ..templates import templates
 
 router = APIRouter(tags=["search"])
@@ -38,6 +38,11 @@ def search(
         for page in list_accessible_pages(session, current_user.id)
         if normalized in page.title.casefold()
     ][:20]
+    folders = [
+        folder
+        for folder in accessible_folders(session, current_user)
+        if normalized in folder.name.casefold()
+    ][:20]
 
     return templates.TemplateResponse(
         request=request,
@@ -46,6 +51,7 @@ def search(
             "termo": query,
             "usuarios": users,
             "paginas": pages,
+            "pastas": folders,
             "usuario_atual": current_user,
         },
     )

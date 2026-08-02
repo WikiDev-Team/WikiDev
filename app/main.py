@@ -94,6 +94,7 @@ def root():
 def dashboard(
     request: Request,
     open_page: int | None = None,
+    open_folder: int | None = None,
     discussion: str | None = None,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
@@ -114,6 +115,12 @@ def dashboard(
     )
 
     open_page_id = open_page if any(page.id == open_page for page in pages) else None
+    open_folder_id = (
+        open_folder
+        if open_page_id is None
+        and any(folder.id == open_folder for folder in folders)
+        else None
+    )
 
     open_discussion = None
     if open_page_id is not None:
@@ -138,6 +145,7 @@ def dashboard(
             "owned_folders": owned_folders,
             "pending_friend_requests": pending_friend_requests,
             "open_page_id": open_page_id,
+            "open_folder_id": open_folder_id,
             "open_discussion": open_discussion,
         },
     )

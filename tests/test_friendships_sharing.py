@@ -387,6 +387,40 @@ def test_folder_visibility_respects_parent_folders(client: TestClient, engine):
     assert client.get(f"/folders/{visible_child}").status_code == 200
 
 
+def test_profile_lists_only_accessible_folders_from_user(client: TestClient, engine):
+    alice_id, alice_token = _create_authenticated_user(client, engine, "alice_profile_folders")
+    _, bob_token = _create_authenticated_user(client, engine, "bob_profile_folders")
+
+    _login_as(client, alice_token)
+    private_id = _create_folder(client, "Pasta privada no perfil", "private")
+    public_id = _create_folder(client, "Pasta pública no perfil", "public")
+    private_parent_id = _create_folder(client, "Raiz privada no perfil", "private")
+    blocked_child_id = _create_folder(
+        client,
+        "Filha pública bloqueada no perfil",
+        "public",
+        parent_folder_id=private_parent_id,
+    )
+
+    own_profile = client.get(f"/profile/{alice_id}")
+    assert own_profile.status_code == 200
+    assert "Minhas pastas" in own_profile.text
+    assert "Pasta privada no perfil" in own_profile.text
+    assert "Pasta pública no perfil" in own_profile.text
+    assert "Filha pública bloqueada no perfil" in own_profile.text
+    assert f"/dashboard?open_folder={private_id}" in own_profile.text
+
+    _login_as(client, bob_token)
+    visitor_profile = client.get(f"/profile/{alice_id}")
+    assert visitor_profile.status_code == 200
+    assert "Pastas compartilhadas com você" in visitor_profile.text
+    assert "Pasta pública no perfil" in visitor_profile.text
+    assert f"/dashboard?open_folder={public_id}" in visitor_profile.text
+    assert "Pasta privada no perfil" not in visitor_profile.text
+    assert "Filha pública bloqueada no perfil" not in visitor_profile.text
+    assert f"/dashboard?open_folder={blocked_child_id}" not in visitor_profile.text
+
+
 def test_update_folder_without_shared_users(client: TestClient, engine):
     _, alice_token = _create_authenticated_user(client, engine, "alice_folder_update")
     _login_as(client, alice_token)
