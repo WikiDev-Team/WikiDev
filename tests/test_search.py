@@ -49,6 +49,10 @@ def test_search_returns_only_accessible_folders(client: TestClient, register_and
         },
     ).json()
 
+    owner_dashboard = client.get("/dashboard")
+    assert owner_dashboard.status_code == 200
+    assert '<span class="tree-owner">@folder_owner</span>' not in owner_dashboard.text
+
     client.post("/logout")
     register_and_login(username="folder_reader", email="folder-reader@example.com")
 
@@ -67,6 +71,11 @@ def test_search_returns_only_accessible_folders(client: TestClient, register_and
     )
     assert dashboard.status_code == 200
     assert f'hx-get="/folders/{public_folder["id"]}/panel"' in dashboard.text
+    assert '<span class="tree-owner">@folder_owner</span>' in dashboard.text
+
+    folder_panel = client.get(f'/folders/{public_folder["id"]}/panel')
+    assert folder_panel.status_code == 200
+    assert '<p class="page-author">por @folder_owner</p>' in folder_panel.text
 
     blocked_dashboard = client.get(
         "/dashboard",

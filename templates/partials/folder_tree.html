@@ -5,6 +5,9 @@
                 <button type="button" class="tree-button" hx-get="/folders/{{ folder.id }}/panel" hx-target="#page-editor-container" hx-swap="innerHTML" onclick="hideWelcome()">
                     <span aria-hidden="true">📁</span>
                     <span class="tree-label">{{ folder.name }}</span>
+                    {% if folder.author_id != usuario.id and folder.author %}
+                        <span class="tree-owner">@{{ folder.author.username }}</span>
+                    {% endif %}
                     <span class="visibility-dot {{ folder.visibility.value }}" title="{{ 'Pública' if folder.visibility.value == 'public' else 'Privada' }}"></span>
                 </button>
                 {% if folders|selectattr('parent_folder_id', 'equalto', folder.id)|list %}
