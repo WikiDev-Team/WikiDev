@@ -13,6 +13,7 @@
                 {% endif %}
             </span>
             <h1>{{ folder.name }}</h1>
+            {% if folder.author %}<p class="page-author">por @{{ folder.author.username }}</p>{% endif %}
             {% if folder.description %}<p>{{ folder.description }}</p>{% endif %}
         </div>
         {% if can_manage or can_edit %}<div class="workspace-actions">{% if can_manage %}<button type="button" class="secondary-action" hx-get="/folders/{{ folder.id }}/edit-form" hx-target="#page-editor-container">Configurar pasta</button>{% endif %}{% if can_edit %}<button type="button" class="primary-action" hx-get="/pages/new?folder_id={{ folder.id }}" hx-target="#page-editor-container">Nova página</button>{% endif %}</div>{% endif %}
