@@ -240,7 +240,7 @@ def edit_page(
     status: PageStatus = Form(PageStatus.DRAFT),
     visibility: PageVisibility | None = Form(None),
     edit_policy: EditPolicy | None = Form(None),
-    folder_id: str | None = Form(None),
+    folder_id: str = Form(""),
     shared_user_ids: list[int] | None = Form(None),
     editor_user_ids: list[int] | None = Form(None),
     session: Session = Depends(get_session),
@@ -269,14 +269,13 @@ def edit_page(
             updates["edit_policy"] = EditPolicy.CUSTOM
         elif edit_policy is not None:
             updates["edit_policy"] = edit_policy
-        if folder_id is not None:
-            parsed_folder_id = _parse_folder_id(folder_id)
-            if parsed_folder_id is not None:
-                folder = session.get(Folder, parsed_folder_id)
-                if folder is None:
-                    raise HTTPException(status_code=404, detail="Pasta não encontrada")
-                require_folder_edit(session, folder, current_user)
-            updates["folder_id"] = parsed_folder_id
+        parsed_folder_id = _parse_folder_id(folder_id)
+        if parsed_folder_id is not None:
+            folder = session.get(Folder, parsed_folder_id)
+            if folder is None:
+                raise HTTPException(status_code=404, detail="Pasta não encontrada")
+            require_folder_edit(session, folder, current_user)
+        updates["folder_id"] = parsed_folder_id
 
     page = update_page(session, page, PageUpdate(**updates))
     if is_owner:

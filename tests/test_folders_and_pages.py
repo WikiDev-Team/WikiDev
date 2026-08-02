@@ -102,6 +102,32 @@ def test_attach_detach_existing_page_and_prevent_folder_cycles(client: TestClien
     assert client.get(f"/pages/{page_id}").json()["folder_id"] is None
 
 
+def test_page_metadata_can_remove_page_from_folder(client: TestClient, register_and_login):
+    register_and_login()
+    folder = client.post("/folders/", json={"name": "Pasta temporária"}).json()
+    page = client.post(
+        f"/folders/{folder['id']}/pages",
+        json={"title": "Página para desvincular", "tag_ids": []},
+    ).json()
+
+    response = client.patch(
+        f"/pages/{page['id']}",
+        data={
+            "title": page["title"],
+            "summary": "",
+            "page_type": page["page_type"],
+            "status": page["status"],
+            "visibility": page["visibility"],
+            "edit_policy": page["edit_policy"],
+            "folder_id": "",
+        },
+    )
+
+    assert response.status_code == 200
+    assert client.get(f"/pages/{page['id']}").json()["folder_id"] is None
+    assert "Pasta: Pasta temporária" not in response.text
+
+
 def test_non_owner_cannot_modify_page_folder_or_blocks(client: TestClient, register_and_login):
     register_and_login(username="owner", email="owner@example.com")
     folder = client.post("/folders/", json={"name": "Pública", "visibility": "public"}).json()
