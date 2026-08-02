@@ -37,7 +37,7 @@ templates/             # páginas e fragmentos HTMX
 static/                # CSS, tema e imagens
 tests/                 # testes funcionais, segurança e CRUD
 scripts/               # seed e smoke test
-metrics/data/          # métricas e arquivos para geração de gráficos
+metrics/               # resultados e análise das métricas de qualidade
 ```
 
 ### Visibilidade e estado
@@ -106,6 +106,10 @@ python scripts/test_backend.py
 
 O GitHub Actions executa a suíte em Python 3.11 e 3.12 em pushes e pull requests para `main` e `develop`.
 
+## Métricas de qualidade
+
+O projeto acompanha SLOC, Índice de Manutenibilidade, Complexidade Ciclomática e métricas de Halstead. Consulte [`metrics/data/METRICS.md`](metrics/data/METRICS.md) para a análise dos resultados.
+
 ## Docker
 
 ```bash
@@ -125,6 +129,9 @@ O banco SQLite é persistido no volume `wikidev_data`.
 | Pastas | `/folders/`, `/folders/{id}/pages`, `/folders/{id}/pages/{page_id}` |
 | Amizades | `/friends`, `/friendships/request/{user_id}`, `/friendships/{id}/...` |
 | Comentários | `/comments/`, `/comments/{id}` |
+| Discussões | `/comments/pages/{page_id}/discussion`, `/comments/blocks/{block_id}/discussion` |
+| Fórum | `GET /forum` |
+| Perfis | `GET /profile/{user_id}` |
 | Exemplos | `/examples/`, `/examples/{id}` |
 | Busca | `GET /busca?q=...` |
 | Saúde | `GET /health` |

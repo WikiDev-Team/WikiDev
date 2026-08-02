@@ -204,6 +204,7 @@ def create_folder_ui(
         context={
             **_folder_panel_context(session, folder, current_user),
             "folders": accessible_folders(session, current_user),
+            "usuario": current_user,
         },
     )
 
@@ -313,6 +314,7 @@ def update_folder_ui(
         context={
             **_folder_panel_context(session, folder, current_user),
             "folders": accessible_folders(session, current_user),
+            "usuario": current_user,
         },
     )
 
@@ -346,7 +348,10 @@ def delete_folder_ui(
     return templates.TemplateResponse(
         request=request,
         name="partials/folder_deleted.html",
-        context={"folders": accessible_folders(session, current_user)},
+        context={
+            "folders": accessible_folders(session, current_user),
+            "usuario": current_user,
+        },
     )
 
 
