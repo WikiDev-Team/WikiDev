@@ -1,3 +1,12 @@
+"""Popula o banco com conteúdo de demonstração útil.
+
+Uso: python -m scripts.seed_demo
+
+Pode rodar mais de uma vez. Páginas de demonstração que já existem (mesmo
+título e mesmo autor) são atualizadas para o conteúdo atual de
+scripts/demo_content.py. Páginas criadas por pessoas não são tocadas.
+"""
+
 from __future__ import annotations
 
 from sqlmodel import Session, select
@@ -5,11 +14,13 @@ from sqlmodel import Session, select
 from app.crud import (
     create_comment,
     create_folder,
-    create_language,
     create_page,
     create_page_block,
     create_tag,
     create_user,
+    delete_page_block,
+    update_folder,
+    update_page,
 )
 from app.db import engine, init_db
 from app.models import (
@@ -17,104 +28,77 @@ from app.models import (
     CommentCreate,
     Folder,
     FolderCreate,
+    FolderUpdate,
     FolderVisibility,
-    Language,
-    LanguageCreate,
+    Friendship,
+    FriendshipStatus,
     Page,
+    PageBlock,
     PageBlockCreate,
     PageBlockType,
     PageCreate,
     PageStatus,
     PageType,
+    PageUpdate,
     PageVisibility,
     Tag,
     TagCreate,
     User,
     UserCreate,
 )
+from scripts.demo_content import COMMENTS, FOLDERS, PAGES, USERS
 
 
-def main() -> None:
-    init_db()
-    with Session(engine) as session:
-        user = session.exec(select(User).where(User.username == "admin")).first()
+def _ensure_users(session: Session) -> dict[str, User]:
+    users: dict[str, User] = {}
+    for data in USERS:
+        user = session.exec(select(User).where(User.username == data["username"])).first()
         if user is None:
-            user = create_user(
-                session,
-                UserCreate(
-                    username="admin",
-                    email="admin@wikidev.local",
-                    display_name="Administrador",
-                    bio="Conta inicial para demonstração.",
-                    password="admin123",
-                ),
-            )
+            user = create_user(session, UserCreate(**data))
+        users[data["username"]] = user
+    return users
 
-        language = session.exec(select(Language).where(Language.name == "Python")).first()
-        if language is None:
-            language = create_language(
-                session,
-                LanguageCreate(
-                    name="Python",
-                    description="Linguagem de propósito geral.",
-                    official_url="https://www.python.org/",
-                ),
-            )
 
-        tag = session.exec(select(Tag).where(Tag.name == "exemplo")).first()
-        if tag is None:
-            tag = create_tag(session, TagCreate(name="exemplo"))
+def _ensure_friendship(session: Session, a: User, b: User) -> None:
+    existing = session.exec(
+        select(Friendship).where(
+            ((Friendship.requester_id == a.id) & (Friendship.addressee_id == b.id))
+            | ((Friendship.requester_id == b.id) & (Friendship.addressee_id == a.id))
+        )
+    ).first()
+    if existing is None:
+        session.add(Friendship(requester_id=a.id, addressee_id=b.id, status=FriendshipStatus.ACCEPTED))
+    elif existing.status != FriendshipStatus.ACCEPTED:
+        existing.status = FriendshipStatus.ACCEPTED
+        session.add(existing)
+    session.commit()
 
-        folder = session.exec(select(Folder).where(Folder.name == "Primeiros passos")).first()
+
+def _ensure_folders(session: Session, users: dict[str, User]) -> dict[str, Folder]:
+    folders: dict[str, Folder] = {}
+    for owner, name, description in FOLDERS:
+        author = users[owner]
+        folder = session.exec(
+            select(Folder).where(Folder.name == name, Folder.author_id == author.id)
+        ).first()
         if folder is None:
             folder = create_folder(
                 session,
                 FolderCreate(
-                    name="Primeiros passos",
-                    description="Conteúdo de demonstração do WikiDev.",
+                    name=name,
+                    description=description,
                     visibility=FolderVisibility.PUBLIC,
-                    author_id=user.id,
+                    author_id=author.id,
                 ),
             )
-
-        page = session.exec(select(Page).where(Page.title == "Python: variáveis e tipos básicos")).first()
-        if page is None:
-            page = create_page(
+        elif folder.description != description or folder.visibility != FolderVisibility.PUBLIC:
+            folder = update_folder(
                 session,
-                PageCreate(
-                    title="Python: variáveis e tipos básicos",
-                    page_type=PageType.OFFICIAL,
-                    status=PageStatus.PUBLISHED,
-                    visibility=PageVisibility.PUBLIC,
-                    summary="Uma introdução curta à criação de variáveis em Python.",
-                    language_id=language.id,
-                    author_id=user.id,
-                    folder_id=folder.id,
-                    tag_ids=[tag.id],
-                ),
+                folder,
+                FolderUpdate(description=description, visibility=FolderVisibility.PUBLIC),
             )
-            create_page_block(
-                session,
-                page.id,
-                PageBlockCreate(
-                    block_type=PageBlockType.TEXT,
-                    content="Python possui tipagem dinâmica: o tipo acompanha o valor atribuído.",
-                    font_size="large",
-                ),
-            )
-            create_page_block(
-                session,
-                page.id,
-                PageBlockCreate(
-                    block_type=PageBlockType.CODE,
-                    content='linguagem = "Python"\nversao = 3\nprint(linguagem, versao)',
-                    language="python",
-                ),
-            )
-
-        _seed_extra_pages(session, user, folder)
-
-    print("Dados de demonstração criados. Login: admin / admin123")
+        folders[name] = folder
+    return folders
 
 
 def _tag_ids(session: Session, names: list[str]) -> list[int]:
@@ -127,99 +111,117 @@ def _tag_ids(session: Session, names: list[str]) -> list[int]:
     return ids
 
 
-def _ensure_page(session: Session, user: User, folder: Folder | None, title: str, summary: str,
-                 tags: list[str], blocks: list[tuple[PageBlockType, str, str]]) -> Page:
-    page = session.exec(select(Page).where(Page.title == title)).first()
-    if page is not None:
-        return page
-    page = create_page(
-        session,
-        PageCreate(
-            title=title,
-            page_type=PageType.NOTE,
-            status=PageStatus.PUBLISHED,
-            visibility=PageVisibility.PUBLIC,
-            summary=summary,
-            author_id=user.id,
-            folder_id=folder.id if folder else None,
-            tag_ids=_tag_ids(session, tags),
-        ),
-    )
-    for block_type, content, language in blocks:
-        create_page_block(
+def _block_specs(spec: dict) -> list[tuple[str, str, str]]:
+    return [(block[0], block[1], block[2] if len(block) > 2 else "") for block in spec["blocks"]]
+
+
+def _current_blocks(session: Session, page: Page) -> list[PageBlock]:
+    return session.exec(
+        select(PageBlock)
+        .where(PageBlock.page_id == page.id)
+        .order_by(PageBlock.position.asc(), PageBlock.id.asc())
+    ).all()
+
+
+def _upsert_page(session: Session, spec: dict, users: dict[str, User], folders: dict[str, Folder]) -> Page:
+    author = users[spec["author"]]
+    folder = folders[spec["folder"]]
+    tag_ids = _tag_ids(session, spec["tags"])
+    page = session.exec(
+        select(Page).where(Page.title == spec["title"], Page.author_id == author.id)
+    ).first()
+
+    if page is None:
+        page = create_page(
             session,
-            page.id,
-            PageBlockCreate(block_type=block_type, content=content, language=language),
+            PageCreate(
+                title=spec["title"],
+                page_type=PageType.NOTE,
+                status=PageStatus.PUBLISHED,
+                visibility=PageVisibility.PUBLIC,
+                summary=spec["summary"],
+                author_id=author.id,
+                folder_id=folder.id,
+                tag_ids=tag_ids,
+            ),
         )
-    return page
-
-
-def _seed_extra_pages(session: Session, user: User, starter_folder: Folder) -> None:
-    db_folder = session.exec(select(Folder).where(Folder.name == "Banco de dados")).first()
-    if db_folder is None:
-        db_folder = create_folder(
+    else:
+        page = update_page(
             session,
-            FolderCreate(
-                name="Banco de dados",
-                description="Consultas, modelagem e dicas de SQL.",
-                visibility=FolderVisibility.PUBLIC,
-                author_id=user.id,
+            page,
+            PageUpdate(
+                summary=spec["summary"],
+                folder_id=folder.id,
+                status=PageStatus.PUBLISHED,
+                visibility=PageVisibility.PUBLIC,
+                tag_ids=tag_ids,
             ),
         )
 
-    _ensure_page(
-        session, user, starter_folder,
-        "Git: comandos do dia a dia",
-        "Cola rápida com os comandos de Git que mais aparecem no trabalho.",
-        ["git", "cheatsheet"],
-        [
-            (PageBlockType.TEXT,
-             "## Fluxo básico\n\n1. Crie uma branch a partir da `main`\n2. Faça commits pequenos e com mensagem clara\n"
-             "3. Abra um **pull request** e peça revisão\n\n> Dica: use `git status` antes de qualquer comando destrutivo.", ""),
-            (PageBlockType.CODE,
-             "git switch -c feat/minha-feature\ngit add -p\ngit commit -m \"feat: adiciona busca por tag\"\n"
-             "git push -u origin feat/minha-feature", "bash"),
-        ],
-    )
-    joins = _ensure_page(
-        session, user, db_folder,
-        "SQL: tipos de JOIN",
-        "Quando usar INNER, LEFT e FULL JOIN, com exemplos.",
-        ["sql", "banco-de-dados"],
-        [
-            (PageBlockType.TEXT,
-             "| JOIN | Retorna |\n|---|---|\n| `INNER` | só linhas com par nas duas tabelas |\n"
-             "| `LEFT` | todas da esquerda, com `NULL` quando não há par |\n| `FULL` | todas das duas tabelas |\n\n"
-             "Para montar a API que roda essas consultas, veja [[FastAPI: rotas com dependências]].", ""),
-            (PageBlockType.CODE,
-             "SELECT u.username, COUNT(p.id) AS paginas\nFROM users u\nLEFT JOIN pages p ON p.author_id = u.id\n"
-             "GROUP BY u.username\nORDER BY paginas DESC;", "sql"),
-        ],
-    )
-    _ensure_page(
-        session, user, None,
-        "FastAPI: rotas com dependências",
-        "Como reaproveitar autenticação e sessão de banco com Depends.",
-        ["python", "fastapi"],
-        [
-            (PageBlockType.TEXT,
-             "Com `Depends`, o FastAPI resolve a sessão e o usuário antes de chamar a rota. "
-             "Assim cada endpoint recebe o que precisa **sem repetir código**.\n\n"
-             "Antes de começar, revise [[Python: variáveis e tipos básicos]].", ""),
-            (PageBlockType.CODE,
-             "@router.get(\"/pages/{page_id}\")\ndef get_page(\n    page_id: int,\n"
-             "    session: Session = Depends(get_session),\n    user: User = Depends(get_current_user),\n):\n"
-             "    return require_page_view(session, page_id, user)", "python"),
-        ],
-    )
+    wanted = _block_specs(spec)
+    current = _current_blocks(session, page)
+    if [(b.block_type.value, b.content, b.language or "") for b in current] != wanted:
+        for block in current:
+            delete_page_block(session, block)
+        for position, (block_type, content, language) in enumerate(wanted):
+            create_page_block(
+                session,
+                page.id,
+                PageBlockCreate(
+                    block_type=PageBlockType(block_type),
+                    content=content,
+                    language=language,
+                    position=position,
+                ),
+            )
+    return page
 
-    has_comment = session.exec(select(Comment).where(Comment.page_id == joins.id)).first()
-    if has_comment is None:
-        create_comment(
-            session,
-            CommentCreate(page_id=joins.id, body="Vale incluir um exemplo de self join aqui também."),
-            author_id=user.id,
-        )
+
+# Comentário da versão antiga do seed, substituído pelo comentário da Ana.
+LEGACY_COMMENTS = {("admin", "SQL: tipos de JOIN", "Vale incluir um exemplo de self join aqui também.")}
+
+
+def _ensure_comments(session: Session, users: dict[str, User], pages: dict[str, Page]) -> None:
+    for username, title, body in LEGACY_COMMENTS:
+        legacy = session.exec(
+            select(Comment).where(
+                Comment.page_id == pages[title].id,
+                Comment.author_id == users[username].id,
+                Comment.body == body,
+                Comment.block_id.is_(None),
+                Comment.parent_comment_id.is_(None),
+            )
+        ).first()
+        has_replies = legacy is not None and session.exec(
+            select(Comment).where(Comment.parent_comment_id == legacy.id)
+        ).first()
+        if legacy is not None and not has_replies:
+            session.delete(legacy)
+            session.commit()
+
+    for username, title, body in COMMENTS:
+        page = pages[title]
+        author = users[username]
+        exists = session.exec(
+            select(Comment).where(
+                Comment.page_id == page.id, Comment.author_id == author.id, Comment.body == body
+            )
+        ).first()
+        if exists is None:
+            create_comment(session, CommentCreate(page_id=page.id, body=body), author_id=author.id)
+
+
+def main() -> None:
+    init_db()
+    with Session(engine) as session:
+        users = _ensure_users(session)
+        _ensure_friendship(session, users["admin"], users["ana"])
+        folders = _ensure_folders(session, users)
+        pages = {spec["title"]: _upsert_page(session, spec, users, folders) for spec in PAGES}
+        _ensure_comments(session, users, pages)
+
+    print("Dados de demonstração prontos.")
+    print("Logins: admin / admin123 e ana / ana12345")
 
 
 if __name__ == "__main__":

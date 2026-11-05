@@ -131,6 +131,9 @@ function renderRunOutput(panel, result) {
     if (result.stdout) lines.push(['run-stdout', result.stdout]);
     if (result.stderr) lines.push(['run-stderr', result.stderr]);
     if (result.error) lines.push(['run-error', result.error]);
+    if (result.error && result.error.includes('ModuleNotFoundError')) {
+        lines.push(['run-muted', 'No navegador só estão disponíveis a biblioteca padrão e os pacotes do Pyodide (numpy, pandas etc.). Frameworks como FastAPI precisam rodar no seu computador.']);
+    }
     if (!lines.length) lines.push(['run-muted', '(sem saída)']);
     const pre = document.createElement('pre');
     for (const [cls, text] of lines) {
