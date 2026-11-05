@@ -285,6 +285,7 @@ function toggleExperiment(wrapper, tryButton) {
     const existing = wrapper.querySelector('.try-editor');
     if (existing) {
         existing.remove();
+        wrapper.querySelector('.try-notice')?.remove();
         pre.hidden = false;
         tryButton.textContent = 'Experimentar';
         tryButton.title = 'Mudar o código e rodar aqui, sem alterar a página';
@@ -297,8 +298,12 @@ function toggleExperiment(wrapper, tryButton) {
     editor.value = pre.querySelector('code')?.innerText ?? '';
     editor.rows = Math.min(Math.max(editor.value.split('\n').length + 1, 4), 30);
     editor.setAttribute('aria-label', 'Cópia editável do código (só no seu navegador)');
+    const notice = document.createElement('div');
+    notice.className = 'try-notice';
+    notice.setAttribute('role', 'status');
+    notice.innerHTML = '<strong>Modo experimento.</strong> As alterações ficam só no seu navegador: ninguém mais vê e elas somem ao recarregar. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> executa.';
     pre.hidden = true;
-    pre.after(editor);
+    pre.after(notice, editor);
     wrapper.classList.add('is-experimenting');
     tryButton.textContent = 'Restaurar';
     tryButton.title = 'Voltar ao código original da página';

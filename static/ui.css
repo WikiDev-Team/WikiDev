@@ -624,6 +624,14 @@ a.tag-chip:hover { filter: brightness(1.15); }
     box-shadow: inset 3px 0 0 var(--accent-strong);
 }
 .try-editor:focus { outline: none; }
+.try-notice {
+    padding: 8px 16px; border-bottom: 1px solid var(--border-color);
+    background: var(--bg-elevated); color: var(--text-secondary);
+    font-size: 0.8rem; line-height: 1.5;
+    box-shadow: inset 3px 0 0 var(--accent-strong);
+}
+.try-notice strong { color: var(--accent-strong); }
+.try-notice kbd { font-size: 0.72rem; }
 .run-images { display: grid; justify-items: start; gap: 12px; padding: 10px 16px 0; min-width: 0; }
 .run-images img { max-width: 100%; height: auto; border-radius: 6px; background: #fff; }
 .run-actions { display: flex; gap: 6px; padding: 0 16px 12px; }
