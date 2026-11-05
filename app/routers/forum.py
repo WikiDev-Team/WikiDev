@@ -25,7 +25,7 @@ class DiscussionEntry:
     @property
     def url(self) -> str:
         discussion = f"block-{self.block.id}" if self.block else "page"
-        return f"/dashboard?open_page={self.page.id}&discussion={discussion}"
+        return f"/p/{self.page.id}?discussion={discussion}"
 
     @property
     def block_label(self) -> str:

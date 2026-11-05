@@ -13,6 +13,16 @@
 					<option value="c" {% if block.language == "c" %}selected{% endif %}>C</option>
 					<option value="cpp" {% if block.language == "cpp" %}selected{% endif %}>C++</option>
 					<option value="java" {% if block.language == "java" %}selected{% endif %}>Java</option>
+					<option value="javascript" {% if block.language == "javascript" %}selected{% endif %}>JavaScript</option>
+					<option value="typescript" {% if block.language == "typescript" %}selected{% endif %}>TypeScript</option>
+					<option value="go" {% if block.language == "go" %}selected{% endif %}>Go</option>
+					<option value="rust" {% if block.language == "rust" %}selected{% endif %}>Rust</option>
+					<option value="sql" {% if block.language == "sql" %}selected{% endif %}>SQL</option>
+					<option value="bash" {% if block.language == "bash" %}selected{% endif %}>Bash</option>
+					<option value="xml" {% if block.language == "xml" %}selected{% endif %}>HTML</option>
+					<option value="css" {% if block.language == "css" %}selected{% endif %}>CSS</option>
+					<option value="json" {% if block.language == "json" %}selected{% endif %}>JSON</option>
+					<option value="plaintext" {% if block.language == "plaintext" %}selected{% endif %}>Texto simples</option>
 				</select>
 
 			</div>
@@ -38,8 +48,10 @@
 			<textarea
 				id="content-{{ block.id }}"
 				name="content"
-				rows="{% if block.block_type.value == 'code' %}10{% else %}5{% endif %}"
+				rows="{% if block.block_type.value == 'code' %}10{% else %}6{% endif %}"
+				{% if block.block_type.value == 'code' %}class="code-input" spellcheck="false"{% else %}placeholder="Escreva em Markdown: # título, **negrito**, `código`, - listas, [links](https://...)"{% endif %}
 			>{{ block.content }}</textarea>
+			{% if block.block_type.value != 'code' %}<small class="field-hint">Aceita Markdown: títulos, listas, links, tabelas e `código`.</small>{% endif %}
 		</div>
 
 		<div class="page-block-actions">

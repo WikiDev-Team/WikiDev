@@ -1,110 +1,70 @@
+{% from "partials/ui_macros.html" import icon %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ project }}</title>
+    <title>{% if document_title %}{{ document_title }} · {% endif %}{{ project }}</title>
     <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="/static/vendor/htmx-1.9.10.min.js"></script>
     <script defer src="/static/theme.js"></script>
     <script defer src="/static/folder-sharing.js"></script>
     <script defer src="/static/page-sharing.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
+    <script defer src="/static/vendor/highlight-11.11.1.min.js"></script>
+    <script defer src="/static/workspace.js"></script>
+    <link rel="stylesheet" href="/static/vendor/hljs-github-dark.min.css">
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+    <link rel="stylesheet" href="/static/ui.css">
 </head>
-<body>
+<body class="workspace-body">
 {% set active_page = 'dashboard' %}
 {% set show_sidebar_toggle = true %}
 {% include "partials/topbar.html" %}
 
 <div class="layout-container">
-    <main class="main-content">
-        <section id="welcome-panel" class="welcome-section hero-panel">
-            <span class="eyebrow">Olá, {{ usuario.display_name or usuario.username }}</span>
-            <h1>Construa conhecimento que continua útil.</h1>
-            <p>Organize páginas em pastas, compartilhe com amigos e encontre rapidamente o conteúdo disponível para você.</p>
-            <div class="hero-actions">
-                <button class="primary-action" hx-get="/pages/new" hx-target="#page-editor-container" onclick="hideWelcome()">Criar página</button>
-                <button class="secondary-action" hx-get="/folders/new" hx-target="#page-editor-container" onclick="hideWelcome()">Criar pasta</button>
-            </div>
-        </section>
-        <div id="page-editor-container" aria-live="polite"></div>
-        {% if open_page_id %}
-        <div hx-get="/pages/{{ open_page_id }}/blocks-editor" hx-trigger="load"
-             hx-target="#page-editor-container" hx-swap="innerHTML" data-open-discussion="{{ open_discussion or '' }}" hidden></div>
-        <script>document.getElementById('welcome-panel').hidden = true;</script>
-        {% elif open_folder_id %}
-        <div hx-get="/folders/{{ open_folder_id }}/panel" hx-trigger="load"
-             hx-target="#page-editor-container" hx-swap="innerHTML" hidden></div>
-        <script>document.getElementById('welcome-panel').hidden = true;</script>
-        {% endif %}
-    </main>
-
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar" aria-label="Navegação da wiki">
         <div class="sidebar-actions">
             <button type="button" class="add-page-button" hx-get="/pages/new" hx-target="#page-editor-container"
-                    hx-swap="innerHTML" onclick="hideWelcome()">+ Nova página</button>
-            <button type="button" class="add-folder-button" hx-get="/folders/new" hx-target="#page-editor-container"
-                    hx-swap="innerHTML" onclick="hideWelcome()">+ Nova pasta</button>
+                    hx-swap="innerHTML">{{ icon("plus", 15) }} Nova página</button>
         </div>
+        <nav class="sidebar-section sidebar-home">
+            <a href="/dashboard" class="nav-item tree-button" data-nav-path="/dashboard">{{ icon("home") }}<span class="tree-label">Início</span></a>
+        </nav>
         {% include "partials/folder_sidebar.html" %}
         <div class="sidebar-section">
             <div class="sidebar-section-heading">
-                <span>Páginas acessíveis</span><span class="count-pill">{{ pages|length }}</span>
+                <span>Páginas</span><span class="count-pill">{{ pages|length }}</span>
             </div>
             <ul class="file-tree" id="pages-list">
                 {% for page in pages %}{% include "partials/page_item.html" %}{% endfor %}
             </ul>
         </div>
     </aside>
-</div>
+    <div class="sidebar-backdrop" onclick="toggleSidebar()" aria-hidden="true"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
-<script>
-    function hideWelcome() {
-        const panel = document.getElementById('welcome-panel');
-        if (panel) panel.hidden = true;
-    }
-    function showWelcome() {
-        const panel = document.getElementById('welcome-panel');
-        const editor = document.getElementById('page-editor-container');
-        if (panel) panel.hidden = false;
-        if (editor) editor.innerHTML = '';
-    }
-    function toggleSidebar() { document.getElementById('sidebar')?.classList.toggle('collapsed'); }
-    function closeSearch() {
-        const results = document.getElementById('search-results');
-        if (results) results.innerHTML = '';
-    }
-    function highlightCodeBlocks(root = document) {
-        if (!window.hljs) return;
-        root.querySelectorAll('pre code').forEach((block) => {
-            if (!block.dataset.highlighted) hljs.highlightElement(block);
-        });
-    }
-    document.addEventListener('DOMContentLoaded', () => {
-        highlightCodeBlocks();
-        if (window.innerWidth <= 900) document.getElementById('sidebar')?.classList.add('collapsed');
-    });
-    let pendingDiscussion = {{ open_discussion|tojson }};
-    document.body.addEventListener('htmx:afterSwap', (event) => {
-        highlightCodeBlocks(event.target);
-        if (!pendingDiscussion || event.target.id !== 'page-editor-container') return;
-        const target = pendingDiscussion === 'page'
-            ? event.target.querySelector('.page-discussion-panel')
-            : event.target.querySelector(`#block-${pendingDiscussion.replace('block-', '')} .block-discussion-panel`);
-        if (!target) return;
-        pendingDiscussion = null;
-        target.open = true;
-        htmx.ajax('GET', target.getAttribute('hx-get'), {
-            target: target.getAttribute('hx-target'),
-            swap: 'innerHTML',
-        });
-    });
-    document.addEventListener('click', (event) => {
-        const container = document.getElementById('search-container');
-        if (container && !container.contains(event.target)) closeSearch();
-    });
-</script>
+    <main class="main-content">
+        <div id="page-editor-container" aria-live="polite" data-open-discussion="{{ open_discussion or '' }}">
+            {% if not_found %}
+                <section class="workspace-card not-found-card">
+                    <span class="eyebrow">Não encontrado</span>
+                    <h1>Nada por aqui</h1>
+                    <p>{{ not_found }}</p>
+                    <div class="hero-actions"><a class="primary-action" href="/dashboard">Voltar ao início</a></div>
+                </section>
+            {% elif open_page_id %}
+                {% include "partials/page_blocks_editor.html" %}
+            {% elif open_folder_id %}
+                {% include "partials/folder_panel.html" %}
+            {% else %}
+                {% include "partials/home.html" %}
+            {% endif %}
+        </div>
+    </main>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
 </body>
 </html>

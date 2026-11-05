@@ -1,0 +1,79 @@
+{% from "partials/ui_macros.html" import icon, visibility_badge %}
+<div class="home" id="home-panel">
+    <section id="welcome-panel" class="welcome-section home-hero">
+        <div>
+            <span class="eyebrow">Olá, {{ usuario.display_name or usuario.username }}</span>
+            <h1>O que vamos documentar hoje?</h1>
+            <p>Organize o que você aprende em páginas com texto e código, agrupe em pastas e compartilhe com seus amigos.</p>
+        </div>
+        <div class="hero-actions">
+            <button class="primary-action" hx-get="/pages/new" hx-target="#page-editor-container">{{ icon("plus", 15) }} Criar página</button>
+            <button class="secondary-action" hx-get="/folders/new" hx-target="#page-editor-container">{{ icon("folder", 15) }} Criar pasta</button>
+        </div>
+    </section>
+
+    <section class="stat-row" aria-label="Resumo">
+        <div class="stat-tile"><span class="stat-value">{{ stats.my_pages }}</span><span class="stat-label">{{ "página sua" if stats.my_pages == 1 else "páginas suas" }}</span></div>
+        <div class="stat-tile"><span class="stat-value">{{ stats.folders }}</span><span class="stat-label">{{ "pasta" if stats.folders == 1 else "pastas" }}</span></div>
+        <a class="stat-tile" href="/friends"><span class="stat-value">{{ stats.friends }}</span><span class="stat-label">{{ "amigo" if stats.friends == 1 else "amigos" }}</span></a>
+        <div class="stat-tile"><span class="stat-value">{{ pages|length }}</span><span class="stat-label">{{ "página acessível" if pages|length == 1 else "páginas acessíveis" }}</span></div>
+    </section>
+
+    <div class="home-grid">
+        <section class="home-section">
+            <div class="section-heading">
+                <h2>Atualizadas recentemente</h2>
+            </div>
+            {% if recent_pages %}
+            <div class="page-card-grid">
+                {% for page in recent_pages %}
+                <a class="page-card" href="/p/{{ page.id }}" hx-get="/pages/{{ page.id }}/blocks-editor"
+                   hx-target="#page-editor-container" hx-push-url="/p/{{ page.id }}">
+                    <span class="page-card-icon">{{ icon("file", 18) }}</span>
+                    <strong>{{ page.title }}</strong>
+                    <span class="page-card-summary">{{ page.summary or "Sem resumo." }}</span>
+                    <span class="card-meta">
+                        {% if page.author %}@{{ page.author.username }} · {% endif %}{{ page.updated_at|time_ago }}
+                        {% if page.folder %} · {{ page.folder.name }}{% endif %}
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="onboarding">
+                <h3>Comece em três passos</h3>
+                <ol>
+                    <li><strong>Crie uma página</strong> sobre algo que você aprendeu esta semana.</li>
+                    <li><strong>Adicione blocos</strong> de texto em Markdown e de código com destaque de sintaxe.</li>
+                    <li><strong>Compartilhe</strong> com amigos ou deixe pública para quem quiser aprender.</li>
+                </ol>
+            </div>
+            {% endif %}
+        </section>
+
+        <section class="home-section">
+            <div class="section-heading">
+                <h2>Discussões recentes</h2>
+                <a href="/forum" class="section-link">Ver fórum</a>
+            </div>
+            {% if recent_discussions %}
+            <ul class="activity-list">
+                {% for entry in recent_discussions %}
+                <li>
+                    <a href="{{ entry.url }}" class="activity-item">
+                        <span class="activity-icon">{{ icon("message", 15) }}</span>
+                        <span class="activity-body">
+                            <strong>{{ entry.page.title }}</strong>
+                            <span>{{ entry.block_label }}</span>
+                            <small>{% if entry.latest_author %}@{{ entry.latest_author.username }} · {% endif %}{{ entry.latest_activity|time_ago }} · {{ entry.comment_count }} comentário{% if entry.comment_count != 1 %}s{% endif %}</small>
+                        </span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="empty-state">Nenhuma conversa ainda. Abra uma página e comente em um bloco para começar.</p>
+            {% endif %}
+        </section>
+    </div>
+</div>

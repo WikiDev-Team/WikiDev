@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Entrar - WikiDev</title>
     <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="/static/vendor/htmx-1.9.10.min.js"></script>
     <script defer src="/static/theme.js"></script>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/static/auth.css">
@@ -38,6 +38,7 @@
                 hx-swap="innerHTML"
                 class="auth-form"
             >
+                {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
                 <label>
                     <span>Usuário</span>
                     <input type="text" name="username" placeholder="Digite seu usuário" required>

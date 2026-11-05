@@ -61,7 +61,7 @@ def test_search_returns_only_accessible_folders(client: TestClient, register_and
     assert response.status_code == 200
     assert "Pastas disponíveis para você" in response.text
     assert "Pesquisa pública" in response.text
-    assert f"/dashboard?open_folder={public_folder['id']}" in response.text
+    assert f"/pastas/{public_folder['id']}" in response.text
     assert "Pesquisa privada" not in response.text
     assert "Pesquisa filha pública" not in response.text
 

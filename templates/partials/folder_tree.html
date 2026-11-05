@@ -1,15 +1,16 @@
+{% from "partials/ui_macros.html" import icon %}
 {% macro folder_nodes(parent_id=None, depth=0) -%}
     {% if depth < 10 %}
         {% for folder in folders if folder.parent_folder_id == parent_id %}
             <li class="folder-tree-item" style="padding-left: {{ depth * 14 }}px">
-                <button type="button" class="tree-button" hx-get="/folders/{{ folder.id }}/panel" hx-target="#page-editor-container" hx-swap="innerHTML" onclick="hideWelcome()">
-                    <span aria-hidden="true">📁</span>
+                <a href="/pastas/{{ folder.id }}" class="nav-item tree-button" data-nav-path="/pastas/{{ folder.id }}" hx-get="/folders/{{ folder.id }}/panel" hx-target="#page-editor-container" hx-swap="innerHTML show:window:top" hx-push-url="/pastas/{{ folder.id }}">
+                    {{ icon("folder") }}
                     <span class="tree-label">{{ folder.name }}</span>
                     {% if folder.author_id != usuario.id and folder.author %}
                         <span class="tree-owner">@{{ folder.author.username }}</span>
                     {% endif %}
                     <span class="visibility-dot {{ folder.visibility.value }}" title="{{ 'Pública' if folder.visibility.value == 'public' else 'Privada' }}"></span>
-                </button>
+                </a>
                 {% if folders|selectattr('parent_folder_id', 'equalto', folder.id)|list %}
                     <ul class="folder-tree-list">{{ folder_nodes(folder.id, depth + 1) }}</ul>
                 {% endif %}

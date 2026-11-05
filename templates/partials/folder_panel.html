@@ -1,3 +1,5 @@
+{% from "partials/ui_macros.html" import icon %}
+{% if request and request.headers.get("HX-Request") %}<title>{{ folder.name }} · WikiDev</title>{% endif %}
 <section id="folder-panel" class="workspace-card">
     <header class="workspace-header">
         <div>
@@ -19,11 +21,11 @@
         {% if can_manage or can_edit %}<div class="workspace-actions">{% if can_manage %}<button type="button" class="secondary-action" hx-get="/folders/{{ folder.id }}/edit-form" hx-target="#page-editor-container">Configurar pasta</button>{% endif %}{% if can_edit %}<button type="button" class="primary-action" hx-get="/pages/new?folder_id={{ folder.id }}" hx-target="#page-editor-container">Nova página</button>{% endif %}</div>{% endif %}
     </header>
 
-    {% if subfolders %}<div class="content-section"><h2>Subpastas</h2><div class="resource-grid">{% for item in subfolders %}<button class="resource-card" hx-get="/folders/{{ item.id }}/panel" hx-target="#page-editor-container"><strong>📁 {{ item.name }}</strong><span>{{ item.description or 'Sem descrição' }}</span></button>{% endfor %}</div></div>{% endif %}
+    {% if subfolders %}<div class="content-section"><h2>Subpastas</h2><div class="resource-grid">{% for item in subfolders %}<a class="resource-card" href="/pastas/{{ item.id }}" hx-get="/folders/{{ item.id }}/panel" hx-target="#page-editor-container" hx-push-url="/pastas/{{ item.id }}"><strong>{{ icon("folder") }} {{ item.name }}</strong><span>{{ item.description or 'Sem descrição' }}</span></a>{% endfor %}</div></div>{% endif %}
 
     <div class="content-section">
         <h2>Páginas</h2>
-        {% if folder_pages %}<div class="resource-grid">{% for page in folder_pages %}<button class="resource-card" hx-get="/pages/{{ page.id }}/blocks-editor" hx-target="#page-editor-container"><strong>{{ page.title }}</strong><span>{{ page.summary or page.status.value }}</span></button>{% if can_edit %}<form hx-post="/folders/{{ folder.id }}/detach" hx-target="#folder-panel" hx-swap="outerHTML"><input type="hidden" name="page_id" value="{{ page.id }}"><button class="text-danger compact-action" type="submit">Remover da pasta</button></form>{% endif %}{% endfor %}</div>{% else %}<p class="empty-state">Esta pasta ainda não contém páginas.</p>{% endif %}
+        {% if folder_pages %}<div class="resource-grid">{% for page in folder_pages %}<a class="resource-card" href="/p/{{ page.id }}" hx-get="/pages/{{ page.id }}/blocks-editor" hx-target="#page-editor-container" hx-push-url="/p/{{ page.id }}"><strong>{{ icon("file") }} {{ page.title }}</strong><span>{{ page.summary or "Sem resumo" }}</span><small class="card-meta">{% if page.author %}@{{ page.author.username }} · {% endif %}{{ page.updated_at|time_ago }}</small></a>{% if can_edit %}<form hx-post="/folders/{{ folder.id }}/detach" hx-target="#folder-panel" hx-swap="outerHTML"><input type="hidden" name="page_id" value="{{ page.id }}"><button class="text-danger compact-action" type="submit">Remover da pasta</button></form>{% endif %}{% endfor %}</div>{% else %}<p class="empty-state">Esta pasta ainda não contém páginas.</p>{% endif %}
     </div>
 
     {% if can_edit and attachable_pages %}<div class="content-section attach-section"><h2>Adicionar página existente</h2><form class="inline-form" hx-post="/folders/{{ folder.id }}/attach" hx-target="#folder-panel" hx-swap="outerHTML"><select name="page_id" required><option value="">Selecione...</option>{% for page in attachable_pages %}<option value="{{ page.id }}">{{ page.title }}</option>{% endfor %}</select><button class="secondary-action" type="submit">Adicionar</button></form></div>{% endif %}

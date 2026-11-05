@@ -408,17 +408,17 @@ def test_profile_lists_only_accessible_folders_from_user(client: TestClient, eng
     assert "Pasta privada no perfil" in own_profile.text
     assert "Pasta pública no perfil" in own_profile.text
     assert "Filha pública bloqueada no perfil" in own_profile.text
-    assert f"/dashboard?open_folder={private_id}" in own_profile.text
+    assert f"/pastas/{private_id}" in own_profile.text
 
     _login_as(client, bob_token)
     visitor_profile = client.get(f"/profile/{alice_id}")
     assert visitor_profile.status_code == 200
     assert "Pastas compartilhadas com você" in visitor_profile.text
     assert "Pasta pública no perfil" in visitor_profile.text
-    assert f"/dashboard?open_folder={public_id}" in visitor_profile.text
+    assert f"/pastas/{public_id}" in visitor_profile.text
     assert "Pasta privada no perfil" not in visitor_profile.text
     assert "Filha pública bloqueada no perfil" not in visitor_profile.text
-    assert f"/dashboard?open_folder={blocked_child_id}" not in visitor_profile.text
+    assert f"/pastas/{blocked_child_id}" not in visitor_profile.text
 
 
 def test_update_folder_without_shared_users(client: TestClient, engine):

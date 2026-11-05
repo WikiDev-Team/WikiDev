@@ -5,29 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ profile_user.display_name or profile_user.username }} - WikiDev</title>
     <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="/static/vendor/htmx-1.9.10.min.js"></script>
     <script defer src="/static/theme.js"></script>
+    <script defer src="/static/workspace.js"></script>
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+    <link rel="stylesheet" href="/static/ui.css">
 </head>
 <body>
-    <header class="topbar compact-topbar">
-        <div class="topbar-left">
-            <a href="/profile" class="botao-user">{{ usuario.display_name or usuario.username }}</a>
-            <nav class="main-nav">
-                <a href="/dashboard">Home</a>
-                <a href="/friends">Amigos</a>
-                <a href="/forum">Fórum</a>
-            </nav>
-        </div>
-        <div class="topbar-right">
-            <a href="/dashboard" class="topbar-logo-link" aria-label="Página inicial do WikiDev">
-                <img src="/static/wikidev_logo.png" alt="Logo do WikiDev" class="topbar-logo">
-            </a>
-            <button type="button" class="theme-toggle" aria-label="Alternar tema">
-                <img src="/static/sun_icon.png" alt="" class="theme-icon">
-            </button>
-        </div>
-    </header>
+    {% set active_page = "profile" %}
+    {% include "partials/topbar.html" %}
 
     <main class="profile-shell">
         {% if message %}<div class="flash-message">{{ message }}</div>{% endif %}
@@ -88,9 +77,9 @@
             {% if visible_folders %}
                 <div class="profile-page-list">
                     {% for folder in visible_folders %}
-                        <a href="/dashboard?open_folder={{ folder.id }}" class="profile-page-card">
+                        <a href="/pastas/{{ folder.id }}" class="profile-page-card">
                             <span>
-                                <strong>📁 {{ folder.name }}</strong>
+                                <strong>{{ folder.name }}</strong>
                                 {% if folder.description %}<small>{{ folder.description }}</small>{% endif %}
                             </span>
                             <span class="visibility-badge visibility-{{ folder.visibility.value }}">
@@ -109,7 +98,7 @@
             {% if visible_pages %}
                 <div class="profile-page-list">
                     {% for page in visible_pages %}
-                        <a href="/dashboard?open_page={{ page.id }}" class="profile-page-card">
+                        <a href="/p/{{ page.id }}" class="profile-page-card">
                             <span>
                                 <strong>{{ page.title }}</strong>
                                 {% if page.summary %}<small>{{ page.summary }}</small>{% endif %}

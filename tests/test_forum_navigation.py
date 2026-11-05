@@ -23,7 +23,7 @@ def test_dashboard_prepares_general_discussion_from_forum_link(client: TestClien
     response = client.get("/dashboard", params={"open_page": page["id"], "discussion": "page"})
     assert response.status_code == 200
     assert 'data-open-discussion="page"' in response.text
-    assert "htmx.ajax('GET'" in response.text
+    assert '/static/workspace.js' in response.text
 
 
 def test_dashboard_prepares_block_discussion_from_forum_link(

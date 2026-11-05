@@ -1,3 +1,4 @@
+{% from "partials/ui_macros.html" import icon %}
 <header class="topbar">
     <div class="topbar-brand">
         <a href="/dashboard" class="topbar-logo-link" aria-label="Página inicial">
@@ -17,8 +18,10 @@
 
     <div id="search-container" class="topbar-search">
         <label class="visually-hidden" for="global-search">Buscar usuários, páginas ou pastas</label>
-        <input id="global-search" type="search" name="q" placeholder="Buscar usuários, páginas ou pastas..." autocomplete="off"
+        <span class="search-icon">{{ icon("search", 15) }}</span>
+        <input id="global-search" type="search" name="q" placeholder="Buscar páginas, pastas ou pessoas" autocomplete="off"
                hx-get="/busca" hx-trigger="input changed delay:350ms, search" hx-target="#search-results">
+        <kbd class="search-kbd" title="Atalho: tecla /">/</kbd>
         <div id="search-results"></div>
     </div>
 
@@ -27,6 +30,6 @@
             <img src="/static/sun_icon.png" alt="" class="theme-icon">
         </button>
         <a href="/profile" class="botao-user">{{ usuario.display_name or usuario.username }}</a>
-        {% if show_sidebar_toggle|default(false) %}<button type="button" class="menu-hamburger" aria-label="Abrir ou fechar barra lateral" onclick="toggleSidebar()">≡</button>{% endif %}
+        {% if show_sidebar_toggle|default(false) %}<button type="button" class="menu-hamburger" aria-label="Abrir ou fechar barra lateral" onclick="toggleSidebar()">{{ icon("menu", 18) }}</button>{% endif %}
     </div>
 </header>

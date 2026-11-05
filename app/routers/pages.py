@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, Response
 from sqlmodel import Session, select
 
-from ..crud import create_page, delete_page, update_page
+from ..crud import create_page, create_tag, delete_page, update_page
 from ..db import get_session
 from ..dependencies import get_current_user
 from ..models import (
@@ -19,7 +19,10 @@ from ..models import (
     PageType,
     PageUpdate,
     PageVisibility,
+    Tag,
+    TagCreate,
     User,
+    slugify_text,
 )
 from ..permissions import (
     accessible_folders,
@@ -55,6 +58,27 @@ def _parse_tag_ids(value: str) -> list[int]:
             raise HTTPException(status_code=422, detail="IDs de tags devem ser números")
         result.append(int(raw))
     return result
+
+
+MAX_TAGS_PER_PAGE = 10
+
+
+def _resolve_tag_names(session: Session, value: str) -> list[int]:
+    """Converte "python, fastapi" em IDs de tags, criando as que ainda não existem."""
+    tag_ids: list[int] = []
+    for raw in value.split(","):
+        name = " ".join(raw.split())[:50]
+        if not name:
+            continue
+        slug = slugify_text(name)
+        tag = session.exec(select(Tag).where(Tag.slug == slug)).first() if slug else None
+        if tag is None:
+            tag = create_tag(session, TagCreate(name=name))
+        if tag.id not in tag_ids:
+            tag_ids.append(tag.id)
+        if len(tag_ids) >= MAX_TAGS_PER_PAGE:
+            break
+    return tag_ids
 
 
 def _parse_folder_id(value: str | None) -> int | None:
@@ -136,6 +160,7 @@ def add_page_htmx(
     visibility: PageVisibility = Form(PageVisibility.PRIVATE),
     edit_policy: EditPolicy = Form(EditPolicy.OWNER),
     tag_ids: str = Form(""),
+    tags: str = Form(""),
     folder_id: str = Form(""),
     shared_user_ids: list[int] | None = Form(None),
     editor_user_ids: list[int] | None = Form(None),
@@ -152,6 +177,11 @@ def add_page_htmx(
         if folder is None:
             raise HTTPException(status_code=404, detail="Pasta não encontrada")
         require_folder_edit(session, folder, current_user)
+
+    selected_tag_ids = _parse_tag_ids(tag_ids)
+    for tag_id in _resolve_tag_names(session, tags):
+        if tag_id not in selected_tag_ids:
+            selected_tag_ids.append(tag_id)
 
     if visibility == PageVisibility.PRIVATE:
         edit_policy = EditPolicy.OWNER
@@ -171,7 +201,7 @@ def add_page_htmx(
             edit_policy=edit_policy,
             author_id=current_user.id,
             folder_id=parsed_folder_id,
-            tag_ids=_parse_tag_ids(tag_ids),
+            tag_ids=selected_tag_ids,
         ),
     )
     replace_page_shares(
@@ -193,6 +223,7 @@ def add_page_htmx(
             "is_owner": True,
             **_sidebar_context(session, current_user),
         },
+        headers={"HX-Push-Url": f"/p/{page.id}"},
     )
 
 
@@ -241,6 +272,7 @@ def edit_page(
     visibility: PageVisibility | None = Form(None),
     edit_policy: EditPolicy | None = Form(None),
     folder_id: str = Form(""),
+    tags: str | None = Form(None),
     shared_user_ids: list[int] | None = Form(None),
     editor_user_ids: list[int] | None = Form(None),
     session: Session = Depends(get_session),
@@ -260,6 +292,8 @@ def edit_page(
         "page_type": page_type,
         "status": status,
     }
+    if tags is not None:
+        updates["tag_ids"] = _resolve_tag_names(session, tags)
     if is_owner:
         if visibility is not None:
             updates["visibility"] = visibility
@@ -342,4 +376,5 @@ def remove_page(
         request=request,
         name="partials/page_deleted.html",
         context=_sidebar_context(session, current_user),
+        headers={"HX-Push-Url": "/dashboard"},
     )

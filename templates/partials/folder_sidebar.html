@@ -1,7 +1,7 @@
 <div id="folders-tree" class="sidebar-section" {% if folder_sidebar_oob %}hx-swap-oob="outerHTML"{% endif %}>
     <div class="sidebar-section-heading">
-        <span>Pastas acessíveis</span>
-        <button type="button" class="icon-button" title="Nova pasta" hx-get="/folders/new" hx-target="#page-editor-container" hx-swap="innerHTML" onclick="hideWelcome()">+</button>
+        <span>Pastas</span>
+        <button type="button" class="icon-button" title="Nova pasta" aria-label="Nova pasta" hx-get="/folders/new" hx-target="#page-editor-container" hx-swap="innerHTML">{% from "partials/ui_macros.html" import icon %}{{ icon("plus", 14) }}</button>
     </div>
     {% include "partials/folder_tree.html" %}
 </div>
