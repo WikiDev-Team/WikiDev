@@ -1,0 +1,23 @@
+{# Resposta do sinal de presença: quem está na página e os blocos que mudaram. #}
+<span class="presence-state" hidden data-busy="{{ busy_json }}"></span>
+{% if others %}
+<div class="presence-bar">
+    <ul class="presence-avatars">
+        {% for person in others[:5] %}
+        <li class="presence-avatar{% if person.editing %} is-editing{% endif %}" title="{{ person.name }}{% if person.editing %} (editando){% endif %}">{{ person.initials }}</li>
+        {% endfor %}
+        {% if others|length > 5 %}<li class="presence-avatar presence-more">+{{ others|length - 5 }}</li>{% endif %}
+    </ul>
+    <span class="presence-text">
+        {% set names = others|map(attribute="name")|list %}
+        {% if names|length == 1 %}{{ names[0] }} também está nesta página{% elif names|length == 2 %}{{ names[0] }} e {{ names[1] }} também estão nesta página{% else %}{{ names[0] }}, {{ names[1] }} e mais {{ names|length - 2 }} também estão nesta página{% endif %}{% if others|selectattr("editing")|list %} · alterações aparecem aqui sozinhas{% endif %}
+    </span>
+</div>
+{% endif %}
+{% set oob = true %}
+{% for block in changed %}{% include "partials/page_block.html" %}{% endfor %}
+{% set oob = false %}
+{% if added %}
+<div hx-swap-oob="beforeend:#page-blocks-list">{% for block in added %}{% include "partials/page_block.html" %}{% endfor %}</div>
+{% endif %}
+{% for block_id in removed %}<div id="block-{{ block_id }}" hx-swap-oob="delete"></div>{% endfor %}

@@ -4,6 +4,26 @@
 		hx-target="#block-{{ block.id }}"
 		hx-swap="outerHTML"
 	>
+		{# Estado do bloco quando o formulário foi aberto: permite mesclar com quem salvar antes. #}
+		<input type="hidden" name="base_version" value="{{ block.updated_at.isoformat() }}">
+		<textarea name="base_content" hidden aria-hidden="true" tabindex="-1">{{ block.content }}</textarea>
+		{% if conflict_with is defined and conflict_with %}
+			<div class="collab-notice collab-conflict" role="alert">
+				<strong>{{ conflict_with }} salvou este bloco enquanto você editava.</strong>
+				{% if conflict_count == 1 %}Um trecho foi alterado{% else %}{{ conflict_count }} trechos foram alterados{% endif %} pelos dois.
+				Escolha o que fica entre os marcadores <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> e <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>, apague-os e salve de novo.
+				O restante das alterações de vocês já está combinado abaixo.
+				<details>
+					<summary>Ver a versão salva por {{ conflict_with }}</summary>
+					<pre class="collab-theirs">{{ block.content }}</pre>
+				</details>
+			</div>
+		{% elif co_editors is defined and co_editors %}
+			<div class="collab-notice" role="status">
+				{{ co_editors|map(attribute="name")|join(", ") }} {% if co_editors|length == 1 %}está{% else %}estão{% endif %} editando este bloco agora.
+				Pode continuar: ao salvar, as alterações de vocês são combinadas.
+			</div>
+		{% endif %}
 		{% if block.block_type.value == "code" %}
 			<div class="block-form-row">
 				<label for="language-{{ block.id }}">Linguagem</label>
@@ -50,7 +70,7 @@
 				name="content"
 				rows="{% if block.block_type.value == 'code' %}10{% else %}6{% endif %}"
 				{% if block.block_type.value == 'code' %}class="code-input" spellcheck="false"{% else %}placeholder="Escreva em Markdown: # título, **negrito**, `código`, - listas, [[Outra página]]"{% endif %}
-			>{{ block.content }}</textarea>
+			>{% if draft is defined %}{{ draft }}{% else %}{{ block.content }}{% endif %}</textarea>
 			{% if block.block_type.value != 'code' %}<small class="field-hint">Aceita Markdown (títulos, listas, tabelas, `código`). Use [[Título da página]] para linkar outra página.</small>{% endif %}
 		</div>
 

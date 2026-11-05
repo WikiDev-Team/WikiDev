@@ -1,0 +1,10 @@
+<article id="block-{{ block_id }}" class="page-block page-block-editing">
+    <div class="collab-notice collab-conflict" role="alert">
+        <strong>Este bloco foi excluído por outra pessoa enquanto você editava.</strong>
+        Seu texto não foi salvo; copie-o abaixo se quiser colocá-lo num bloco novo.
+    </div>
+    <textarea readonly rows="6" class="code-input">{{ content }}</textarea>
+    <div class="page-block-actions">
+        <button type="button" data-dismiss-block>Fechar</button>
+    </div>
+</article>
