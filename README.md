@@ -24,6 +24,7 @@
 
 - **Código que roda na página.** Blocos de Python ganham um botão "Executar" que usa [Pyodide](https://pyodide.org) dentro de um iframe isolado, sem acesso aos cookies nem à página.
 - **Wiki de verdade.** Links com `[[Título]]`, seção "Citada em", páginas por tag e histórico de versões com diff e restauração.
+- **Edição simultânea.** Quem está na página aparece no topo, blocos em edição ganham um aviso, mudanças dos outros chegam sozinhas e salvamentos ao mesmo tempo são mesclados linha a linha.
 - **Busca instantânea.** Ctrl+K encontra páginas, conteúdo, pastas, tags e pessoas, sempre respeitando as permissões.
 - **Social e privado ao mesmo tempo.** Amigos, fórum e comentários por bloco, com páginas privadas, para amigos, públicas ou compartilhadas com pessoas específicas.
 - **Pronto para publicar.** Docker, blueprint do Render, testes automatizados e CI.
@@ -62,6 +63,7 @@ WikiDev é uma wiki colaborativa para organizar conhecimento de programação em
 - Página inicial com páginas atualizadas recentemente, discussões recentes e resumo da conta.
 - Tags informadas por nome, criadas automaticamente e exibidas na página, com página própria por tag (`/t/<tag>`) e lista de tags na barra lateral.
 - Histórico de versões de cada página (`/p/<id>/historico`), com diff por bloco e restauração. Edições seguidas da mesma pessoa em até 5 minutos viram uma só versão.
+- Edição simultânea (`app/collab.py`): cada aba manda um sinal a cada 4 s com a versão dos blocos que tem na tela; a resposta mostra quem mais está na página e troca só os blocos que outras pessoas criaram, alteraram ou excluíram. Ao salvar um bloco que mudou desde que foi aberto, as alterações são combinadas por mescla de três vias; se as duas pessoas mexeram nas mesmas linhas, nada é sobrescrito e o formulário volta com marcadores de conflito. A presença fica em memória, então vale para um processo do uvicorn (o padrão do projeto).
 - Links entre páginas com `[[Título]]` ou `[[Título|texto]]` e seção "Citada em" com as páginas que apontam para a atual. Só páginas visíveis para o leitor são resolvidas.
 - Busca rápida com Ctrl+K (ou Cmd+K) por título, conteúdo dos blocos, pastas, tags e pessoas.
 - Botão "Executar" nos blocos de Python, usando Pyodide no navegador. O código roda num Web Worker dentro de um iframe com sandbox (origem opaca, sem acesso a cookies ou ao DOM) e é interrompido após 10 s.

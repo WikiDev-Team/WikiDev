@@ -1,7 +1,10 @@
+import json
+
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response
 from sqlmodel import Session, select
 
+from ..collab import HEARTBEAT_SECONDS, merge3, presence
 from ..crud import create_page, create_page_block, delete_page_block, update_page_block
 from ..db import get_session
 from ..dependencies import get_current_user
@@ -13,6 +16,7 @@ from ..models import (
     PageBlockType,
     PageBlockUpdate,
     PageCreate,
+    PageRevision,
     PageStatus,
     PageType,
     PageVisibility,
@@ -69,6 +73,7 @@ def wiki_index_for(session: Session, current_user: User) -> dict[str, int]:
 def page_view_context(session: Session, page: Page, current_user: User) -> dict:
     blocks = list_blocks(session, page.id)
     return {
+        "heartbeat_seconds": HEARTBEAT_SECONDS,
         "wiki_index": wiki_index_for(session, current_user),
         "backlinks": backlinks(session, page, current_user),
         "page": page,
@@ -156,12 +161,31 @@ def edit_block_form(
     block = get_block_or_404(session, block_id)
     page = get_page_or_404(session, block.page_id)
     require_page_edit(session, page, current_user)
+    presence.start_editing(page.id, current_user, block.id)
 
     return templates.TemplateResponse(
         request=request,
         name="partials/page_block_form.html",
-        context={"block": block, "can_edit": True, "block_comment_counts": block_comment_counts(session, [block])},
+        context={
+            "block": block,
+            "can_edit": True,
+            "block_comment_counts": block_comment_counts(session, [block]),
+            "co_editors": presence.editing_block(page.id, block.id, current_user.id),
+        },
     )
+
+
+def last_editor_name(session: Session, page: Page, exclude_user_id: int) -> str:
+    """Quem salvou por último a página (para dizer com quem mesclamos)."""
+    revision = session.exec(
+        select(PageRevision)
+        .where(PageRevision.page_id == page.id, PageRevision.author_id != exclude_user_id)
+        .order_by(PageRevision.updated_at.desc(), PageRevision.id.desc())
+    ).first()
+    author = session.get(User, revision.author_id) if revision and revision.author_id else None
+    if author is None:
+        return "outra pessoa"
+    return author.display_name or author.username
 
 
 @router.patch("/blocks/{block_id}", response_class=HTMLResponse)
@@ -171,12 +195,55 @@ def update_block(
     content: str = Form(""),
     language: str = Form(""),
     font_size: str = Form("normal"),
+    base_content: str | None = Form(None),
+    base_version: str | None = Form(None),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
-    block = get_block_or_404(session, block_id)
+    block = session.get(PageBlock, block_id)
+    if block is None:
+        if base_version is not None:
+            # Outra pessoa excluiu o bloco enquanto este formulário estava aberto:
+            # devolve o texto para não perder o que foi escrito.
+            return templates.TemplateResponse(
+                request=request,
+                name="partials/page_block_gone.html",
+                context={"block_id": block_id, "content": content},
+            )
+        raise HTTPException(status_code=404, detail="Bloco não encontrado")
     page = get_page_or_404(session, block.page_id)
     require_page_edit(session, page, current_user)
+
+    note = ""
+    merge_notice = ""
+    changed_meanwhile = (
+        base_version is not None
+        and base_content is not None
+        and block.updated_at.isoformat() != base_version
+        and (block.content or "") != base_content
+    )
+    if changed_meanwhile and content != (block.content or ""):
+        other = last_editor_name(session, page, current_user.id)
+        result = merge3(base_content, content, block.content or "", theirs_name=other)
+        if not result.clean:
+            # Conflito: nada é salvo; a pessoa vê as duas versões e decide.
+            return templates.TemplateResponse(
+                request=request,
+                name="partials/page_block_form.html",
+                context={
+                    "block": block,
+                    "can_edit": True,
+                    "draft": result.content,
+                    "draft_language": language,
+                    "draft_font_size": font_size,
+                    "conflict_with": other,
+                    "conflict_count": result.conflicts,
+                    "block_comment_counts": block_comment_counts(session, [block]),
+                },
+            )
+        content = result.content
+        note = f"Mesclada com a edição simultânea de {other}"
+        merge_notice = f"Suas alterações foram combinadas com as de {other}."
 
     if block.block_type == PageBlockType.TEXT:
         payload = PageBlockUpdate(content=content, language="", font_size=font_size)
@@ -191,15 +258,85 @@ def update_block(
 
     ensure_baseline(session, page)
     block = update_page_block(session, block, payload)
-    record_revision(session, page, current_user)
+    record_revision(session, page, current_user, note=note)
     return templates.TemplateResponse(
         request=request,
         name="partials/page_block.html",
         context={
             "block": block,
             "can_edit": True,
+            "merge_notice": merge_notice,
             "block_comment_counts": block_comment_counts(session, [block]),
             "wiki_index": wiki_index_for(session, current_user),
+        },
+    )
+
+
+def _parse_ids(raw: str) -> set[int]:
+    return {int(item) for item in raw.split(",") if item.strip().isdigit()}
+
+
+def _parse_known(raw: str) -> dict[int, str]:
+    """``"12=2026-11-05T13:00:00.123,13=..."`` → {12: "2026-...", 13: ...}."""
+    known: dict[int, str] = {}
+    for item in raw.split(","):
+        block_id, _, version = item.strip().partition("=")
+        if block_id.isdigit():
+            known[int(block_id)] = version
+    return known
+
+
+@router.post("/{page_id}/presence", response_class=HTMLResponse)
+def page_presence(
+    request: Request,
+    page_id: int,
+    editing: str = Form(""),
+    known: str = Form(""),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Sinal periódico de quem está na página; devolve também o que mudou.
+
+    A aba informa a versão (``updated_at``) de cada bloco que tem na tela; os
+    blocos com versão diferente, novos ou excluídos voltam como hx-swap-oob.
+    """
+    page = get_page_or_404(session, page_id)
+    require_page_view(session, page, current_user)
+
+    editing_ids = _parse_ids(editing)
+    known_versions = _parse_known(known)
+    presence.touch(page.id, current_user, editing_ids)
+
+    blocks = list_blocks(session, page.id)
+    current_ids = {block.id for block in blocks}
+    changed = [
+        block for block in blocks
+        if block.id in known_versions
+        and block.id not in editing_ids
+        and known_versions[block.id] != block.updated_at.isoformat()
+    ]
+    added = [block for block in blocks if block.id not in known_versions]
+    removed = sorted(set(known_versions) - current_ids - editing_ids)
+    others = presence.others(page.id, current_user.id)
+    busy = {}
+    for person in others:
+        for block_id in person.editing:
+            if block_id in current_ids:
+                busy.setdefault(str(block_id), []).append(person.name)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/page_presence.html",
+        context={
+            "page": page,
+            "others": others,
+            "busy_json": json.dumps(busy, ensure_ascii=False),
+            "changed": changed,
+            "added": added,
+            "removed": removed,
+            "can_edit": can_edit_page(session, page, current_user),
+            "block_comment_counts": block_comment_counts(session, changed + added),
+            "wiki_index": wiki_index_for(session, current_user) if changed or added else {},
         },
     )
 

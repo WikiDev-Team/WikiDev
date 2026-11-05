@@ -47,6 +47,9 @@
             {% endif %}
         </div>
     </header>
+    <div id="page-presence" class="page-presence" aria-live="polite"
+         hx-post="/pages/{{ page.id }}/presence" hx-trigger="every {{ heartbeat_seconds }}s, load delay:300ms"
+         hx-swap="innerHTML"></div>
     {% include "partials/page_blocks_list.html" %}
     {% if can_edit %}
         <div class="block-add-actions">

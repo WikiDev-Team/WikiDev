@@ -1,5 +1,6 @@
 {% from "partials/ui_macros.html" import icon %}
-<article id="block-{{ block.id }}" class="page-block page-block-{{ block.block_type.value }}">
+<article id="block-{{ block.id }}" class="page-block page-block-{{ block.block_type.value }}" data-version="{{ block.updated_at.isoformat() }}"{% if oob is defined and oob %} hx-swap-oob="true"{% endif %}>
+    {% if merge_notice is defined and merge_notice %}<div class="collab-notice collab-merged" role="status">{{ merge_notice }}</div>{% endif %}
     {% if can_edit %}
         <details class="block-menu">
             <summary aria-label="Ações do bloco" title="Ações do bloco">{{ icon("more") }}</summary>

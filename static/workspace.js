@@ -154,3 +154,58 @@ document.addEventListener('keydown', (event) => {
     }
     if (event.key === 'Escape') { closeSearch(); closeSidebarOnMobile(); }
 });
+
+// ── Edição simultânea ───────────────────────────────────────────────────
+// O #page-presence manda um sinal periódico com o que esta aba conhece da
+// página; a resposta diz quem mais está ali e traz (via hx-swap-oob) os blocos
+// que outras pessoas mudaram. Blocos abertos para edição nunca são trocados.
+function blockIdsIn(selector) {
+    return Array.from(document.querySelectorAll(selector))
+        .map((el) => el.id.replace('block-', ''))
+        .filter((id) => /^\d+$/.test(id));
+}
+function dedupeBlocks() {
+    const seen = new Map();
+    document.querySelectorAll('#page-blocks-list > article[id^="block-"]').forEach((el) => {
+        const other = seen.get(el.id);
+        if (!other) { seen.set(el.id, el); return; }
+        // Fica a versão em edição, se houver; senão a primeira.
+        if (el.classList.contains('page-block-editing') && !other.classList.contains('page-block-editing')) {
+            other.remove();
+            seen.set(el.id, el);
+        } else {
+            el.remove();
+        }
+    });
+}
+function applyPresence(container) {
+    const state = container.querySelector('.presence-state');
+    if (!state) return;
+    let busy = {};
+    try { busy = JSON.parse(state.dataset.busy || '{}'); } catch { busy = {}; }
+    document.querySelectorAll('#page-blocks-list > article[id^="block-"]').forEach((el) => {
+        const names = busy[el.id.replace('block-', '')];
+        el.classList.toggle('is-busy', Boolean(names));
+        if (names) el.dataset.busyBy = `${names.join(', ')} editando`;
+        else delete el.dataset.busyBy;
+    });
+    dedupeBlocks();
+}
+document.body.addEventListener('htmx:configRequest', (event) => {
+    const el = event.detail.elt;
+    if (el.id !== 'page-presence') return;
+    // Aba em segundo plano não precisa de sinal; a presença expira sozinha.
+    if (document.visibilityState === 'hidden') { event.preventDefault(); return; }
+    event.detail.parameters.known = Array.from(document.querySelectorAll('#page-blocks-list > article[id^="block-"]'))
+        .map((block) => `${block.id.replace('block-', '')}=${block.dataset.version || ''}`)
+        .join(',');
+    event.detail.parameters.editing = blockIdsIn('#page-blocks-list > article.page-block-editing').join(',');
+});
+document.body.addEventListener('htmx:afterSwap', (event) => {
+    if (event.target.id === 'page-presence') applyPresence(event.target);
+});
+document.body.addEventListener('htmx:oobAfterSwap', (event) => enhance(event.target));
+document.addEventListener('click', (event) => {
+    const dismiss = event.target.closest('[data-dismiss-block]');
+    if (dismiss) dismiss.closest('article')?.remove();
+});
