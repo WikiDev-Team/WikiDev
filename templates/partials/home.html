@@ -1,10 +1,25 @@
-{% from "partials/ui_macros.html" import icon, visibility_badge %}
+{% from "partials/ui_macros.html" import icon, page_link_attrs %}
+{% macro mini_list(items, empty, meta) -%}
+{% if items %}
+<ul class="mini-list">
+    {% for page in items %}
+    <li><a {{ page_link_attrs(page) }} class="mini-link">
+        <span class="mini-title">{{ page.title }}</span>
+        <span class="mini-meta">{{ meta(page) }}</span>
+    </a></li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="mini-empty">{{ empty }}</p>
+{% endif %}
+{%- endmacro %}
+{% macro author_and_date(page) %}{% if page.author and page.author_id != usuario.id %}@{{ page.author.username }} · {% endif %}{{ page.updated_at|time_ago }}{% endmacro %}
+{% macro views_label(page) %}{% set n = most_viewed_counts.get(page.id, 0) %}{{ n }} {{ "visualização" if n == 1 else "visualizações" }}{% endmacro %}
 <div class="home" id="home-panel">
-    <section id="welcome-panel" class="welcome-section home-hero">
+    <section id="welcome-panel" class="welcome-section home-hero home-hero-compact">
         <div>
             <span class="eyebrow">Olá, {{ usuario.display_name or usuario.username }}</span>
             <h1>O que vamos documentar hoje?</h1>
-            <p>Organize o que você aprende em páginas com texto e código, agrupe em pastas e compartilhe com seus amigos.</p>
         </div>
         <div class="hero-actions">
             <button class="primary-action" hx-get="/pages/new" hx-target="#page-editor-container">{{ icon("plus", 15) }} Criar página</button>
@@ -12,68 +27,85 @@
         </div>
     </section>
 
-    <section class="stat-row" aria-label="Resumo">
-        <div class="stat-tile"><span class="stat-value">{{ stats.my_pages }}</span><span class="stat-label">{{ "página sua" if stats.my_pages == 1 else "páginas suas" }}</span></div>
-        <div class="stat-tile"><span class="stat-value">{{ stats.folders }}</span><span class="stat-label">{{ "pasta" if stats.folders == 1 else "pastas" }}</span></div>
-        <a class="stat-tile" href="/friends"><span class="stat-value">{{ stats.friends }}</span><span class="stat-label">{{ "amigo" if stats.friends == 1 else "amigos" }}</span></a>
-        <div class="stat-tile"><span class="stat-value">{{ pages|length }}</span><span class="stat-label">{{ "página acessível" if pages|length == 1 else "páginas acessíveis" }}</span></div>
-    </section>
-
-    <div class="home-grid">
-        <section class="home-section">
-            <div class="section-heading">
-                <h2>Atualizadas recentemente</h2>
-            </div>
-            {% if recent_pages %}
-            <div class="page-card-grid">
-                {% for page in recent_pages %}
-                <a class="page-card" href="/p/{{ page.id }}" hx-get="/pages/{{ page.id }}/blocks-editor"
-                   hx-target="#page-editor-container" hx-push-url="/p/{{ page.id }}">
-                    <span class="page-card-icon">{{ icon("file", 18) }}</span>
-                    <strong>{{ page.title }}</strong>
-                    <span class="page-card-summary">{{ page.summary or "Sem resumo." }}</span>
-                    <span class="card-meta">
-                        {% if page.author %}@{{ page.author.username }} · {% endif %}{{ page.updated_at|time_ago }}
-                        {% if page.folder %} · {{ page.folder.name }}{% endif %}
-                    </span>
-                </a>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="onboarding">
-                <h3>Comece em três passos</h3>
-                <ol>
-                    <li><strong>Crie uma página</strong> sobre algo que você aprendeu esta semana.</li>
-                    <li><strong>Adicione blocos</strong> de texto em Markdown e de código com destaque de sintaxe.</li>
-                    <li><strong>Compartilhe</strong> com amigos ou deixe pública para quem quiser aprender.</li>
-                </ol>
-            </div>
-            {% endif %}
+    {% if not pages %}
+    <div class="onboarding">
+        <h3>Comece em três passos</h3>
+        <ol>
+            <li><strong>Crie uma página</strong> sobre algo que você aprendeu esta semana.</li>
+            <li><strong>Adicione blocos</strong> de texto em Markdown e de código com destaque de sintaxe.</li>
+            <li><strong>Compartilhe</strong> com amigos ou deixe pública para quem quiser aprender.</li>
+        </ol>
+    </div>
+    {% else %}
+    <div class="quick-sections">
+        <section class="quick-section" aria-labelledby="qs-favorites">
+            <h2 id="qs-favorites">{{ icon("star", 15) }} Favoritas</h2>
+            {{ mini_list(favorites[:5], "Use a estrela de uma página para fixá-la aqui.", author_and_date) }}
         </section>
-
-        <section class="home-section">
-            <div class="section-heading">
-                <h2>Discussões recentes</h2>
-                <a href="/forum" class="section-link">Ver fórum</a>
-            </div>
-            {% if recent_discussions %}
-            <ul class="activity-list">
-                {% for entry in recent_discussions %}
-                <li>
-                    <a href="{{ entry.url }}" class="activity-item">
-                        <span class="activity-icon">{{ icon("message", 15) }}</span>
-                        <span class="activity-body">
-                            <strong>{{ entry.page.title }}</strong>
-                            <span>{{ entry.block_label }}</span>
-                            <small>{% if entry.latest_author %}@{{ entry.latest_author.username }} · {% endif %}{{ entry.latest_activity|time_ago }} · {{ entry.comment_count }} comentário{% if entry.comment_count != 1 %}s{% endif %}</small>
-                        </span>
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="empty-state">Nenhuma conversa ainda. Abra uma página e comente em um bloco para começar.</p>
-            {% endif %}
+        <section class="quick-section" aria-labelledby="qs-recent">
+            <h2 id="qs-recent">{{ icon("clock", 15) }} Vistas recentemente</h2>
+            {{ mini_list(recently_viewed, "As páginas que você abrir aparecem aqui.", author_and_date) }}
+        </section>
+        <section class="quick-section" aria-labelledby="qs-popular">
+            <h2 id="qs-popular">{{ icon("eye", 15) }} Mais vistas</h2>
+            {{ mini_list(most_viewed, "Ainda não há visualizações.", views_label) }}
         </section>
     </div>
+
+    <section class="home-section page-browser" aria-labelledby="browser-title">
+        <div class="section-heading">
+            <h2 id="browser-title">Todas as páginas</h2>
+        </div>
+        <form id="browse-form" class="browse-toolbar" onsubmit="return false" role="search">
+            <input type="hidden" name="owner" value="{{ filters.owner }}">
+            <label class="browse-search">
+                <span class="visually-hidden">Filtrar por título</span>
+                {{ icon("search", 14) }}
+                <input type="search" name="q" value="{{ filters.q }}" placeholder="Filtrar por título ou resumo" autocomplete="off"
+                       hx-get="/home/paginas" hx-include="#browse-form" hx-trigger="input changed delay:300ms, search" hx-target="#browse-results" hx-swap="outerHTML">
+            </label>
+            <label class="browse-select">
+                {{ icon("tag", 14) }}
+                <span class="visually-hidden">Tag</span>
+                <select name="tag" hx-get="/home/paginas" hx-include="#browse-form" hx-trigger="change" hx-target="#browse-results" hx-swap="outerHTML">
+                    <option value="">Todas as tags</option>
+                    {% for slug, name in tag_options %}<option value="{{ slug }}"{% if filters.tag == slug %} selected{% endif %}>{{ name }}</option>{% endfor %}
+                </select>
+            </label>
+            <label class="browse-select">
+                {{ icon("sort", 14) }}
+                <span class="visually-hidden">Ordenar por</span>
+                <select name="sort" hx-get="/home/paginas" hx-include="#browse-form" hx-trigger="change" hx-target="#browse-results" hx-swap="outerHTML">
+                    {% for key, label in sort_options.items() %}<option value="{{ key }}"{% if filters.sort == key %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+            </label>
+        </form>
+        {% include "partials/nav/browse_results.html" %}
+    </section>
+    {% endif %}
+
+    <section class="home-section">
+        <div class="section-heading">
+            <h2>Discussões recentes</h2>
+            <a href="/forum" class="section-link">Ver fórum</a>
+        </div>
+        {% if recent_discussions %}
+        <ul class="activity-list">
+            {% for entry in recent_discussions %}
+            <li>
+                <a href="{{ entry.url }}" class="activity-item">
+                    <span class="activity-icon">{{ icon("message", 15) }}</span>
+                    <span class="activity-body">
+                        <strong>{{ entry.page.title }}</strong>
+                        <span>{{ entry.block_label }}</span>
+                        <small>{% if entry.latest_author %}@{{ entry.latest_author.username }} · {% endif %}{{ entry.latest_activity|time_ago }} · {{ entry.comment_count }} comentário{% if entry.comment_count != 1 %}s{% endif %}</small>
+                    </span>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty-state">Nenhuma conversa ainda. Abra uma página e comente em um bloco para começar.</p>
+        {% endif %}
+    </section>
 </div>

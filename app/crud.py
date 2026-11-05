@@ -15,7 +15,7 @@ from .models import (
     User, UserCreate, UserUpdate,
     slugify_text,
     PageBlock, PageBlockCreate, PageBlockUpdate,
-    PageRevision,
+    PageRevision, PageFavorite, PageVisit,
 )
 
 ModelT = TypeVar("ModelT")
@@ -205,6 +205,8 @@ def delete_page(session: Session, obj: Page) -> None:
     session.exec(delete(CodeExample).where(CodeExample.page_id == obj.id))
     session.exec(delete(PageBlock).where(PageBlock.page_id == obj.id))
     session.exec(delete(PageRevision).where(PageRevision.page_id == obj.id))
+    session.exec(delete(PageFavorite).where(PageFavorite.page_id == obj.id))
+    session.exec(delete(PageVisit).where(PageVisit.page_id == obj.id))
     session.exec(
         update(Page)
         .where(Page.parent_page_id == obj.id)

@@ -25,8 +25,6 @@ from ..models import (
     slugify_text,
 )
 from ..permissions import (
-    accessible_folders,
-    can_edit_page,
     get_friend_users,
     get_page_share_user_ids,
     list_accessible_pages,
@@ -38,6 +36,7 @@ from ..permissions import (
 )
 from ..revisions import ensure_baseline, record_revision
 from ..templates import templates
+from ..navigation import page_nav_context, sidebar_context
 from ..wiki import wiki_index
 
 router = APIRouter(prefix="/pages", tags=["pages"])
@@ -107,18 +106,18 @@ def _blocks(session: Session, page_id: int) -> list[PageBlock]:
     ).all()
 
 
-def _sidebar_context(session: Session, current_user: User) -> dict:
+def _sidebar_context(session: Session, current_user: User, open_page: Page | None = None) -> dict:
     pages = list_accessible_pages(session, current_user.id)
-    return {
-        "pages": pages,
-        "wiki_index": wiki_index(pages, current_user),
-        "editable_page_ids": {
-            page.id for page in pages if can_edit_page(session, page, current_user)
-        },
-        "folders": accessible_folders(session, current_user),
-        "owned_folders": _owned_folders(session, current_user),
-        "usuario": current_user,
-    }
+    context = sidebar_context(session, current_user, pages=pages, open_page=open_page)
+    context.update(
+        {
+            "wiki_index": wiki_index(pages, current_user),
+            "owned_folders": _owned_folders(session, current_user),
+        }
+    )
+    if open_page is not None:
+        context.update(page_nav_context(session, open_page, current_user))
+    return context
 
 
 @router.get("/", response_model=list[PageRead])
@@ -227,7 +226,7 @@ def add_page_htmx(
             "blocks": [],
             "can_edit": True,
             "is_owner": True,
-            **_sidebar_context(session, current_user),
+            **_sidebar_context(session, current_user, open_page=page),
         },
         headers={"HX-Push-Url": f"/p/{page.id}"},
     )
@@ -341,7 +340,7 @@ def edit_page(
             "blocks": _blocks(session, page.id),
             "can_edit": True,
             "is_owner": is_owner,
-            **_sidebar_context(session, current_user),
+            **_sidebar_context(session, current_user, open_page=page),
         },
     )
 

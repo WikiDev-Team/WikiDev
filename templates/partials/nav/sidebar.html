@@ -1,0 +1,26 @@
+{# Barra lateral de navegação: favoritas + árvore de pastas e páginas.
+   Re-renderizada como hx-swap-oob quando páginas ou pastas mudam (sidebar_oob). #}
+{% from "partials/ui_macros.html" import icon %}
+<div id="sidebar-nav" class="sidebar-nav"{% if sidebar_oob %} hx-swap-oob="outerHTML"{% endif %}>
+    {% include "partials/nav/favorites.html" %}
+
+    <div id="folders-tree" class="sidebar-section tree-section">
+        <div class="sidebar-section-heading">
+            <span>Páginas</span>
+            <span class="tree-heading-actions">
+                <span class="count-pill" title="Páginas que você pode ver">{{ pages|length }}</span>
+                <button type="button" class="icon-button" data-tree-collapse title="Recolher todas as pastas" aria-label="Recolher todas as pastas">{{ icon("collapse", 13) }}</button>
+                <button type="button" class="icon-button" title="Nova pasta" aria-label="Nova pasta" hx-get="/folders/new" hx-target="#page-editor-container" hx-swap="innerHTML">{{ icon("plus", 14) }}</button>
+            </span>
+        </div>
+        {% if folders or unfiled_pages %}
+        <ul class="tree" role="tree" aria-label="Pastas e páginas">
+            {% include "partials/nav/tree_folders.html" %}
+            {% set tree_items = unfiled_pages %}{% set next_offset = unfiled_next_offset %}{% set more_url = "/nav/sem-pasta" %}{% set remaining = unfiled_total - unfiled_pages|length %}
+            {% include "partials/nav/tree_pages.html" %}
+        </ul>
+        {% else %}
+        <p class="sidebar-empty">Nenhuma página ainda.</p>
+        {% endif %}
+    </div>
+</div>

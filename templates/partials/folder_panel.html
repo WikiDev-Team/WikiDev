@@ -1,6 +1,7 @@
-{% from "partials/ui_macros.html" import icon %}
+{% from "partials/ui_macros.html" import icon, breadcrumb %}
 {% if request and request.headers.get("HX-Request") %}<title>{{ folder.name }} · WikiDev</title>{% endif %}
-<section id="folder-panel" class="workspace-card">
+<section id="folder-panel" class="workspace-card" data-folder-chain="{{ folder_path|default([])|map(attribute='id')|join(',') }}">
+    {{ breadcrumb((folder_path|default([]))[:-1], folder.name) }}
     <header class="workspace-header">
         <div>
             <span class="eyebrow">

@@ -1,0 +1,28 @@
+{% from "partials/ui_macros.html" import icon %}
+<div id="browse-results" class="browse-results">
+    <div class="owner-tabs" role="tablist" aria-label="De quem são as páginas">
+        {% for key, label in owner_filters.items() %}
+        <button type="button" role="tab" class="owner-tab{% if filters.owner == key %} active{% endif %}" aria-selected="{{ 'true' if filters.owner == key else 'false' }}"
+                hx-get="/home/paginas?{{ filters.query_string(owner=key) }}" hx-target="#browse-results" hx-swap="outerHTML">
+            {{ label }} <span class="tab-count">{{ owner_counts[key] }}</span>
+        </button>
+        {% endfor %}
+    </div>
+    {% if filters.tag or filters.q %}
+    <div class="active-filters">
+        {% if filters.tag %}<button type="button" class="filter-chip" hx-get="/home/paginas?{{ filters.query_string(tag='') }}" hx-target="#browse-results" hx-swap="outerHTML" title="Remover filtro">{{ icon("tag", 12) }} {{ active_tag_name }} {{ icon("x", 12) }}</button>{% endif %}
+        {% if filters.q %}<button type="button" class="filter-chip" hx-get="/home/paginas?{{ filters.query_string(q='') }}" hx-target="#browse-results" hx-swap="outerHTML" title="Remover filtro">“{{ filters.q }}” {{ icon("x", 12) }}</button>{% endif %}
+        <button type="button" class="section-link" hx-get="/home/paginas?sort={{ filters.sort }}" hx-target="#browse-results" hx-swap="outerHTML">Limpar filtros</button>
+    </div>
+    {% endif %}
+    <p class="browse-summary-line" aria-live="polite">
+        {{ browse_total }} {{ "página" if browse_total == 1 else "páginas" }} · {{ sort_options[filters.sort]|lower }}
+    </p>
+    {% if browse_items %}
+    <ul class="browse-list">{% include "partials/nav/browse_rows.html" %}</ul>
+    {% else %}
+    <p class="empty-state">Nenhuma página com esses filtros.</p>
+    {% endif %}
+    {# Mantém o formulário de filtros em sincronia quando a troca vem dos chips. #}
+    <template class="browse-state" data-owner="{{ filters.owner }}" data-tag="{{ filters.tag }}" data-sort="{{ filters.sort }}" data-q="{{ filters.q }}"></template>
+</div>

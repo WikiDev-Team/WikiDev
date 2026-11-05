@@ -1,21 +1,14 @@
-{% from "partials/ui_macros.html" import icon, visibility_badge %}
+{% from "partials/ui_macros.html" import icon, visibility_badge, breadcrumb %}
 {% if request and request.headers.get("HX-Request") %}<title>{{ page.title }} · WikiDev</title>{% endif %}
-<article id="page-blocks-editor" class="workspace-card page-blocks-editor page-document" data-page-id="{{ page.id }}">
+<article id="page-blocks-editor" class="workspace-card page-blocks-editor page-document" data-page-id="{{ page.id }}" data-folder-chain="{{ folder_chain_ids|default('') }}">
     {% if restored %}<div class="success-message">Versão restaurada. O estado anterior continua disponível no histórico.</div>{% endif %}
-    <nav class="breadcrumb" aria-label="Localização">
-        <a href="/dashboard">Início</a>
-        {% if page.folder %}
-            {{ icon("chevron", 14) }}
-            <a href="/pastas/{{ page.folder.id }}" hx-get="/folders/{{ page.folder.id }}/panel" hx-target="#page-editor-container" hx-push-url="/pastas/{{ page.folder.id }}">{{ page.folder.name }}</a>
-        {% endif %}
-        {{ icon("chevron", 14) }}
-        <span aria-current="page">{{ page.title }}</span>
-    </nav>
+    {{ breadcrumb(folder_path if folder_path is defined else ([page.folder] if page.folder else []), page.title) }}
 
     <header class="workspace-header blocks-editor-header">
         <div class="page-heading">
             <div class="page-title-line">
                 <h1>{{ page.title }}</h1>
+                {% include "partials/nav/favorite_toggle.html" %}
             </div>
             {% if page.summary %}<p class="page-summary">{{ page.summary }}</p>{% endif %}
             <div class="page-meta">

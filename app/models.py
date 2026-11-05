@@ -525,3 +525,26 @@ class PageRevision(SQLModel, table=True):
     note: str = Field(default="", max_length=200)
     created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
     updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
+
+
+# ── Navegação: favoritas e visitas ───────────────────────────────────────────
+
+class PageFavorite(SQLModel, table=True):
+    """Página marcada com estrela por um usuário (aparece na home e na barra lateral)."""
+
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    page_id: int = Field(foreign_key="page.id", primary_key=True, index=True)
+    created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
+
+
+class PageVisit(SQLModel, table=True):
+    """Quantas vezes cada usuário abriu cada página e quando foi a última vez.
+
+    Uma linha por par usuário/página: alimenta "Vistas recentemente" e "Mais vistas"
+    sem crescer a cada clique.
+    """
+
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    page_id: int = Field(foreign_key="page.id", primary_key=True, index=True)
+    count: int = Field(default=0)
+    last_viewed_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False, index=True))

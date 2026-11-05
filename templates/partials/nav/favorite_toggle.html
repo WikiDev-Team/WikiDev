@@ -1,0 +1,9 @@
+{% from "partials/ui_macros.html" import icon %}
+<button type="button" id="favorite-toggle" class="favorite-star{% if is_favorite %} is-favorite{% endif %}"
+        hx-post="/pages/{{ page.id }}/favorite" hx-target="this" hx-swap="outerHTML"
+        aria-pressed="{{ 'true' if is_favorite else 'false' }}"
+        aria-label="{{ 'Remover das favoritas' if is_favorite else 'Adicionar às favoritas' }}"
+        title="{{ 'Remover das favoritas' if is_favorite else 'Adicionar às favoritas' }}">
+    {{ icon("star", 17) }}
+</button>
+{% if favorites_oob %}{% include "partials/nav/favorites.html" %}{% endif %}

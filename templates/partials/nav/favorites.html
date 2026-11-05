@@ -1,0 +1,14 @@
+{% from "partials/ui_macros.html" import icon, page_link_attrs %}
+<div id="sidebar-favorites" class="sidebar-section"{% if favorites_oob %} hx-swap-oob="outerHTML"{% endif %}{% if not sidebar_favorites %} hidden{% endif %}>
+    <div class="sidebar-section-heading"><span>Favoritas</span></div>
+    <ul class="tree tree-flat">
+        {% for page in sidebar_favorites %}
+        <li class="tree-leaf">
+            <a {{ page_link_attrs(page) }} class="nav-item tree-row tree-link" data-nav-path="/p/{{ page.id }}" title="{{ page.title }}">
+                <span class="tree-icon tree-icon-star">{{ icon("star", 14) }}</span>
+                <span class="tree-label">{{ page.title }}</span>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
