@@ -157,3 +157,10 @@ def test_fork_requires_view_permission(client: TestClient, session: Session, reg
     client.cookies.clear()
     register_and_login(username="eve", email="eve@example.com")
     assert client.post(f"/pages/blocks/{block.id}/fork", headers=HX).status_code in (403, 404)
+
+
+def test_static_assets_have_cache_busting_version(client: TestClient, register_and_login):
+    register_and_login()
+    html = client.get("/dashboard").text
+    assert '/static/ui.css?v=' in html
+    assert '/static/python-runner.js?v=' in html

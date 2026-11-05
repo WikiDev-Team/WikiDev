@@ -1,3 +1,5 @@
+import hashlib
+from pathlib import Path
 from datetime import datetime, timezone
 
 from fastapi.templating import Jinja2Templates
@@ -85,3 +87,28 @@ def time_ago(value: datetime | None) -> str:
 templates.env.filters["markdown"] = render_markdown
 templates.env.filters["time_ago"] = time_ago
 templates.env.filters["run_output"] = parse_run_output
+
+
+_asset_versions: dict[str, tuple[float, str]] = {}
+
+
+def asset(path: str) -> str:
+    """URL de um arquivo em static/ com ?v=<hash do conteúdo>.
+
+    Quando o arquivo muda, a URL muda e o navegador baixa a versão nova em vez
+    de reaproveitar o CSS/JS antigo do cache.
+    """
+    file = Path("static") / path
+    try:
+        mtime = file.stat().st_mtime
+    except OSError:
+        return f"/static/{path}"
+    cached = _asset_versions.get(path)
+    if cached is None or cached[0] != mtime:
+        digest = hashlib.sha1(file.read_bytes()).hexdigest()[:10]
+        cached = (mtime, digest)
+        _asset_versions[path] = cached
+    return f"/static/{path}?v={cached[1]}"
+
+
+templates.env.globals["asset"] = asset
