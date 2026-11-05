@@ -3,6 +3,8 @@
 <div class="code-block-wrapper">
     <div class="code-block-header">
         <span class="code-language-label">{{ lang_labels.get(lang, lang) }}</span>
+        {% if lang == "python" %}<button type="button" class="run-code-button" title="Executar no navegador">Executar</button>{% endif %}
     </div>
 	<pre class="code-block"><code class="language-{{ lang }}">{{ block.content }}</code></pre>
+    {% if lang == "python" %}<div class="run-output" aria-live="polite" hidden></div>{% endif %}
 </div>

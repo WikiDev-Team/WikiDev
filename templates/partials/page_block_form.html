@@ -49,9 +49,9 @@
 				id="content-{{ block.id }}"
 				name="content"
 				rows="{% if block.block_type.value == 'code' %}10{% else %}6{% endif %}"
-				{% if block.block_type.value == 'code' %}class="code-input" spellcheck="false"{% else %}placeholder="Escreva em Markdown: # título, **negrito**, `código`, - listas, [links](https://...)"{% endif %}
+				{% if block.block_type.value == 'code' %}class="code-input" spellcheck="false"{% else %}placeholder="Escreva em Markdown: # título, **negrito**, `código`, - listas, [[Outra página]]"{% endif %}
 			>{{ block.content }}</textarea>
-			{% if block.block_type.value != 'code' %}<small class="field-hint">Aceita Markdown: títulos, listas, links, tabelas e `código`.</small>{% endif %}
+			{% if block.block_type.value != 'code' %}<small class="field-hint">Aceita Markdown (títulos, listas, tabelas, `código`). Use [[Título da página]] para linkar outra página.</small>{% endif %}
 		</div>
 
 		<div class="page-block-actions">

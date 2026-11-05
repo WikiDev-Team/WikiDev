@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import HTMLResponse
 from sqlmodel import Session, select
 
 from ..crud import create_tag, update_tag
 from ..db import get_session
 from ..dependencies import get_current_user
 from ..models import PageTagLink, Tag, TagCreate, TagRead, TagUpdate, User
+from ..templates import templates
+from ..wiki import tag_panel_context
 
 router = APIRouter(prefix="/tags", tags=["tags"])
 
@@ -16,6 +19,27 @@ def _tag_or_404(session: Session, tag_id: int) -> Tag:
     if tag is None:
         raise HTTPException(status_code=404, detail="Tag não encontrada")
     return tag
+
+
+def tag_by_slug(session: Session, slug: str) -> Tag | None:
+    return session.exec(select(Tag).where(Tag.slug == slug)).first()
+
+
+@router.get("/{slug}/panel", response_class=HTMLResponse)
+def tag_panel(
+    request: Request,
+    slug: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    tag = tag_by_slug(session, slug)
+    if tag is None:
+        raise HTTPException(status_code=404, detail="Tag não encontrada")
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/tag_panel.html",
+        context=tag_panel_context(session, tag, current_user),
+    )
 
 
 @router.get("/", response_model=list[TagRead])

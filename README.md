@@ -9,7 +9,11 @@ WikiDev é uma wiki colaborativa para organizar conhecimento de programação em
 - Páginas compostas por blocos de texto em Markdown (títulos, listas, links, tabelas) e blocos de código com destaque de sintaxe e botão de copiar.
 - Link próprio para cada página (`/p/<id>`) e pasta (`/pastas/<id>`), com histórico do navegador, botão "Copiar link" e retorno ao link depois do login.
 - Página inicial com páginas atualizadas recentemente, discussões recentes e resumo da conta.
-- Tags informadas por nome, criadas automaticamente e exibidas na página.
+- Tags informadas por nome, criadas automaticamente e exibidas na página, com página própria por tag (`/t/<tag>`) e lista de tags na barra lateral.
+- Histórico de versões de cada página (`/p/<id>/historico`), com diff por bloco e restauração. Edições seguidas da mesma pessoa em até 5 minutos viram uma só versão.
+- Links entre páginas com `[[Título]]` ou `[[Título|texto]]` e seção "Citada em" com as páginas que apontam para a atual. Só páginas visíveis para o leitor são resolvidas.
+- Busca rápida com Ctrl+K (ou Cmd+K) por título, conteúdo dos blocos, pastas, tags e pessoas.
+- Botão "Executar" nos blocos de Python, usando Pyodide no navegador. O código roda num Web Worker dentro de um iframe com sandbox (origem opaca, sem acesso a cookies ou ao DOM) e é interrompido após 10 s.
 - Pastas hierárquicas sem possibilidade de ciclos.
 - Criação de página dentro de pasta e associação ou remoção de páginas existentes.
 - Solicitações de amizade, perfis públicos e remoção de amizade.

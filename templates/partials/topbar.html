@@ -21,7 +21,7 @@
         <span class="search-icon">{{ icon("search", 15) }}</span>
         <input id="global-search" type="search" name="q" placeholder="Buscar páginas, pastas ou pessoas" autocomplete="off"
                hx-get="/busca" hx-trigger="input changed delay:350ms, search" hx-target="#search-results">
-        <kbd class="search-kbd" title="Atalho: tecla /">/</kbd>
+        <button type="button" class="search-kbd" title="Abrir busca rápida (Ctrl+K)" onclick="openCommandPalette()">Ctrl K</button>
         <div id="search-results"></div>
     </div>
 
@@ -33,3 +33,18 @@
         {% if show_sidebar_toggle|default(false) %}<button type="button" class="menu-hamburger" aria-label="Abrir ou fechar barra lateral" onclick="toggleSidebar()">{{ icon("menu", 18) }}</button>{% endif %}
     </div>
 </header>
+
+<div id="command-palette" class="command-palette" hidden>
+    <div class="command-backdrop" onclick="closeCommandPalette()"></div>
+    <div class="command-dialog" role="dialog" aria-modal="true" aria-label="Busca rápida">
+        <div class="command-input-row">
+            {{ icon("search", 17) }}
+            <input id="command-input" type="text" name="q" placeholder="Ir para página, pasta, tag ou pessoa…" autocomplete="off"
+                   role="combobox" aria-controls="command-results" aria-expanded="true"
+                   hx-get="/busca/rapida" hx-trigger="input changed delay:150ms, open-palette" hx-target="#command-results">
+            <kbd>Esc</kbd>
+        </div>
+        <div id="command-results" class="command-results" role="listbox"></div>
+        <div class="command-footer"><span><kbd>↑</kbd><kbd>↓</kbd> navegar</span><span><kbd>Enter</kbd> abrir</span><span><kbd>Esc</kbd> fechar</span></div>
+    </div>
+</div>

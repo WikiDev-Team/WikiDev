@@ -100,6 +100,52 @@ document.addEventListener('click', async (event) => {
         catch { showToast(url); }
     }
 });
+// ── Busca rápida (Ctrl+K) ───────────────────────────────────────────────
+let commandIndex = 0;
+function commandItems() {
+    return Array.from(document.querySelectorAll('#command-results .command-item'));
+}
+function highlightCommand(index) {
+    const items = commandItems();
+    if (!items.length) return;
+    commandIndex = (index + items.length) % items.length;
+    items.forEach((item, i) => item.classList.toggle('selected', i === commandIndex));
+    items[commandIndex].scrollIntoView({ block: 'nearest' });
+}
+function openCommandPalette() {
+    const palette = document.getElementById('command-palette');
+    const input = document.getElementById('command-input');
+    if (!palette || !input) return;
+    palette.hidden = false;
+    input.value = '';
+    input.focus();
+    if (window.htmx) htmx.trigger(input, 'open-palette');
+}
+function closeCommandPalette() {
+    const palette = document.getElementById('command-palette');
+    if (palette) palette.hidden = true;
+}
+document.body.addEventListener('htmx:afterSwap', (event) => {
+    if (event.target.id === 'command-results') highlightCommand(0);
+});
+document.addEventListener('keydown', (event) => {
+    const palette = document.getElementById('command-palette');
+    const paletteOpen = palette && !palette.hidden;
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        if (paletteOpen) closeCommandPalette(); else openCommandPalette();
+        return;
+    }
+    if (!paletteOpen) return;
+    if (event.key === 'Escape') { event.preventDefault(); closeCommandPalette(); }
+    else if (event.key === 'ArrowDown') { event.preventDefault(); highlightCommand(commandIndex + 1); }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); highlightCommand(commandIndex - 1); }
+    else if (event.key === 'Enter') {
+        const item = commandItems()[commandIndex];
+        if (item) { event.preventDefault(); window.location.href = item.href; }
+    }
+});
+
 document.addEventListener('keydown', (event) => {
     if (event.key === '/' && !event.target.closest('input, textarea, select, [contenteditable]')) {
         event.preventDefault();

@@ -1,0 +1,99 @@
+{% from "partials/ui_macros.html" import icon %}
+{% if request and request.headers.get("HX-Request") %}<title>Histórico · {{ page.title }} · WikiDev</title>{% endif %}
+<section id="page-history" class="workspace-card page-document page-history">
+    <nav class="breadcrumb" aria-label="Localização">
+        <a href="/dashboard">Início</a>
+        {% if page.folder %}{{ icon("chevron", 14) }}<a href="/pastas/{{ page.folder.id }}">{{ page.folder.name }}</a>{% endif %}
+        {{ icon("chevron", 14) }}
+        <a href="/p/{{ page.id }}" hx-get="/pages/{{ page.id }}/blocks-editor" hx-target="#page-editor-container" hx-push-url="/p/{{ page.id }}">{{ page.title }}</a>
+        {{ icon("chevron", 14) }}
+        <span aria-current="page">Histórico</span>
+    </nav>
+
+    <header class="workspace-header">
+        <div>
+            <h1>Histórico de versões</h1>
+            <p class="page-summary">{{ revisions|length }} {{ "versão registrada" if revisions|length == 1 else "versões registradas" }} de “{{ page.title }}”.</p>
+        </div>
+        <div class="page-header-actions">
+            <a class="secondary-action" href="/p/{{ page.id }}" hx-get="/pages/{{ page.id }}/blocks-editor" hx-target="#page-editor-container" hx-push-url="/p/{{ page.id }}">Voltar para a página</a>
+        </div>
+    </header>
+
+    {% if not revisions %}
+        <p class="empty-state">Esta página ainda não tem versões registradas. Elas aparecem a partir da próxima edição.</p>
+    {% else %}
+    <div class="history-layout">
+        <ol class="revision-list">
+            {% for revision in revisions %}
+            {% set author = revision_authors.get(revision.author_id) %}
+            <li>
+                <a class="revision-item{% if selected_revision and revision.id == selected_revision.id %} active{% endif %}"
+                   href="/p/{{ page.id }}/historico?v={{ revision.id }}"
+                   hx-get="/pages/{{ page.id }}/history?v={{ revision.id }}" hx-target="#page-editor-container"
+                   hx-push-url="/p/{{ page.id }}/historico?v={{ revision.id }}">
+                    <span class="revision-dot" aria-hidden="true"></span>
+                    <span class="revision-body">
+                        <strong>{{ revision.updated_at|time_ago }}{% if loop.first %} <span class="revision-current">atual</span>{% endif %}</strong>
+                        <small>{% if author %}@{{ author.username }}{% else %}autor removido{% endif %}{% if revision.note %} · {{ revision.note }}{% endif %}</small>
+                    </span>
+                </a>
+            </li>
+            {% endfor %}
+        </ol>
+
+        <div class="revision-detail">
+            {% set author = revision_authors.get(selected_revision.author_id) %}
+            <div class="revision-detail-header">
+                <div>
+                    <strong>{{ selected_revision.updated_at.strftime('%d/%m/%Y às %H:%M') }} UTC</strong>
+                    <span class="card-meta">{% if author %}por @{{ author.username }}{% endif %}{% if selected_revision.note %} · {{ selected_revision.note }}{% endif %}</span>
+                </div>
+                <div class="revision-stats">
+                    <span class="diff-stat-add">+{{ diff.added }}</span>
+                    <span class="diff-stat-remove">−{{ diff.removed }}</span>
+                    {% if can_edit and not is_latest %}
+                    <button type="button" class="secondary-action"
+                            hx-post="/pages/{{ page.id }}/history/{{ selected_revision.id }}/restore"
+                            hx-target="#page-editor-container"
+                            hx-confirm="Restaurar esta versão? Blocos criados depois dela serão removidos junto com seus comentários. A versão atual continua no histórico.">
+                        Restaurar esta versão
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if not diff.has_changes %}
+                <p class="empty-state">{{ "Ponto de partida do histórico." if selected_revision.note in ("Versão inicial", "Página criada") else "Nenhuma mudança de conteúdo nesta versão." }}</p>
+            {% endif %}
+
+            {% if diff.title_before is not none %}
+            <div class="diff-block">
+                <div class="diff-block-header"><span>Título</span><span class="diff-badge diff-changed">alterado</span></div>
+                <pre class="diff-lines"><span class="diff-line diff-remove">{{ diff.title_before }}</span><span class="diff-line diff-add">{{ diff.title_after }}</span></pre>
+            </div>
+            {% endif %}
+            {% if diff.summary_before is not none %}
+            <div class="diff-block">
+                <div class="diff-block-header"><span>Resumo</span><span class="diff-badge diff-changed">alterado</span></div>
+                <pre class="diff-lines"><span class="diff-line diff-remove">{{ diff.summary_before or "(vazio)" }}</span><span class="diff-line diff-add">{{ diff.summary_after or "(vazio)" }}</span></pre>
+            </div>
+            {% endif %}
+
+            {% set unchanged = diff.blocks|selectattr("status", "equalto", "same")|list %}
+            {% for block in diff.blocks if block.status != "same" or not diff.has_changes %}
+            <div class="diff-block">
+                <div class="diff-block-header">
+                    <span>{{ "Código" if block.block_type == "code" else "Texto" }}{% if block.language %} · {{ block.language }}{% endif %}</span>
+                    {% if block.status != "same" %}<span class="diff-badge diff-{{ block.status }}">{{ {"added": "novo bloco", "removed": "bloco removido", "changed": "alterado"}[block.status] }}</span>{% endif %}
+                </div>
+                <pre class="diff-lines">{% for line in block.lines %}<span class="diff-line diff-{{ line.kind }}">{{ line.text or " " }}</span>{% else %}<span class="diff-line diff-same">(bloco vazio)</span>{% endfor %}</pre>
+            </div>
+            {% endfor %}
+            {% if unchanged and diff.has_changes %}
+            <p class="card-meta">{{ unchanged|length }} {{ "bloco sem alteração" if unchanged|length == 1 else "blocos sem alteração" }}.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</section>
