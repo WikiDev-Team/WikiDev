@@ -75,7 +75,9 @@ A aplicação fica em `http://127.0.0.1:8000`. A documentação OpenAPI fica em 
 python -m scripts.seed_demo
 ```
 
-Credenciais criadas pelo seed: `admin` / `admin123`. Use apenas em desenvolvimento.
+O seed cria 12 páginas de referência (Python, Git, SQL, HTTP, FastAPI, terminal e algoritmos) em pastas e tags, com links entre elas, uma amizade e alguns comentários. Pode rodar de novo: as páginas de demonstração são atualizadas para o conteúdo de `scripts/demo_content.py`, e as páginas criadas por pessoas não são alteradas.
+
+Credenciais criadas pelo seed: `admin` / `admin123` e `ana` / `ana12345`. Use apenas em desenvolvimento.
 
 ## Recuperação de senha
 
