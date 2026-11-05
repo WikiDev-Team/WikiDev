@@ -604,7 +604,29 @@ a.tag-chip:hover { filter: brightness(1.15); }
 }
 .run-code-button:hover { filter: brightness(1.1); }
 .run-code-button[data-running="true"] { background: var(--danger); }
-.run-code-button + .copy-code-button { margin-left: 0; }
+.code-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; min-width: 0; }
+.page-block-code, .code-block-wrapper { min-width: 0; max-width: 100%; }
+.code-actions + .copy-code-button { margin-left: 0; }
+.code-action-button {
+    height: 24px; padding: 0 9px;
+    border: 1px solid var(--border-color); border-radius: 5px;
+    background: transparent; color: var(--text-secondary);
+    font: 600 0.72rem var(--font-sans); cursor: pointer; white-space: nowrap;
+}
+.code-action-button:hover { color: var(--text-primary); background: var(--bg-hover); }
+.code-action-button:disabled { opacity: 0.6; cursor: default; }
+.is-experimenting .try-code-button { color: var(--accent-strong); border-color: var(--accent-strong); }
+.try-editor {
+    display: block; width: 100%; margin: 0; padding: 14px 16px;
+    border: 0; border-radius: 0; resize: vertical;
+    background: var(--bg-main); color: var(--text-primary);
+    font: 0.86rem/1.65 var(--font-mono); tab-size: 4;
+    box-shadow: inset 3px 0 0 var(--accent-strong);
+}
+.try-editor:focus { outline: none; }
+.run-images { display: grid; justify-items: start; gap: 12px; padding: 10px 16px 0; min-width: 0; }
+.run-images img { max-width: 100%; height: auto; border-radius: 6px; background: #fff; }
+.run-actions { display: flex; gap: 6px; padding: 0 16px 12px; }
 .run-output { border-top: 1px solid var(--border-color); background: var(--bg-main); }
 .run-output pre { margin: 0; padding: 10px 16px 14px; overflow-x: auto; font: 0.82rem/1.6 var(--font-mono); white-space: pre-wrap; }
 .run-meta { padding: 8px 16px 0; color: var(--text-muted); font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -644,6 +666,8 @@ a.tag-chip:hover { filter: brightness(1.15); }
 }
 
 @media (max-width: 760px) {
+    .code-block-header { height: auto; min-height: 36px; flex-wrap: wrap; padding-top: 6px; padding-bottom: 6px; }
+    .code-actions { flex-wrap: wrap; }
     .topbar { height: auto; flex-wrap: wrap; row-gap: 8px; padding: 10px 12px; }
     .topbar-brand > div { display: none; }
     .main-nav { order: 3; width: 100%; overflow-x: auto; scrollbar-width: none; }

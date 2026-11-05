@@ -102,6 +102,11 @@ def _migrate_sqlite_schema() -> None:
                     )
                 )
 
+        if "pageblock" in tables:
+            block_columns = {column["name"] for column in inspector.get_columns("pageblock")}
+            if "run_output" not in block_columns:
+                connection.execute(text("ALTER TABLE pageblock ADD COLUMN run_output TEXT"))
+
         if "comment" in tables:
             comment_columns = {column["name"] for column in inspector.get_columns("comment")}
             if "block_id" not in comment_columns:

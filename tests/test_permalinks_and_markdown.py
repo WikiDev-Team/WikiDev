@@ -175,7 +175,8 @@ def test_login_shows_demo_account_only_in_demo_mode(client: TestClient, monkeypa
     try:
         html = client.get("/login").text
         assert "demo-hint" in html
-        assert "admin123" in html
+        assert "admin123" not in html
+        assert "Entrar como admin" not in html
     finally:
         monkeypatch.delenv("DEMO_MODE")
         get_settings.cache_clear()
@@ -192,3 +193,17 @@ def test_base_url_falls_back_to_render_url(monkeypatch):
     finally:
         monkeypatch.delenv("RENDER_EXTERNAL_URL")
         get_settings.cache_clear()
+
+
+def test_seed_password_can_come_from_environment(session, monkeypatch):
+    from app.security import verify_password
+    from scripts.seed_demo import _ensure_users
+
+    users = _ensure_users(session)
+    assert verify_password("admin123", users["admin"].hashed_password)
+
+    monkeypatch.setenv("SEED_ADMIN_PASSWORD", "outra-senha-forte")
+    users = _ensure_users(session)
+    assert verify_password("outra-senha-forte", users["admin"].hashed_password)
+    assert not verify_password("admin123", users["admin"].hashed_password)
+    assert verify_password("ana12345", users["ana"].hashed_password)

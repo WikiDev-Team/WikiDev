@@ -29,11 +29,7 @@
 
             {% if demo_mode %}
             <div class="demo-hint">
-                <p><strong>Demonstração aberta.</strong> Entre com <code>admin</code> / <code>admin123</code> ou crie sua conta. Os dados voltam ao estado inicial de tempos em tempos.</p>
-                <button type="button" class="secondary-link demo-login-button"
-                    onclick="const f=this.closest('.auth-card').querySelector('.auth-form');f.username.value='admin';f.password.value='admin123';f.requestSubmit();">
-                    Entrar como admin
-                </button>
+                <p><strong>Demonstração aberta.</strong> Crie sua conta para explorar as páginas e escrever as suas. Os dados voltam ao estado inicial de tempos em tempos.</p>
             </div>
             {% endif %}
             {% if registered %}<div class="success-message">Conta criada com sucesso! Agora faça login.</div>{% endif %}

@@ -22,5 +22,11 @@ services:
         value: "true"
       - key: DEMO_MODE
         value: "true"
+      # Senhas aleatórias para as contas do seed: ninguém de fora entra como
+      # admin ou ana com as senhas que estão no repositório.
+      - key: SEED_ADMIN_PASSWORD
+        generateValue: true
+      - key: SEED_ANA_PASSWORD
+        generateValue: true
       - key: MAIL_MODE
         value: console

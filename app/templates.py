@@ -5,6 +5,7 @@ from jinja2 import pass_context
 from markdown_it import MarkdownIt
 from markupsafe import Markup, escape
 
+from .run_output import parse_run_output
 from .wiki import WIKILINK_RE, normalize_title
 
 templates = Jinja2Templates(directory="templates")
@@ -83,3 +84,4 @@ def time_ago(value: datetime | None) -> str:
 
 templates.env.filters["markdown"] = render_markdown
 templates.env.filters["time_ago"] = time_ago
+templates.env.filters["run_output"] = parse_run_output

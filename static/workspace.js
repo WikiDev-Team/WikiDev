@@ -88,7 +88,8 @@ document.addEventListener('click', async (event) => {
     if (container && !container.contains(event.target)) closeSearch();
     const copyCode = event.target.closest('.copy-code-button');
     if (copyCode) {
-        const code = copyCode.closest('.code-block-wrapper')?.querySelector('code')?.innerText ?? '';
+        const wrapper = copyCode.closest('.code-block-wrapper');
+        const code = wrapper?.querySelector('.try-editor')?.value ?? wrapper?.querySelector('code')?.innerText ?? '';
         try { await navigator.clipboard.writeText(code); copyCode.textContent = 'Copiado!'; }
         catch { copyCode.textContent = 'Erro'; }
         setTimeout(() => { copyCode.textContent = 'Copiar'; }, 1500);

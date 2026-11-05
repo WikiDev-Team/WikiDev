@@ -222,6 +222,5 @@
     line-height: 1.45;
     text-align: left;
 }
-.demo-hint p { margin: 0 0 10px; }
+.demo-hint p { margin: 0; }
 .demo-hint code { font-size: .85em; padding: 1px 5px; border-radius: 4px; background: rgba(127, 127, 127, .18); }
-.demo-login-button { width: 100%; cursor: pointer; font: inherit; }
