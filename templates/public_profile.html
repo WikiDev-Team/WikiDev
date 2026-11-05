@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ profile_user.display_name or profile_user.username }} - WikiDev</title>
     <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
-    <script defer src="/static/theme.js"></script>
-    <link rel="stylesheet" href="/static/style.css">
-    <link rel="stylesheet" href="/static/auth.css">
+    <script defer src="{{ asset('theme.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('style.css') }}">
+    <link rel="stylesheet" href="{{ asset('auth.css') }}">
 </head>
 <body class="auth-page">
     <button type="button" class="theme-toggle auth-theme-toggle" aria-label="Alternar tema">☀️</button>

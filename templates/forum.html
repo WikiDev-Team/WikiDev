@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Fórum · {{ project }}</title>
     <link rel="icon" type="image/png" href="/static/wikidev_logo.png">
-    <script src="/static/vendor/htmx-1.9.10.min.js"></script>
-    <script defer src="/static/theme.js"></script>
-    <script defer src="/static/workspace.js"></script>
-    <link rel="stylesheet" href="/static/style.css">
+    <script src="{{ asset('vendor/htmx-1.9.10.min.js') }}"></script>
+    <script defer src="{{ asset('theme.js') }}"></script>
+    <script defer src="{{ asset('workspace.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('style.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
-    <link rel="stylesheet" href="/static/ui.css">
+    <link rel="stylesheet" href="{{ asset('ui.css') }}">
 </head>
 <body>
 {% set active_page = 'forum' %}
