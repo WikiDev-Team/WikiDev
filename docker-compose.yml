@@ -10,7 +10,6 @@ services:
       APP_BASE_URL: ${APP_BASE_URL:-http://127.0.0.1:8000}
       DATABASE_URL: sqlite:////data/wikidev.db
       SECURE_COOKIES: ${SECURE_COOKIES:-false}
-      ENABLE_DEV_LOGIN: ${ENABLE_DEV_LOGIN:-false}
       PASSWORD_RESET_TTL_MINUTES: ${PASSWORD_RESET_TTL_MINUTES:-30}
       MAIL_MODE: ${MAIL_MODE:-console}
       MAIL_FROM: ${MAIL_FROM:-WikiDev <no-reply@wikidev.local>}

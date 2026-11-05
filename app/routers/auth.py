@@ -263,38 +263,6 @@ def reset_password(
     return redirect_htmx(request, "/login?reset=1")
 
 
-@router.get("/dev-login")
-def dev_login(session: Session = Depends(get_session)):
-    settings = get_settings()
-    if not settings.enable_dev_login or settings.app_env == "production":
-        raise HTTPException(status_code=404, detail="Rota não encontrada")
-
-    user = session.exec(select(User)).first()
-    if not user:
-        user = create_user(
-            session,
-            UserCreate(username="dev", email="dev@dev.com", password="dev123"),
-        )
-
-    token = generate_session_token()
-    user.token = hash_token(token)
-    session.add(user)
-    session.commit()
-
-    response = HTMLResponse(content="")
-    response.set_cookie(
-        key="session_token",
-        value=token,
-        httponly=True,
-        secure=settings.secure_cookies,
-        samesite="lax",
-        path="/",
-        max_age=60 * 60 * 24 * 7,
-    )
-    response.headers["HX-Redirect"] = "/dashboard"
-    return response
-
-
 @router.post("/logout")
 def logout(request: Request, session: Session = Depends(get_session)):
     token = request.cookies.get("session_token")
