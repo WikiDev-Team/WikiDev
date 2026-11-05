@@ -25,6 +25,7 @@ class Settings:
     app_base_url: str
     secure_cookies: bool
     enable_dev_login: bool
+    demo_mode: bool
     password_reset_ttl_minutes: int
     mail_mode: str
     mail_from: str
@@ -43,9 +44,14 @@ def get_settings() -> Settings:
 
     return Settings(
         app_env=app_env,
-        app_base_url=os.getenv("APP_BASE_URL", "http://127.0.0.1:8000").rstrip("/"),
+        app_base_url=(
+            os.getenv("APP_BASE_URL")
+            or os.getenv("RENDER_EXTERNAL_URL")  # definido automaticamente pelo Render
+            or "http://127.0.0.1:8000"
+        ).rstrip("/"),
         secure_cookies=_as_bool(os.getenv("SECURE_COOKIES"), default_secure),
         enable_dev_login=_as_bool(os.getenv("ENABLE_DEV_LOGIN"), False),
+        demo_mode=_as_bool(os.getenv("DEMO_MODE"), False),
         password_reset_ttl_minutes=_as_int(
             os.getenv("PASSWORD_RESET_TTL_MINUTES"), 30, minimum=5
         ),

@@ -160,3 +160,35 @@ def test_dashboard_home_lists_recent_pages(client: TestClient, register_and_logi
     assert "Atualizadas recentemente" in html
     assert 'href="/p/' in html
     assert "Recente" in html
+
+
+# ── Modo demonstração ────────────────────────────────────────────────────────
+
+
+def test_login_shows_demo_account_only_in_demo_mode(client: TestClient, monkeypatch):
+    from app.config import get_settings
+
+    assert "demo-hint" not in client.get("/login").text
+
+    monkeypatch.setenv("DEMO_MODE", "true")
+    get_settings.cache_clear()
+    try:
+        html = client.get("/login").text
+        assert "demo-hint" in html
+        assert "admin123" in html
+    finally:
+        monkeypatch.delenv("DEMO_MODE")
+        get_settings.cache_clear()
+
+
+def test_base_url_falls_back_to_render_url(monkeypatch):
+    from app.config import get_settings
+
+    monkeypatch.delenv("APP_BASE_URL", raising=False)
+    monkeypatch.setenv("RENDER_EXTERNAL_URL", "https://wikidev.onrender.com/")
+    get_settings.cache_clear()
+    try:
+        assert get_settings().app_base_url == "https://wikidev.onrender.com"
+    finally:
+        monkeypatch.delenv("RENDER_EXTERNAL_URL")
+        get_settings.cache_clear()

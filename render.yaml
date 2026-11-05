@@ -1,0 +1,26 @@
+# Blueprint do Render: https://render.com/docs/blueprint-spec
+# Sobe o WikiDev como demonstração pública no plano gratuito.
+# O disco do plano gratuito é temporário: o banco SQLite volta ao conteúdo de
+# demonstração sempre que o serviço reinicia (deploy ou depois de ficar ocioso).
+services:
+  - type: web
+    name: wikidev
+    runtime: docker
+    plan: free
+    dockerfilePath: ./docker/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SECURE_COOKIES
+        value: "true"
+      - key: DATABASE_URL
+        value: sqlite:////data/wikidev.db
+      - key: SEED_DEMO
+        value: "true"
+      - key: DEMO_MODE
+        value: "true"
+      - key: MAIL_MODE
+        value: console
