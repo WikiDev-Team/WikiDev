@@ -33,7 +33,8 @@ router = APIRouter(tags=["friendships"])
 
 
 def _safe_return_to(return_to: str, fallback: str = "/friends") -> str:
-    if return_to.startswith("/") and not return_to.startswith("//"):
+    # Com barra invertida o navegador também lê o caminho como outro domínio.
+    if return_to.startswith("/") and not return_to.startswith("//") and "\\" not in return_to:
         return return_to
     return fallback
 

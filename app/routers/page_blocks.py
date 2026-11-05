@@ -306,12 +306,13 @@ def page_presence(
     page = get_page_or_404(session, page_id)
     require_page_view(session, page, current_user)
 
-    editing_ids = _parse_ids(editing)
-    known_versions = _parse_known(known)
-    presence.touch(page.id, current_user, editing_ids)
-
     blocks = list_blocks(session, page.id)
     current_ids = {block.id for block in blocks}
+    can_edit = can_edit_page(session, page, current_user)
+    # Só quem pode editar aparece "editando", e só blocos que existem nesta página.
+    editing_ids = _parse_ids(editing) if can_edit else set()
+    known_versions = _parse_known(known)
+    presence.touch(page.id, current_user, editing_ids & current_ids)
     changed = [
         block for block in blocks
         if block.id in known_versions
@@ -337,7 +338,7 @@ def page_presence(
             "changed": changed,
             "added": added,
             "removed": removed,
-            "can_edit": can_edit_page(session, page, current_user),
+            "can_edit": can_edit,
             "block_comment_counts": block_comment_counts(session, changed + added),
             "wiki_index": wiki_index_for(session, current_user) if changed or added else {},
         },

@@ -7,7 +7,7 @@ from sqlmodel import Session, select
 from ..crud import create_tag, update_tag
 from ..db import get_session
 from ..dependencies import get_current_user
-from ..models import PageTagLink, Tag, TagCreate, TagRead, TagUpdate, User
+from ..models import Page, PageTagLink, Tag, TagCreate, TagRead, TagUpdate, User
 from ..templates import templates
 from ..wiki import tag_panel_context
 
@@ -66,9 +66,23 @@ def edit_tag(
     tag_id: int,
     payload: TagUpdate,
     session: Session = Depends(get_session),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
-    return update_tag(session, _tag_or_404(session, tag_id), payload)
+    tag = _tag_or_404(session, tag_id)
+    # Tags são compartilhadas por todo mundo: renomear uma tag usada por páginas
+    # de outras pessoas mudaria as páginas delas. Sem papel de administrador,
+    # só dá para alterar tags usadas apenas nas próprias páginas.
+    others = session.exec(
+        select(Page.id)
+        .join(PageTagLink, PageTagLink.page_id == Page.id)
+        .where(PageTagLink.tag_id == tag.id, Page.author_id != current_user.id)
+    ).first()
+    if others is not None:
+        raise HTTPException(
+            status_code=403,
+            detail="A tag é usada por páginas de outras pessoas e não pode ser alterada",
+        )
+    return update_tag(session, tag, payload)
 
 
 @router.delete("/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)

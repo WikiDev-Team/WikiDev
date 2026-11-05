@@ -42,9 +42,19 @@ def edit_language(
     language_id: int,
     payload: LanguageUpdate,
     session: Session = Depends(get_session),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
-    return update_language(session, _language_or_404(session, language_id), payload)
+    language = _language_or_404(session, language_id)
+    # Mesma regra das tags: não dá para renomear o que outras pessoas usam.
+    others = session.exec(
+        select(Page.id).where(Page.language_id == language.id, Page.author_id != current_user.id)
+    ).first()
+    if others is not None:
+        raise HTTPException(
+            status_code=403,
+            detail="A linguagem é usada por páginas de outras pessoas e não pode ser alterada",
+        )
+    return update_language(session, language, payload)
 
 
 @router.delete("/{language_id}", status_code=status.HTTP_204_NO_CONTENT)
