@@ -193,9 +193,10 @@ O blueprint liga o modo de demonstração:
 |---|---|---|
 | `APP_ENV` | `production` | Cookies `Secure` e login de desenvolvimento bloqueado. |
 | `SEED_DEMO` | `true` | Cria as páginas de demonstração a cada início. |
-| `DEMO_MODE` | `true` | Mostra no login a conta `admin` / `admin123` e o botão "Entrar como admin". |
+| `DEMO_MODE` | `true` | Mostra no login um aviso de que é uma demonstração e convida a criar uma conta. |
+| `SEED_ADMIN_PASSWORD`, `SEED_ANA_PASSWORD` | gerado pelo Render | Troca as senhas das contas do seed, para que ninguém de fora entre como `admin` ou `ana`. O valor fica em **Environment** no painel do serviço. |
 
-No plano gratuito o disco é temporário e o serviço dorme depois de 15 minutos sem acesso. A cada reinício o banco volta ao conteúdo de demonstração, o que é bom para uma vitrine pública, e a primeira visita depois de dormir demora uns 30 segundos. Para guardar dados de verdade, use um plano com disco persistente montado em `/data`, desligue `DEMO_MODE` e troque as senhas das contas do seed.
+No plano gratuito o disco é temporário e o serviço dorme depois de 15 minutos sem acesso. A cada reinício o banco volta ao conteúdo de demonstração, o que é bom para uma vitrine pública, e a primeira visita depois de dormir demora uns 30 segundos. Para guardar dados de verdade, use um plano com disco persistente montado em `/data`, e desligue `DEMO_MODE`.
 
 ## Endpoints principais
 

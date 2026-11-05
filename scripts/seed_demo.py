@@ -9,6 +9,8 @@ scripts/demo_content.py. Páginas criadas por pessoas não são tocadas.
 
 from __future__ import annotations
 
+import os
+
 from sqlmodel import Session, select
 
 from app.crud import (
@@ -23,6 +25,7 @@ from app.crud import (
     update_page,
 )
 from app.db import engine, init_db
+from app.security import get_password_hash
 from app.models import (
     Comment,
     CommentCreate,
@@ -52,9 +55,18 @@ from scripts.demo_content import COMMENTS, FOLDERS, PAGES, USERS
 def _ensure_users(session: Session) -> dict[str, User]:
     users: dict[str, User] = {}
     for data in USERS:
+        # Em uma demonstração pública, SEED_<USUÁRIO>_PASSWORD (por exemplo
+        # SEED_ADMIN_PASSWORD) troca a senha conhecida do repositório.
+        override = os.getenv(f"SEED_{data['username'].upper()}_PASSWORD")
+        if override:
+            data = {**data, "password": override}
         user = session.exec(select(User).where(User.username == data["username"])).first()
         if user is None:
             user = create_user(session, UserCreate(**data))
+        elif override:
+            user.hashed_password = get_password_hash(override)
+            session.add(user)
+            session.commit()
         users[data["username"]] = user
     return users
 
@@ -221,7 +233,11 @@ def main() -> None:
         _ensure_comments(session, users, pages)
 
     print("Dados de demonstração prontos.")
-    print("Logins: admin / admin123 e ana / ana12345")
+    for data in USERS:
+        if os.getenv(f"SEED_{data['username'].upper()}_PASSWORD"):
+            print(f"Login: {data['username']} (senha definida por variável de ambiente)")
+        else:
+            print(f"Login: {data['username']} / {data['password']}")
 
 
 if __name__ == "__main__":

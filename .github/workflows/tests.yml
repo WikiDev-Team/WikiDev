@@ -27,7 +27,6 @@ jobs:
         env:
           APP_ENV: test
           MAIL_MODE: console
-          ENABLE_DEV_LOGIN: "false"
         run: coverage run -m pytest
       - name: Coverage report
         run: coverage report
