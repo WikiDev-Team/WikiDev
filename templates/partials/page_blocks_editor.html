@@ -1,6 +1,7 @@
 {% from "partials/ui_macros.html" import icon, visibility_badge %}
 {% if request and request.headers.get("HX-Request") %}<title>{{ page.title }} · WikiDev</title>{% endif %}
 <article id="page-blocks-editor" class="workspace-card page-blocks-editor page-document" data-page-id="{{ page.id }}">
+    {% if restored %}<div class="success-message">Versão restaurada. O estado anterior continua disponível no histórico.</div>{% endif %}
     <nav class="breadcrumb" aria-label="Localização">
         <a href="/dashboard">Início</a>
         {% if page.folder %}
@@ -26,11 +27,15 @@
             </div>
             {% if page.tags %}
             <ul class="tag-list" aria-label="Tags">
-                {% for tag in page.tags %}<li class="tag-chip">{{ icon("tag", 12) }}{{ tag.name }}</li>{% endfor %}
+                {% for tag in page.tags %}<li><a class="tag-chip" href="/t/{{ tag.slug }}" hx-get="/tags/{{ tag.slug }}/panel" hx-target="#page-editor-container" hx-push-url="/t/{{ tag.slug }}">{{ icon("tag", 12) }}{{ tag.name }}</a></li>{% endfor %}
             </ul>
             {% endif %}
         </div>
         <div class="page-header-actions">
+            <a class="secondary-action" href="/p/{{ page.id }}/historico" hx-get="/pages/{{ page.id }}/history"
+               hx-target="#page-editor-container" hx-push-url="/p/{{ page.id }}/historico" title="Ver versões anteriores">
+                {{ icon("clock", 15) }}<span>Histórico</span>
+            </a>
             <button type="button" class="secondary-action copy-link-button" data-copy-url="/p/{{ page.id }}" title="Copiar link da página">
                 {{ icon("link", 15) }}<span>Copiar link</span>
             </button>
@@ -52,6 +57,16 @@
         </div>
     {% elif not blocks %}
         <p class="empty-state">Esta página ainda não possui conteúdo.</p>
+    {% endif %}
+    {% if backlinks %}
+    <section class="backlinks" aria-label="Páginas que citam esta">
+        <h2>{{ icon("link", 14) }} Citada em</h2>
+        <ul>
+            {% for item in backlinks %}
+            <li><a href="/p/{{ item.id }}" hx-get="/pages/{{ item.id }}/blocks-editor" hx-target="#page-editor-container" hx-push-url="/p/{{ item.id }}">{{ icon("file", 14) }}{{ item.title }}</a></li>
+            {% endfor %}
+        </ul>
+    </section>
     {% endif %}
     <details class="page-discussion-panel" hx-get="/comments/pages/{{ page.id }}/discussion"
              hx-trigger="toggle once" hx-target="#page-discussion-slot-{{ page.id }}" hx-swap="innerHTML">

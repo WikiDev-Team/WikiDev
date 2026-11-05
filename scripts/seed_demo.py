@@ -189,7 +189,8 @@ def _seed_extra_pages(session: Session, user: User, starter_folder: Folder) -> N
         [
             (PageBlockType.TEXT,
              "| JOIN | Retorna |\n|---|---|\n| `INNER` | só linhas com par nas duas tabelas |\n"
-             "| `LEFT` | todas da esquerda, com `NULL` quando não há par |\n| `FULL` | todas das duas tabelas |", ""),
+             "| `LEFT` | todas da esquerda, com `NULL` quando não há par |\n| `FULL` | todas das duas tabelas |\n\n"
+             "Para montar a API que roda essas consultas, veja [[FastAPI: rotas com dependências]].", ""),
             (PageBlockType.CODE,
              "SELECT u.username, COUNT(p.id) AS paginas\nFROM users u\nLEFT JOIN pages p ON p.author_id = u.id\n"
              "GROUP BY u.username\nORDER BY paginas DESC;", "sql"),
@@ -203,7 +204,8 @@ def _seed_extra_pages(session: Session, user: User, starter_folder: Folder) -> N
         [
             (PageBlockType.TEXT,
              "Com `Depends`, o FastAPI resolve a sessão e o usuário antes de chamar a rota. "
-             "Assim cada endpoint recebe o que precisa **sem repetir código**.", ""),
+             "Assim cada endpoint recebe o que precisa **sem repetir código**.\n\n"
+             "Antes de começar, revise [[Python: variáveis e tipos básicos]].", ""),
             (PageBlockType.CODE,
              "@router.get(\"/pages/{page_id}\")\ndef get_page(\n    page_id: int,\n"
              "    session: Session = Depends(get_session),\n    user: User = Depends(get_current_user),\n):\n"

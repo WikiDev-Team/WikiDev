@@ -1,0 +1,46 @@
+{% from "partials/ui_macros.html" import icon %}
+{% set total = title_pages|length + content_pages|length + folders|length + tags|length + users|length %}
+{% if total == 0 %}
+    <p class="command-empty">Nada encontrado para “{{ query }}”.</p>
+{% else %}
+    {% if title_pages %}
+    <div class="command-group">
+        <h3>{{ "Páginas" if query else "Recentes" }}</h3>
+        {% for page in title_pages %}
+        <a class="command-item" href="/p/{{ page.id }}" role="option">{{ icon("file", 15) }}<span class="command-label">{{ page.title }}</span>{% if page.author %}<small>@{{ page.author.username }}</small>{% endif %}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if content_pages %}
+    <div class="command-group">
+        <h3>Mencionado no conteúdo</h3>
+        {% for page in content_pages %}
+        <a class="command-item" href="/p/{{ page.id }}" role="option">{{ icon("file", 15) }}<span class="command-label">{{ page.title }}</span>{% if page.author %}<small>@{{ page.author.username }}</small>{% endif %}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if folders %}
+    <div class="command-group">
+        <h3>Pastas</h3>
+        {% for folder in folders %}
+        <a class="command-item" href="/pastas/{{ folder.id }}" role="option">{{ icon("folder", 15) }}<span class="command-label">{{ folder.name }}</span></a>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if tags %}
+    <div class="command-group">
+        <h3>Tags</h3>
+        {% for tag in tags %}
+        <a class="command-item" href="/t/{{ tag.slug }}" role="option">{{ icon("tag", 15) }}<span class="command-label">{{ tag.name }}</span></a>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if users %}
+    <div class="command-group">
+        <h3>Pessoas</h3>
+        {% for person in users %}
+        <a class="command-item" href="/profile/{{ person.id }}" role="option">{{ icon("users", 15) }}<span class="command-label">{{ person.display_name or person.username }}</span><small>@{{ person.username }}</small></a>
+        {% endfor %}
+    </div>
+    {% endif %}
+{% endif %}

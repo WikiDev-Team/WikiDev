@@ -6,8 +6,10 @@ from ..crud import create_page_block, delete_page_block, update_page_block
 from ..db import get_session
 from ..dependencies import get_current_user
 from ..models import Comment, Page, PageBlock, PageBlockCreate, PageBlockType, PageBlockUpdate, User
-from ..permissions import can_edit_page, require_page_edit, require_page_view
+from ..permissions import can_edit_page, list_accessible_pages, require_page_edit, require_page_view
+from ..revisions import ensure_baseline, record_revision
 from ..templates import templates
+from ..wiki import backlinks, wiki_index
 
 router = APIRouter(prefix="/pages", tags=["page-blocks"])
 
@@ -47,9 +49,15 @@ def block_comment_counts(session: Session, blocks: list[PageBlock]) -> dict[int,
     return counts
 
 
+def wiki_index_for(session: Session, current_user: User) -> dict[str, int]:
+    return wiki_index(list_accessible_pages(session, current_user.id), current_user)
+
+
 def page_view_context(session: Session, page: Page, current_user: User) -> dict:
     blocks = list_blocks(session, page.id)
     return {
+        "wiki_index": wiki_index_for(session, current_user),
+        "backlinks": backlinks(session, page, current_user),
         "page": page,
         "blocks": blocks,
         "block_comment_counts": block_comment_counts(session, blocks),
@@ -91,7 +99,9 @@ def add_block(
         language="python" if block_type == PageBlockType.CODE else "",
         font_size="normal",
     )
+    ensure_baseline(session, page)
     block = create_page_block(session, page_id, payload)
+    record_revision(session, page, current_user)
 
     return templates.TemplateResponse(
         request=request,
@@ -118,6 +128,7 @@ def get_block_partial(
             "block": block,
             "can_edit": can_edit_page(session, page, current_user),
             "block_comment_counts": block_comment_counts(session, [block]),
+            "wiki_index": wiki_index_for(session, current_user),
         },
     )
 
@@ -159,11 +170,18 @@ def update_block(
     else:
         payload = PageBlockUpdate(content=content, language=language)
 
+    ensure_baseline(session, page)
     block = update_page_block(session, block, payload)
+    record_revision(session, page, current_user)
     return templates.TemplateResponse(
         request=request,
         name="partials/page_block.html",
-        context={"block": block, "can_edit": True, "block_comment_counts": block_comment_counts(session, [block])},
+        context={
+            "block": block,
+            "can_edit": True,
+            "block_comment_counts": block_comment_counts(session, [block]),
+            "wiki_index": wiki_index_for(session, current_user),
+        },
     )
 
 
@@ -176,5 +194,7 @@ def remove_block(
     block = get_block_or_404(session, block_id)
     page = get_page_or_404(session, block.page_id)
     require_page_edit(session, page, current_user)
+    ensure_baseline(session, page)
     delete_page_block(session, block)
+    record_revision(session, page, current_user)
     return HTMLResponse("")

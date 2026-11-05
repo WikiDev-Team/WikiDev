@@ -12,6 +12,7 @@
     <script defer src="/static/page-sharing.js"></script>
     <script defer src="/static/vendor/highlight-11.11.1.min.js"></script>
     <script defer src="/static/workspace.js"></script>
+    <script defer src="/static/python-runner.js"></script>
     <link rel="stylesheet" href="/static/vendor/hljs-github-dark.min.css">
     <link rel="stylesheet" href="/static/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -42,6 +43,17 @@
                 {% for page in pages %}{% include "partials/page_item.html" %}{% endfor %}
             </ul>
         </div>
+        {% if sidebar_tags %}
+        <div class="sidebar-section">
+            <div class="sidebar-section-heading"><span>Tags</span></div>
+            <div class="sidebar-tags">
+                {% for tag, count in sidebar_tags %}
+                <a href="/t/{{ tag.slug }}" class="tag-chip nav-item-tag" data-nav-path="/t/{{ tag.slug }}"
+                   hx-get="/tags/{{ tag.slug }}/panel" hx-target="#page-editor-container" hx-push-url="/t/{{ tag.slug }}">{{ tag.name }}<span class="tag-count">{{ count }}</span></a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </aside>
     <div class="sidebar-backdrop" onclick="toggleSidebar()" aria-hidden="true"></div>
 
@@ -54,10 +66,14 @@
                     <p>{{ not_found }}</p>
                     <div class="hero-actions"><a class="primary-action" href="/dashboard">Voltar ao início</a></div>
                 </section>
+            {% elif open_page_id and show_history %}
+                {% include "partials/page_history.html" %}
             {% elif open_page_id %}
                 {% include "partials/page_blocks_editor.html" %}
             {% elif open_folder_id %}
                 {% include "partials/folder_panel.html" %}
+            {% elif open_tag_id %}
+                {% include "partials/tag_panel.html" %}
             {% else %}
                 {% include "partials/home.html" %}
             {% endif %}

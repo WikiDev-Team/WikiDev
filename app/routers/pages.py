@@ -36,7 +36,9 @@ from ..permissions import (
     require_page_owner,
     require_page_view,
 )
+from ..revisions import ensure_baseline, record_revision
 from ..templates import templates
+from ..wiki import wiki_index
 
 router = APIRouter(prefix="/pages", tags=["pages"])
 
@@ -71,7 +73,9 @@ def _resolve_tag_names(session: Session, value: str) -> list[int]:
         if not name:
             continue
         slug = slugify_text(name)
-        tag = session.exec(select(Tag).where(Tag.slug == slug)).first() if slug else None
+        if not slug:
+            continue
+        tag = session.exec(select(Tag).where(Tag.slug == slug)).first()
         if tag is None:
             tag = create_tag(session, TagCreate(name=name))
         if tag.id not in tag_ids:
@@ -107,6 +111,7 @@ def _sidebar_context(session: Session, current_user: User) -> dict:
     pages = list_accessible_pages(session, current_user.id)
     return {
         "pages": pages,
+        "wiki_index": wiki_index(pages, current_user),
         "editable_page_ids": {
             page.id for page in pages if can_edit_page(session, page, current_user)
         },
@@ -212,6 +217,7 @@ def add_page_htmx(
         editor_user_ids or [],
     )
     session.commit()
+    record_revision(session, page, current_user, note="Página criada")
 
     return templates.TemplateResponse(
         request=request,
@@ -311,7 +317,12 @@ def edit_page(
             require_folder_edit(session, folder, current_user)
         updates["folder_id"] = parsed_folder_id
 
+    content_changed = updates["title"] != page.title or updates["summary"] != (page.summary or "")
+    if content_changed:
+        ensure_baseline(session, page)
     page = update_page(session, page, PageUpdate(**updates))
+    if content_changed:
+        record_revision(session, page, current_user)
     if is_owner:
         replace_page_shares(
             session,

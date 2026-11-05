@@ -503,3 +503,23 @@ Page.model_rebuild()
 Comment.model_rebuild()
 CodeExample.model_rebuild()
 PageBlock.model_rebuild()
+
+
+# ── Histórico de versões ─────────────────────────────────────────────────────
+
+class PageRevision(SQLModel, table=True):
+    """Foto do conteúdo de uma página depois de uma edição.
+
+    `snapshot` guarda os blocos em JSON ({id, block_type, content, language,
+    font_size, position}) para permitir diff e restauração.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    page_id: int = Field(foreign_key="page.id", index=True)
+    author_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    title: str = Field(default="", max_length=200)
+    summary: str = Field(default="")
+    snapshot: str = Field(default="[]")
+    note: str = Field(default="", max_length=200)
+    created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
+    updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))

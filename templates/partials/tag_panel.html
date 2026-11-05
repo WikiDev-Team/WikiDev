@@ -1,0 +1,38 @@
+{% from "partials/ui_macros.html" import icon %}
+{% if request and request.headers.get("HX-Request") %}<title>#{{ tag.name }} · WikiDev</title>{% endif %}
+<section id="tag-panel" class="home tag-panel">
+    <nav class="breadcrumb" aria-label="Localização">
+        <a href="/dashboard">Início</a>{{ icon("chevron", 14) }}<span>Tags</span>{{ icon("chevron", 14) }}<span aria-current="page">{{ tag.name }}</span>
+    </nav>
+    <header class="tag-header">
+        <span class="tag-hero-icon">{{ icon("tag", 22) }}</span>
+        <div>
+            <h1>{{ tag.name }}</h1>
+            <p class="page-summary">{{ tag_pages|length }} {{ "página visível para você" if tag_pages|length == 1 else "páginas visíveis para você" }}</p>
+        </div>
+    </header>
+
+    {% if related_tags %}
+    <div class="related-tags">
+        <span class="card-meta">Aparece junto com</span>
+        {% for item, count in related_tags %}
+        <a class="tag-chip" href="/t/{{ item.slug }}" hx-get="/tags/{{ item.slug }}/panel" hx-target="#page-editor-container" hx-push-url="/t/{{ item.slug }}">{{ item.name }}<span class="tag-count">{{ count }}</span></a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if tag_pages %}
+    <div class="page-card-grid">
+        {% for page in tag_pages %}
+        <a class="page-card" href="/p/{{ page.id }}" hx-get="/pages/{{ page.id }}/blocks-editor" hx-target="#page-editor-container" hx-push-url="/p/{{ page.id }}">
+            <span class="page-card-icon">{{ icon("file", 18) }}</span>
+            <strong>{{ page.title }}</strong>
+            <span class="page-card-summary">{{ page.summary or "Sem resumo." }}</span>
+            <span class="card-meta">{% if page.author %}@{{ page.author.username }} · {% endif %}{{ page.updated_at|time_ago }}</span>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state">Nenhuma página visível para você usa esta tag.</p>
+    {% endif %}
+</section>
