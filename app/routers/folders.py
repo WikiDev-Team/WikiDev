@@ -36,6 +36,7 @@ from ..permissions import (
     require_page_view,
 )
 
+from ..navigation import sidebar_context, visible_folder_path
 from ..templates import templates
 
 router = APIRouter(prefix="/folders", tags=["folders"])
@@ -113,6 +114,7 @@ def _folder_panel_context(session: Session, folder: Folder, current_user: User) 
     subfolders = [item for item in subfolders if can_view_folder(session, item, current_user)]
     return {
         "folder": folder,
+        "folder_path": visible_folder_path(session, folder, current_user),
         "folder_pages": visible_pages,
         "attachable_pages": attachable_pages,
         "subfolders": subfolders,
@@ -202,9 +204,8 @@ def create_folder_ui(
         request=request,
         name="partials/folder_panel_with_sidebar.html",
         context={
+            **sidebar_context(session, current_user, open_folder=folder),
             **_folder_panel_context(session, folder, current_user),
-            "folders": accessible_folders(session, current_user),
-            "usuario": current_user,
         },
         headers={"HX-Push-Url": f"/pastas/{folder.id}"},
     )
@@ -313,9 +314,8 @@ def update_folder_ui(
         request=request,
         name="partials/folder_panel_with_sidebar.html",
         context={
+            **sidebar_context(session, current_user, open_folder=folder),
             **_folder_panel_context(session, folder, current_user),
-            "folders": accessible_folders(session, current_user),
-            "usuario": current_user,
         },
     )
 
@@ -349,10 +349,7 @@ def delete_folder_ui(
     return templates.TemplateResponse(
         request=request,
         name="partials/folder_deleted.html",
-        context={
-            "folders": accessible_folders(session, current_user),
-            "usuario": current_user,
-        },
+        context=sidebar_context(session, current_user),
         headers={"HX-Push-Url": "/dashboard"},
     )
 

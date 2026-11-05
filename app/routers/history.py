@@ -9,6 +9,7 @@ from ..dependencies import get_current_user
 from ..models import Page, PageRevision, User
 from ..permissions import can_edit_page, require_page_edit, require_page_view
 from ..revisions import diff_revisions, list_revisions, previous_revision, restore_revision
+from ..navigation import visible_folder_path
 from ..templates import templates
 from .page_blocks import page_view_context
 
@@ -52,6 +53,7 @@ def history_context(
         "diff": diff,
         "revision_authors": authors,
         "can_edit": can_edit_page(session, page, current_user),
+        "folder_path": visible_folder_path(session, page.folder, current_user),
     }
 
 

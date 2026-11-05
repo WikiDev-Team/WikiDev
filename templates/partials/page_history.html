@@ -3,7 +3,7 @@
 <section id="page-history" class="workspace-card page-document page-history">
     <nav class="breadcrumb" aria-label="Localização">
         <a href="/dashboard">Início</a>
-        {% if page.folder %}{{ icon("chevron", 14) }}<a href="/pastas/{{ page.folder.id }}">{{ page.folder.name }}</a>{% endif %}
+        {% for item in folder_path|default([]) %}{{ icon("chevron", 14) }}<a href="/pastas/{{ item.id }}" hx-get="/folders/{{ item.id }}/panel" hx-target="#page-editor-container" hx-push-url="/pastas/{{ item.id }}">{{ item.name }}</a>{% endfor %}
         {{ icon("chevron", 14) }}
         <a href="/p/{{ page.id }}" hx-get="/pages/{{ page.id }}/blocks-editor" hx-target="#page-editor-container" hx-push-url="/p/{{ page.id }}">{{ page.title }}</a>
         {{ icon("chevron", 14) }}

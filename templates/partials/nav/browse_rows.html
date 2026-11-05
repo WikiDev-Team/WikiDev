@@ -1,0 +1,28 @@
+{% from "partials/ui_macros.html" import icon, page_link_attrs %}
+{% for page in browse_items %}
+<li class="browse-row">
+    <a {{ page_link_attrs(page) }} class="browse-link">
+        <span class="browse-icon">{{ icon("file", 16) }}</span>
+        <span class="browse-main">
+            <strong class="browse-title">{{ page.title }}</strong>
+            <span class="browse-summary">{{ page.summary or "Sem resumo." }}</span>
+        </span>
+        <span class="browse-meta">
+            {% if page.author_id == usuario.id %}<span class="owner-badge owner-mine">Sua</span>
+            {% elif page.author %}<span class="owner-badge{% if page.author_id in friend_ids %} owner-friend{% endif %}">@{{ page.author.username }}</span>{% endif %}
+            {% if page.folder %}<span class="browse-folder">{{ icon("folder", 12) }}{{ page.folder.name }}</span>{% endif %}
+            {% if filters.sort == "edited" %}<span title="Versões no histórico">{{ icon("pencil", 12) }}{{ edit_counts.get(page.id, 0) }}</span>
+            {% elif filters.sort == "viewed" %}<span title="Visualizações">{{ icon("eye", 12) }}{{ view_counts.get(page.id, 0) }}</span>{% endif %}
+            <span class="browse-date" title="{{ page.updated_at.strftime('%d/%m/%Y %H:%M') }} UTC">{{ page.updated_at|time_ago }}</span>
+        </span>
+    </a>
+</li>
+{% endfor %}
+{% if browse_next_offset %}
+<li class="browse-more">
+    <button type="button" class="secondary-action" hx-get="/home/paginas?{{ filters.query_string(offset=browse_next_offset) }}"
+            hx-target="closest li" hx-swap="outerHTML" hx-trigger="click, intersect once">
+        Mostrar mais ({{ browse_total - browse_next_offset }} restantes)
+    </button>
+</li>
+{% endif %}

@@ -34,15 +34,7 @@
         <nav class="sidebar-section sidebar-home">
             <a href="/dashboard" class="nav-item tree-button" data-nav-path="/dashboard">{{ icon("home") }}<span class="tree-label">Início</span></a>
         </nav>
-        {% include "partials/folder_sidebar.html" %}
-        <div class="sidebar-section">
-            <div class="sidebar-section-heading">
-                <span>Páginas</span><span class="count-pill">{{ pages|length }}</span>
-            </div>
-            <ul class="file-tree" id="pages-list">
-                {% for page in pages %}{% include "partials/page_item.html" %}{% endfor %}
-            </ul>
-        </div>
+        {% include "partials/nav/sidebar.html" %}
         {% if sidebar_tags %}
         <div class="sidebar-section">
             <div class="sidebar-section-heading"><span>Tags</span></div>

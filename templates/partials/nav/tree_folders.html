@@ -1,0 +1,42 @@
+{# Pastas em árvore. Pastas abertas (a atual e as de cima) já vêm com as páginas;
+   as outras buscam as páginas por htmx na primeira vez que são expandidas. #}
+{% from "partials/ui_macros.html" import icon %}
+{% macro folder_nodes(parent_id, depth) -%}
+{% for folder in tree_children.get(parent_id, []) if depth < 12 %}
+{% set is_open = folder.id in tree_expanded %}
+{% set has_children = tree_children.get(folder.id) or tree_pages.get(folder.id) %}
+<li class="tree-node" role="treeitem" aria-expanded="{{ 'true' if is_open else 'false' }}">
+    <details class="tree-folder" data-folder-id="{{ folder.id }}"{% if is_open %} open{% endif %}
+        {%- if has_children and not is_open %} hx-get="/nav/pastas/{{ folder.id }}" hx-trigger="toggle once" hx-target="#tree-pages-{{ folder.id }}" hx-swap="innerHTML"{% endif %}>
+        <summary class="tree-row{% if not has_children %} tree-row-empty{% endif %}">
+            <span class="tree-caret" aria-hidden="true">{{ icon("chevron", 13) }}</span>
+            <a href="/pastas/{{ folder.id }}" class="nav-item tree-link" data-nav-path="/pastas/{{ folder.id }}" title="{{ folder.name }}"
+               hx-get="/folders/{{ folder.id }}/panel" hx-target="#page-editor-container" hx-swap="innerHTML show:window:top" hx-push-url="/pastas/{{ folder.id }}">
+                <span class="tree-icon">{{ icon("folder", 15) }}</span>
+                <span class="tree-label">{{ folder.name }}</span>
+                {% if folder.author_id != usuario.id and folder.author %}<span class="tree-owner">@{{ folder.author.username }}</span>{% endif %}
+            </a>
+            {% if tree_totals.get(folder.id) %}<span class="tree-count">{{ tree_totals[folder.id] }}</span>{% endif %}
+        </summary>
+        <ul class="tree-children" role="group">
+            {{ folder_nodes(folder.id, depth + 1) }}
+            <li class="tree-pages-slot">
+                <ul class="tree-pages" id="tree-pages-{{ folder.id }}">
+                    {% if is_open %}
+                        {% set folder_pages = tree_pages.get(folder.id, []) %}
+                        {% set tree_items = folder_pages[:tree_page_size] %}
+                        {% set next_offset = tree_page_size if folder_pages|length > tree_page_size else None %}
+                        {% set remaining = folder_pages|length - tree_items|length %}
+                        {% set more_url = "/nav/pastas/" ~ folder.id %}
+                        {% include "partials/nav/tree_pages.html" %}
+                    {% elif tree_pages.get(folder.id) %}
+                        <li class="tree-loading">Carregando…</li>
+                    {% endif %}
+                </ul>
+            </li>
+        </ul>
+    </details>
+</li>
+{% endfor %}
+{%- endmacro %}
+{{ folder_nodes(None, 0) }}

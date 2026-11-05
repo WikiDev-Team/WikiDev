@@ -15,12 +15,11 @@ from .config import get_settings
 from .db import get_session, init_db
 from .dependencies import get_current_user
 from .models import Folder, Friendship, FriendshipStatus, Page, Tag, User
+from .navigation import BrowseFilters, home_context, record_page_view, sidebar_context
 from .permissions import (
     accessible_folders,
-    can_edit_page,
     can_view_folder,
     can_view_page,
-    get_friend_users,
     list_accessible_pages,
 )
 from .routers.auth import _safe_next_url
@@ -35,6 +34,7 @@ from .routers.friendships import router as friendships_router
 from .routers.history import history_context
 from .routers.history import router as history_router
 from .routers.languages import router as languages_router
+from .routers.navigation import router as navigation_router
 from .routers.page_blocks import page_view_context
 from .routers.page_blocks import router as page_blocks_router
 from .routers.pages import router as pages_router
@@ -99,6 +99,7 @@ for router in (
     history_router,
     friendships_router,
     forum_router,
+    navigation_router,
 ):
     app.include_router(router)
 
@@ -163,9 +164,6 @@ def render_workspace(
 ):
     """Renderiza o workspace completo, já com a página ou pasta aberta no servidor."""
     pages = list_accessible_pages(session, current_user.id)
-    editable_page_ids = {
-        page.id for page in pages if can_edit_page(session, page, current_user)
-    }
     folders = accessible_folders(session, current_user)
     owned_folders = [folder for folder in folders if folder.author_id == current_user.id]
     pending_friend_requests = len(
@@ -177,12 +175,12 @@ def render_workspace(
         ).all()
     )
 
-    context = {
+    context = sidebar_context(
+        session, current_user, pages=pages, folders=folders,
+        open_page=open_page, open_folder=open_folder,
+    )
+    context.update({
         "project": "WikiDev",
-        "usuario": current_user,
-        "pages": pages,
-        "editable_page_ids": editable_page_ids,
-        "folders": folders,
         "owned_folders": owned_folders,
         "pending_friend_requests": pending_friend_requests,
         "open_page_id": open_page.id if open_page else None,
@@ -191,7 +189,7 @@ def render_workspace(
         "not_found": not_found,
         "sidebar_tags": page_tags_counts(session, pages),
         "open_tag_id": open_tag.id if open_tag else None,
-    }
+    })
 
     if open_page is not None and show_history:
         context.update(history_context(session, open_page, current_user, history_revision))
@@ -207,18 +205,10 @@ def render_workspace(
         context.update(tag_panel_context(session, open_tag, current_user))
         context["document_title"] = f"#{open_tag.name}"
     else:
-        recent_pages = sorted(pages, key=lambda page: page.updated_at, reverse=True)
-        context.update(
-            {
-                "recent_pages": recent_pages[:6],
-                "recent_discussions": list_recent_discussions(session, current_user)[:5],
-                "stats": {
-                    "my_pages": sum(1 for page in pages if page.author_id == current_user.id),
-                    "folders": len(owned_folders),
-                    "friends": len(get_friend_users(session, current_user.id)),
-                },
-            }
-        )
+        filters = BrowseFilters.from_params(request.query_params)
+        filters.offset = 0
+        context.update(home_context(session, current_user, pages, filters))
+        context["recent_discussions"] = list_recent_discussions(session, current_user)[:5]
 
     return templates.TemplateResponse(
         request=request,
@@ -265,6 +255,7 @@ def page_permalink(
             request, session, current_user,
             not_found="Esta página não existe ou você não tem acesso a ela.",
         )
+    record_page_view(session, current_user.id, page.id)
     return render_workspace(request, session, current_user, open_page=page, discussion=discussion)
 
 

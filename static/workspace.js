@@ -209,3 +209,77 @@ document.addEventListener('click', (event) => {
     const dismiss = event.target.closest('[data-dismiss-block]');
     if (dismiss) dismiss.closest('article')?.remove();
 });
+
+// ── Árvore lateral ──────────────────────────────────────────────────────
+// Pastas são <details>. Quem expande pasta fechada dispara o hx-get (toggle once)
+// que traz as páginas. As pastas abertas ficam salvas no navegador para
+// sobreviver a recarregamentos e às trocas da barra lateral (hx-swap-oob).
+const TREE_KEY = 'wikidev:tree-open';
+function readOpenFolders() {
+    try { return new Set(JSON.parse(localStorage.getItem(TREE_KEY) || '[]').map(String)); }
+    catch { return new Set(); }
+}
+function saveOpenFolders(ids) {
+    try { localStorage.setItem(TREE_KEY, JSON.stringify(Array.from(ids).slice(-200))); } catch { /* sem armazenamento */ }
+}
+function openTreeFolders(ids) {
+    ids.forEach((id) => {
+        const details = document.querySelector(`#sidebar-nav details.tree-folder[data-folder-id="${CSS.escape(String(id))}"]`);
+        if (details && !details.open) details.open = true;
+    });
+}
+function restoreTree() {
+    openTreeFolders(readOpenFolders());
+    revealCurrentInTree();
+}
+// Abre as pastas acima da página/pasta aberta (data-folder-chain vem do servidor).
+function revealCurrentInTree() {
+    const panel = document.querySelector('#page-editor-container [data-folder-chain]');
+    const chain = (panel?.dataset.folderChain || '').split(',').filter(Boolean);
+    openTreeFolders(chain);
+    setTimeout(() => {
+        markActiveNav();
+        document.querySelector('#sidebar-nav .nav-item.active')?.scrollIntoView({ block: 'nearest' });
+    }, 0);
+}
+document.addEventListener('toggle', (event) => {
+    const details = event.target;
+    if (!(details instanceof HTMLDetailsElement) || !details.classList.contains('tree-folder')) return;
+    const ids = readOpenFolders();
+    if (details.open) ids.add(details.dataset.folderId); else ids.delete(details.dataset.folderId);
+    saveOpenFolders(ids);
+    details.closest('.tree-node')?.setAttribute('aria-expanded', details.open ? 'true' : 'false');
+}, true);
+document.addEventListener('click', (event) => {
+    // Clicar no nome da pasta abre o painel e expande a pasta (sem recolher se já aberta).
+    const link = event.target.closest('summary .tree-link');
+    if (link) {
+        const details = link.closest('details');
+        setTimeout(() => { if (details) details.open = true; }, 0);
+        return;
+    }
+    if (event.target.closest('[data-tree-collapse]')) {
+        document.querySelectorAll('#sidebar-nav details.tree-folder[open]').forEach((d) => { d.open = false; });
+        saveOpenFolders(new Set());
+    }
+});
+document.addEventListener('DOMContentLoaded', restoreTree);
+document.body.addEventListener('htmx:oobAfterSwap', (event) => {
+    if (event.target.id === 'sidebar-nav') setTimeout(restoreTree, 0);
+});
+document.body.addEventListener('htmx:afterSwap', (event) => {
+    if (event.target.id === 'page-editor-container') revealCurrentInTree();
+    if (event.target.classList?.contains('tree-pages')) markActiveNav();
+});
+
+// ── Home: filtros ───────────────────────────────────────────────────────
+// Abas e chips trocam #browse-results; aqui o formulário acompanha o estado novo.
+document.body.addEventListener('htmx:afterSettle', () => {
+    const state = document.querySelector('#browse-results .browse-state');
+    const form = document.getElementById('browse-form');
+    if (!state || !form) return;
+    form.elements.owner.value = state.dataset.owner || 'all';
+    form.elements.sort.value = state.dataset.sort || 'recent';
+    form.elements.tag.value = state.dataset.tag || '';
+    if (document.activeElement !== form.elements.q) form.elements.q.value = state.dataset.q || '';
+});

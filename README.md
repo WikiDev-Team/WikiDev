@@ -60,7 +60,9 @@ WikiDev é uma wiki colaborativa para organizar conhecimento de programação em
 - Recuperação de senha por e-mail com token aleatório, armazenado somente como hash, expiração e uso único.
 - Páginas compostas por blocos de texto em Markdown (títulos, listas, links, tabelas) e blocos de código com destaque de sintaxe e botão de copiar.
 - Link próprio para cada página (`/p/<id>`) e pasta (`/pastas/<id>`), com histórico do navegador, botão "Copiar link" e retorno ao link depois do login.
-- Página inicial com páginas atualizadas recentemente, discussões recentes e resumo da conta.
+- Página inicial com favoritas, vistas recentemente e mais vistas, seguida de "Todas as páginas" com filtros (minhas, de amigos, de outras pessoas, por tag ou texto), ordenação (recentes, alfabética, mais editadas, mais vistas) e "Mostrar mais" para listas longas. Os filtros ficam na URL (`/dashboard?owner=friends&tag=python`).
+- Barra lateral em árvore: pastas recolhíveis com as páginas dentro, a pasta atual já aberta, páginas carregadas sob demanda ao expandir e estado das pastas lembrado no navegador. Estrela para favoritar páginas.
+- Breadcrumbs com o caminho completo de pastas em páginas, pastas e histórico.
 - Tags informadas por nome, criadas automaticamente e exibidas na página, com página própria por tag (`/t/<tag>`) e lista de tags na barra lateral.
 - Histórico de versões de cada página (`/p/<id>/historico`), com diff por bloco e restauração. Edições seguidas da mesma pessoa em até 5 minutos viram uma só versão.
 - Edição simultânea (`app/collab.py`): cada aba manda um sinal a cada 4 s com a versão dos blocos que tem na tela; a resposta mostra quem mais está na página e troca só os blocos que outras pessoas criaram, alteraram ou excluíram. Ao salvar um bloco que mudou desde que foi aberto, as alterações são combinadas por mescla de três vias; se as duas pessoas mexeram nas mesmas linhas, nada é sobrescrito e o formulário volta com marcadores de conflito. A presença fica em memória, então vale para um processo do uvicorn (o padrão do projeto).

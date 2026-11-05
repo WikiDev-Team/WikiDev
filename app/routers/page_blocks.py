@@ -25,6 +25,7 @@ from ..models import (
 from ..permissions import can_edit_page, list_accessible_pages, require_page_edit, require_page_view
 from ..revisions import ensure_baseline, record_revision
 from ..run_output import RunOutputError, RunOutputPayload, serialize_run_output
+from ..navigation import page_nav_context, record_page_view
 from ..templates import templates
 from ..wiki import backlinks, wiki_index
 
@@ -81,6 +82,7 @@ def page_view_context(session: Session, page: Page, current_user: User) -> dict:
         "block_comment_counts": block_comment_counts(session, blocks),
         "can_edit": can_edit_page(session, page, current_user),
         "is_owner": page.author_id == current_user.id,
+        **page_nav_context(session, page, current_user),
     }
 
 
@@ -93,6 +95,7 @@ def blocks_editor(
 ):
     page = get_page_or_404(session, page_id)
     require_page_view(session, page, current_user)
+    record_page_view(session, current_user.id, page.id)
     return templates.TemplateResponse(
         request=request,
         name="partials/page_blocks_editor.html",
