@@ -10,6 +10,17 @@ from sqlmodel import Session, SQLModel, create_engine
 import app.main as main_module
 from app.db import get_session
 from app.main import app
+from app.web_security import login_failures, password_reset_requests
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limits() -> Iterator[None]:
+    """Os limites de tentativas ficam em memória; cada teste começa do zero."""
+    login_failures.reset()
+    password_reset_requests.reset()
+    yield
+    login_failures.reset()
+    password_reset_requests.reset()
 
 
 @pytest.fixture(name="engine")

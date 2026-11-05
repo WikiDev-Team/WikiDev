@@ -33,7 +33,6 @@ from ..permissions import (
     require_folder_edit,
     require_folder_owner,
     require_folder_view,
-    require_page_view,
 )
 
 from ..navigation import sidebar_context, visible_folder_path
@@ -97,6 +96,23 @@ def _validate_parent(
             if cursor.parent_folder_id is not None
             else None
         )
+
+
+def _require_can_move_page(page: Page, folder: Folder, user: User, *, attaching: bool) -> None:
+    """A pasta define quem vê a página, então mover páginas alheias é restrito.
+
+    Colocar uma página numa pasta pode escondê-la de quem a via; tirá-la da
+    pasta pode expô-la a quem a pasta barrava. Por isso só o autor da página
+    a coloca numa pasta, e só ele ou o dono da pasta a retiram.
+    """
+    if page.author_id == user.id:
+        return
+    if not attaching and folder.author_id == user.id:
+        return
+    raise HTTPException(
+        status_code=403,
+        detail="Somente o autor da página pode movê-la entre pastas",
+    )
 
 
 def _folder_panel_context(session: Session, folder: Folder, current_user: User) -> dict:
@@ -365,7 +381,7 @@ def attach_page_ui(
     folder = _folder_or_404(session, folder_id)
     page = _page_or_404(session, page_id)
     require_folder_edit(session, folder, current_user)
-    require_page_view(session, page, current_user)
+    _require_can_move_page(page, folder, current_user, attaching=True)
     page.folder_id = folder.id
     session.add(page)
     session.commit()
@@ -390,6 +406,7 @@ def detach_page_ui(
     require_folder_edit(session, folder, current_user)
     if page.folder_id != folder.id:
         raise HTTPException(status_code=409, detail="A página não está nesta pasta")
+    _require_can_move_page(page, folder, current_user, attaching=False)
     page.folder_id = None
     session.add(page)
     session.commit()
@@ -498,7 +515,7 @@ def add_existing_page_to_folder(
     folder = _folder_or_404(session, folder_id)
     page = _page_or_404(session, page_id)
     require_folder_edit(session, folder, current_user)
-    require_page_view(session, page, current_user)
+    _require_can_move_page(page, folder, current_user, attaching=True)
     page.folder_id = folder.id
     session.add(page)
     session.commit()
@@ -518,6 +535,7 @@ def remove_page_from_folder(
     require_folder_edit(session, folder, current_user)
     if page.folder_id != folder.id:
         raise HTTPException(status_code=409, detail="A página não está nesta pasta")
+    _require_can_move_page(page, folder, current_user, attaching=False)
     page.folder_id = None
     session.add(page)
     session.commit()

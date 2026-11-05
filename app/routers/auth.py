@@ -20,6 +20,7 @@ from ..security import (
     verify_password,
 )
 from ..templates import templates
+from ..web_security import login_failures, password_reset_requests
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["auth"])
@@ -76,10 +77,19 @@ def login(
     session: Session = Depends(get_session),
 ):
     username = username.strip()
+    limit_key = username.casefold()
+    if login_failures.blocked(limit_key):
+        return _message_html(
+            "Muitas tentativas com este usuário. Espere alguns minutos e tente de novo.",
+            error=True,
+        )
     user = session.exec(select(User).where(User.username == username)).first()
 
     if not user or not verify_password(password, user.hashed_password):
+        login_failures.hit(limit_key)
         return _message_html("Usuário ou senha inválidos.", error=True)
+
+    login_failures.reset(limit_key)
 
     token = generate_session_token()
     user.token = hash_token(token)
@@ -145,6 +155,13 @@ def request_password_reset(
 ):
     email = email.strip().lower()
     user = session.exec(select(User).where(User.email == email)).first()
+
+    # Limita quantos e-mails de recuperação alguém consegue disparar para a
+    # mesma caixa; a resposta continua igual para não revelar contas.
+    if user is not None and password_reset_requests.blocked(email):
+        user = None
+    elif user is not None:
+        password_reset_requests.hit(email)
 
     if user is not None:
         now = datetime.utcnow()
