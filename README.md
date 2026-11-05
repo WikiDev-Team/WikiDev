@@ -1,4 +1,55 @@
-# WikiDev
+<p align="center"><img src="static/wikidev_logo.png" alt="" width="72"></p>
+
+<h1 align="center">WikiDev</h1>
+
+<p align="center">
+  Uma wiki colaborativa para quem programa: páginas com texto em Markdown e código que roda no navegador,<br>
+  organizadas em pastas, ligadas entre si e compartilhadas com amigos.
+</p>
+
+<p align="center">
+  <a href="https://github.com/WikiDev-Team/WikiDev/actions/workflows/tests.yml"><img src="https://github.com/WikiDev-Team/WikiDev/actions/workflows/tests.yml/badge.svg" alt="Testes"></a>
+  <img src="https://img.shields.io/badge/python-3.11%20%7C%203.12-3776AB?logo=python&logoColor=white" alt="Python 3.11 e 3.12">
+  <img src="https://img.shields.io/badge/FastAPI-HTMX-009688?logo=fastapi&logoColor=white" alt="FastAPI e HTMX">
+  <img src="https://img.shields.io/badge/licen%C3%A7a-MIT-blue" alt="Licença MIT">
+</p>
+
+<p align="center">
+  <a href="https://render.com/deploy?repo=https://github.com/WikiDev-Team/WikiDev"><img src="https://render.com/images/deploy-to-render-button.svg" alt="Publicar no Render"></a>
+</p>
+
+<p align="center"><img src="docs/img/demo.gif" alt="Entrando na demonstração, buscando uma página com Ctrl+K e executando um bloco de Python" width="860"></p>
+
+## Destaques
+
+- **Código que roda na página.** Blocos de Python ganham um botão "Executar" que usa [Pyodide](https://pyodide.org) dentro de um iframe isolado, sem acesso aos cookies nem à página.
+- **Wiki de verdade.** Links com `[[Título]]`, seção "Citada em", páginas por tag e histórico de versões com diff e restauração.
+- **Busca instantânea.** Ctrl+K encontra páginas, conteúdo, pastas, tags e pessoas, sempre respeitando as permissões.
+- **Social e privado ao mesmo tempo.** Amigos, fórum e comentários por bloco, com páginas privadas, para amigos, públicas ou compartilhadas com pessoas específicas.
+- **Pronto para publicar.** Docker, blueprint do Render, testes automatizados e CI.
+
+| Página com Markdown e links | Busca rápida (Ctrl+K) |
+|---|---|
+| ![Página de boas-vindas](docs/img/pagina.png) | ![Busca rápida](docs/img/busca.png) |
+| **Python executando no navegador** | **Início** |
+| ![Bloco de Python executado](docs/img/executar.png) | ![Página inicial](docs/img/home.png) |
+
+<p align="center"><img src="docs/img/celular.png" alt="WikiDev no celular" width="260"></p>
+
+## Experimente
+
+Localmente, em um minuto:
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python -m scripts.seed_demo        # 12 páginas de exemplo
+uvicorn app.main:app --reload      # http://127.0.0.1:8000, login admin / admin123
+```
+
+Ou publique a sua cópia com o botão **Deploy to Render** acima (veja [Publicar online](#publicar-online)).
+
+## Sobre o projeto
 
 WikiDev é uma wiki colaborativa para organizar conhecimento de programação em páginas, blocos e pastas. O backend usa FastAPI e SQLModel; a interface é renderizada com Jinja2 e atualizada com HTMX.
 
@@ -25,7 +76,7 @@ WikiDev é uma wiki colaborativa para organizar conhecimento de programação em
 - Busca global que respeita as mesmas regras de privacidade.
 - Perfis e listagens públicas sem exposição do e-mail.
 - Testes automatizados, cobertura e workflow de integração contínua.
-- Docker, seed de demonstração e smoke test.
+- Docker, blueprint do Render, modo de demonstração, seed e smoke test.
 
 ## Arquitetura
 
@@ -126,7 +177,25 @@ cp .env.example .env
 docker compose up --build
 ```
 
-O banco SQLite é persistido no volume `wikidev_data`.
+O banco SQLite é persistido no volume `wikidev_data`. Com `SEED_DEMO=true`, o container roda o seed de demonstração antes de subir.
+
+## Publicar online
+
+O repositório tem um blueprint do Render ([`render.yaml`](render.yaml)) que sobe o WikiDev no plano gratuito usando o `docker/Dockerfile`:
+
+1. Crie uma conta em [render.com](https://render.com) e conecte o GitHub.
+2. Clique em **New > Blueprint**, escolha este repositório e confirme. O botão **Deploy to Render** no topo faz o mesmo.
+3. Em alguns minutos o site fica em `https://<nome-do-serviço>.onrender.com`.
+
+O blueprint liga o modo de demonstração:
+
+| Variável | Valor | Efeito |
+|---|---|---|
+| `APP_ENV` | `production` | Cookies `Secure` e login de desenvolvimento bloqueado. |
+| `SEED_DEMO` | `true` | Cria as páginas de demonstração a cada início. |
+| `DEMO_MODE` | `true` | Mostra no login a conta `admin` / `admin123` e o botão "Entrar como admin". |
+
+No plano gratuito o disco é temporário e o serviço dorme depois de 15 minutos sem acesso. A cada reinício o banco volta ao conteúdo de demonstração, o que é bom para uma vitrine pública, e a primeira visita depois de dormir demora uns 30 segundos. Para guardar dados de verdade, use um plano com disco persistente montado em `/data`, desligue `DEMO_MODE` e troque as senhas das contas do seed.
 
 ## Endpoints principais
 

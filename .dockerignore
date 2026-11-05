@@ -1,0 +1,16 @@
+.git
+.github
+.husky
+.venv
+venv
+node_modules
+__pycache__
+*.py[cod]
+.pytest_cache
+.coverage
+htmlcov
+*.db
+.env
+metrics
+docs
+tests

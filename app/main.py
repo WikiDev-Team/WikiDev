@@ -11,6 +11,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
 
+from .config import get_settings
 from .db import get_session, init_db
 from .dependencies import get_current_user
 from .models import Folder, Friendship, FriendshipStatus, Page, Tag, User
@@ -122,6 +123,7 @@ def login_page(request: Request):
             "registered": request.query_params.get("registered") == "1",
             "password_reset": request.query_params.get("reset") == "1",
             "next_url": _safe_next_url(request.query_params.get("next")),
+            "demo_mode": get_settings().demo_mode,
         },
     )
 
