@@ -377,6 +377,8 @@ class PageBlockBase(SQLModel):
 
 class PageBlock(PageBlockBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    # Última execução salva (JSON validado em app/run_output.py). Some quando o código muda.
+    run_output: Optional[str] = Field(default=None)
     created_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
     updated_at: datetime = Field(default_factory=now_utc, sa_column=Column(DateTime, nullable=False))
 

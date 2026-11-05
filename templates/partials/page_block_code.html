@@ -1,10 +1,37 @@
 {% set lang = block.language or "plaintext" %}
 {% set lang_labels = {"python": "Python", "c": "C", "cpp": "C++", "java": "Java", "javascript": "JavaScript", "typescript": "TypeScript", "go": "Go", "rust": "Rust", "sql": "SQL", "bash": "Bash", "xml": "HTML", "css": "CSS", "json": "JSON", "plaintext": "Texto"} %}
-<div class="code-block-wrapper">
+{% set saved = block.run_output | run_output if lang == "python" else None %}
+<div class="code-block-wrapper"{% if lang == "python" and can_edit %} data-output-url="/pages/blocks/{{ block.id }}/output"{% endif %}>
     <div class="code-block-header">
         <span class="code-language-label">{{ lang_labels.get(lang, lang) }}</span>
-        {% if lang == "python" %}<button type="button" class="run-code-button" title="Executar no navegador">Executar</button>{% endif %}
+        <span class="code-actions">
+            {% if lang == "python" %}
+                <button type="button" class="run-code-button" title="Executar no navegador">Executar</button>
+                <button type="button" class="code-action-button try-code-button" title="Mudar o código e rodar aqui, sem alterar a página">Experimentar</button>
+            {% endif %}
+            <button type="button" class="code-action-button fork-code-button" hx-post="/pages/blocks/{{ block.id }}/fork"
+                    hx-confirm="Criar uma página privada sua com uma cópia deste código?"
+                    title="Criar uma página sua com uma cópia deste código">Bifurcar</button>
+        </span>
     </div>
 	<pre class="code-block"><code class="language-{{ lang }}">{{ block.content }}</code></pre>
-    {% if lang == "python" %}<div class="run-output" aria-live="polite" hidden></div>{% endif %}
+    {% if lang == "python" %}
+        <div class="run-output" aria-live="polite"{% if not saved %} hidden{% endif %}>
+            {% if saved %}
+                <div class="run-meta">Saída salva com a página</div>
+                {% if saved.images %}
+                    <div class="run-images">
+                        {% for image in saved.images %}<img src="data:image/png;base64,{{ image }}" alt="Gráfico {{ loop.index }} gerado pelo código" loading="lazy">{% endfor %}
+                    </div>
+                {% endif %}
+                <pre>{% if saved.stdout %}<span class="run-stdout">{{ saved.stdout }}
+</span>{% endif %}{% if saved.stderr %}<span class="run-stderr">{{ saved.stderr }}
+</span>{% endif %}{% if saved.error %}<span class="run-error">{{ saved.error }}
+</span>{% endif %}{% if not (saved.stdout or saved.stderr or saved.error or saved.images) %}<span class="run-muted">(sem saída)</span>{% endif %}</pre>
+                {% if can_edit %}
+                    <div class="run-actions"><button type="button" class="code-action-button clear-output-button">Remover saída salva</button></div>
+                {% endif %}
+            {% endif %}
+        </div>
+    {% endif %}
 </div>
