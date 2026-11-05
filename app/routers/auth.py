@@ -51,6 +51,13 @@ def redirect_htmx(request: Request, url: str, token: str | None = None):
     return response
 
 
+def _safe_next_url(value: str | None) -> str:
+    """Aceita apenas caminhos internos para evitar redirecionamentos abertos."""
+    if value and value.startswith("/") and not value.startswith("//") and "\\" not in value:
+        return value
+    return ""
+
+
 @router.get("/register", response_class=HTMLResponse)
 def registration_page(request: Request):
     return templates.TemplateResponse(
@@ -65,6 +72,7 @@ def login(
     request: Request,
     username: str = Form(...),
     password: str = Form(...),
+    next_url: str = Form("", alias="next"),
     session: Session = Depends(get_session),
 ):
     username = username.strip()
@@ -78,7 +86,7 @@ def login(
     user.updated_at = datetime.utcnow()
     session.add(user)
     session.commit()
-    return redirect_htmx(request, "/dashboard", token)
+    return redirect_htmx(request, _safe_next_url(next_url) or "/dashboard", token)
 
 
 @router.post("/register")

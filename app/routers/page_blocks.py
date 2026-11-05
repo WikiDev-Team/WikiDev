@@ -47,6 +47,17 @@ def block_comment_counts(session: Session, blocks: list[PageBlock]) -> dict[int,
     return counts
 
 
+def page_view_context(session: Session, page: Page, current_user: User) -> dict:
+    blocks = list_blocks(session, page.id)
+    return {
+        "page": page,
+        "blocks": blocks,
+        "block_comment_counts": block_comment_counts(session, blocks),
+        "can_edit": can_edit_page(session, page, current_user),
+        "is_owner": page.author_id == current_user.id,
+    }
+
+
 @router.get("/{page_id}/blocks-editor", response_class=HTMLResponse)
 def blocks_editor(
     request: Request,
@@ -56,19 +67,10 @@ def blocks_editor(
 ):
     page = get_page_or_404(session, page_id)
     require_page_view(session, page, current_user)
-    editable = can_edit_page(session, page, current_user)
-
-    blocks = list_blocks(session, page_id)
     return templates.TemplateResponse(
         request=request,
         name="partials/page_blocks_editor.html",
-        context={
-            "page": page,
-            "blocks": blocks,
-            "block_comment_counts": block_comment_counts(session, blocks),
-            "can_edit": editable,
-            "is_owner": page.author_id == current_user.id,
-        },
+        context=page_view_context(session, page, current_user),
     )
 
 

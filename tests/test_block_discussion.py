@@ -43,7 +43,7 @@ def test_each_block_has_its_own_collapsed_discussion(
     assert editor.status_code == 200
     assert f"/comments/blocks/{text_block.id}/discussion" in editor.text
     assert f"/comments/blocks/{code_block.id}/discussion" in editor.text
-    assert "💬 Comentários" in editor.text
+    assert "<span>Comentários</span>" in editor.text
 
 
 def test_block_discussions_are_isolated_from_page_and_other_blocks(
@@ -62,7 +62,7 @@ def test_block_discussions_are_isolated_from_page_and_other_blocks(
         headers={"HX-Request": "true"},
     )
     assert created.status_code == 201
-    assert "💬 1 comentário" in created.text
+    assert "<span>1 comentário</span>" in created.text
 
     first_discussion = client.get(f"/comments/blocks/{first_block.id}/discussion")
     second_discussion = client.get(f"/comments/blocks/{second_block.id}/discussion")
@@ -93,7 +93,7 @@ def test_block_comment_supports_reply_edit_remove_and_counter_update(
         headers={"HX-Request": "true"},
     )
     assert reply.status_code == 201
-    assert "💬 2 comentários" in reply.text
+    assert "<span>2 comentários</span>" in reply.text
 
     edited = client.patch(
         f"/comments/{comment['id']}/discussion",
@@ -109,7 +109,7 @@ def test_block_comment_supports_reply_edit_remove_and_counter_update(
     )
     assert removed.status_code == 200
     assert "Comentário removido" in removed.text
-    assert "💬 1 comentário" in removed.text
+    assert "<span>1 comentário</span>" in removed.text
 
 
 def test_private_block_discussion_is_not_exposed(

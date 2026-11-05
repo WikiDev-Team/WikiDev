@@ -1,1 +1,1 @@
-<div class="page-block-text font-size-{{ block.font_size or 'normal' }}">{% if block.content %}{{ block.content }}{% else %}<span class="empty-block-text">Bloco de texto vazio.</span>{% endif %}</div>
+<div class="page-block-text markdown-body font-size-{{ block.font_size or 'normal' }}">{% if block.content %}{{ block.content|markdown }}{% else %}<p class="empty-block-text">Bloco de texto vazio.</p>{% endif %}</div>

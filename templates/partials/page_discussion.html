@@ -1,3 +1,4 @@
+{% from "partials/ui_macros.html" import icon %}
 {% macro render_comment(node) %}
     {% set comment = node.comment %}
     <article class="comment-thread comment-depth-{{ [node.depth, 3]|min }}">
@@ -20,7 +21,7 @@
 {% endmacro %}
 
 {% if block %}
-    <summary id="block-comment-summary-{{ block.id }}" hx-swap-oob="innerHTML">💬 {% if active_comment_count %}{{ active_comment_count }} comentário{% if active_comment_count != 1 %}s{% endif %}{% else %}Comentários{% endif %}</summary>
+    <summary id="block-comment-summary-{{ block.id }}" hx-swap-oob="innerHTML">{{ icon("message", 14) }}<span>{% if active_comment_count %}{{ active_comment_count }} comentário{% if active_comment_count != 1 %}s{% endif %}{% else %}Comentários{% endif %}</span></summary>
 {% endif %}
 
 <section id="{{ discussion_id }}" class="discussion-content">

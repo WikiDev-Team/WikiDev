@@ -1,20 +1,42 @@
-<div id="page-blocks-editor" class="workspace-card page-blocks-editor">
+{% from "partials/ui_macros.html" import icon, visibility_badge %}
+{% if request and request.headers.get("HX-Request") %}<title>{{ page.title }} · WikiDev</title>{% endif %}
+<article id="page-blocks-editor" class="workspace-card page-blocks-editor page-document" data-page-id="{{ page.id }}">
+    <nav class="breadcrumb" aria-label="Localização">
+        <a href="/dashboard">Início</a>
+        {% if page.folder %}
+            {{ icon("chevron", 14) }}
+            <a href="/pastas/{{ page.folder.id }}" hx-get="/folders/{{ page.folder.id }}/panel" hx-target="#page-editor-container" hx-push-url="/pastas/{{ page.folder.id }}">{{ page.folder.name }}</a>
+        {% endif %}
+        {{ icon("chevron", 14) }}
+        <span aria-current="page">{{ page.title }}</span>
+    </nav>
+
     <header class="workspace-header blocks-editor-header">
-        <div>
+        <div class="page-heading">
             <div class="page-title-line">
                 <h1>{{ page.title }}</h1>
-                <span class="visibility-badge visibility-{{ page.visibility.value }}">
-                    {% if page.visibility.value == 'private' %}Somente eu{% elif page.visibility.value == 'friends' %}Amigos{% elif page.visibility.value == 'custom' %}Selecionados{% else %}Público{% endif %}
-                </span>
             </div>
-            {% if page.author %}<p class="page-author">por @{{ page.author.username }}</p>{% endif %}
-            {% if page.folder %}<p class="page-author">Pasta: {{ page.folder.name }}</p>{% endif %}
-            {% if page.summary %}<p>{{ page.summary }}</p>{% endif %}
+            {% if page.summary %}<p class="page-summary">{{ page.summary }}</p>{% endif %}
+            <div class="page-meta">
+                {% if page.author %}<a class="page-author" href="/profile/{{ page.author.id }}">por @{{ page.author.username }}</a>{% endif %}
+                <span class="meta-sep" aria-hidden="true">·</span>
+                <span title="{{ page.updated_at.strftime('%d/%m/%Y %H:%M') }} UTC">{{ icon("clock", 13) }} atualizada {{ page.updated_at|time_ago }}</span>
+                {{ visibility_badge(page.visibility) }}
+                {% if page.status.value == 'draft' %}<span class="status-badge status-draft">Rascunho</span>{% elif page.status.value == 'archived' %}<span class="status-badge status-archived">Arquivada</span>{% endif %}
+            </div>
+            {% if page.tags %}
+            <ul class="tag-list" aria-label="Tags">
+                {% for tag in page.tags %}<li class="tag-chip">{{ icon("tag", 12) }}{{ tag.name }}</li>{% endfor %}
+            </ul>
+            {% endif %}
         </div>
         <div class="page-header-actions">
+            <button type="button" class="secondary-action copy-link-button" data-copy-url="/p/{{ page.id }}" title="Copiar link da página">
+                {{ icon("link", 15) }}<span>Copiar link</span>
+            </button>
             {% if can_edit %}
                 <button type="button" class="secondary-action" hx-get="/pages/{{ page.id }}/metadata/edit"
-                        hx-target="#page-blocks-editor" hx-swap="outerHTML">Editar página</button>
+                        hx-target="#page-blocks-editor" hx-swap="outerHTML">{{ icon("pencil", 15) }}<span>Editar página</span></button>
             {% else %}
                 <span class="read-only-label">Somente leitura</span>
             {% endif %}
@@ -24,16 +46,16 @@
     {% if can_edit %}
         <div class="block-add-actions">
             <button type="button" hx-post="/pages/{{ page.id }}/blocks" hx-vals='{"block_type": "text"}'
-                    hx-target="#page-blocks-list" hx-swap="beforeend">+ Texto</button>
+                    hx-target="#page-blocks-list" hx-swap="beforeend">{{ icon("plus", 14) }} Texto</button>
             <button type="button" hx-post="/pages/{{ page.id }}/blocks" hx-vals='{"block_type": "code"}'
-                    hx-target="#page-blocks-list" hx-swap="beforeend">+ Código</button>
+                    hx-target="#page-blocks-list" hx-swap="beforeend">{{ icon("plus", 14) }} Código</button>
         </div>
     {% elif not blocks %}
         <p class="empty-state">Esta página ainda não possui conteúdo.</p>
     {% endif %}
     <details class="page-discussion-panel" hx-get="/comments/pages/{{ page.id }}/discussion"
              hx-trigger="toggle once" hx-target="#page-discussion-slot-{{ page.id }}" hx-swap="innerHTML">
-        <summary>Discussão</summary>
+        <summary>{{ icon("message", 15) }} Discussão</summary>
         <div id="page-discussion-slot-{{ page.id }}" class="discussion-loading">Abra para carregar os comentários.</div>
     </details>
-</div>
+</article>

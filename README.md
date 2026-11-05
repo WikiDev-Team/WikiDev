@@ -6,7 +6,10 @@ WikiDev é uma wiki colaborativa para organizar conhecimento de programação em
 
 - Cadastro, login, logout e sessões por cookie `HttpOnly`.
 - Recuperação de senha por e-mail com token aleatório, armazenado somente como hash, expiração e uso único.
-- Páginas compostas por blocos de texto e código com destaque de sintaxe.
+- Páginas compostas por blocos de texto em Markdown (títulos, listas, links, tabelas) e blocos de código com destaque de sintaxe e botão de copiar.
+- Link próprio para cada página (`/p/<id>`) e pasta (`/pastas/<id>`), com histórico do navegador, botão "Copiar link" e retorno ao link depois do login.
+- Página inicial com páginas atualizadas recentemente, discussões recentes e resumo da conta.
+- Tags informadas por nome, criadas automaticamente e exibidas na página.
 - Pastas hierárquicas sem possibilidade de ciclos.
 - Criação de página dentro de pasta e associação ou remoção de páginas existentes.
 - Solicitações de amizade, perfis públicos e remoção de amizade.
@@ -34,7 +37,7 @@ app/
 └── routers/           # auth, páginas, pastas, amizade, busca e APIs
 
 templates/             # páginas e fragmentos HTMX
-static/                # CSS, tema e imagens
+static/                # CSS (style.css + ui.css), JS, imagens e vendor/ (htmx, highlight.js)
 tests/                 # testes funcionais, segurança e CRUD
 scripts/               # seed e smoke test
 metrics/               # resultados e análise das métricas de qualidade

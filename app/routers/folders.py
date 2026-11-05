@@ -206,6 +206,7 @@ def create_folder_ui(
             "folders": accessible_folders(session, current_user),
             "usuario": current_user,
         },
+        headers={"HX-Push-Url": f"/pastas/{folder.id}"},
     )
 
 
@@ -352,6 +353,7 @@ def delete_folder_ui(
             "folders": accessible_folders(session, current_user),
             "usuario": current_user,
         },
+        headers={"HX-Push-Url": "/dashboard"},
     )
 
 

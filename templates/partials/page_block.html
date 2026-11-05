@@ -1,7 +1,8 @@
+{% from "partials/ui_macros.html" import icon %}
 <article id="block-{{ block.id }}" class="page-block page-block-{{ block.block_type.value }}">
     {% if can_edit %}
         <details class="block-menu">
-            <summary aria-label="Ações do bloco">⋯</summary>
+            <summary aria-label="Ações do bloco" title="Ações do bloco">{{ icon("more") }}</summary>
             <div class="block-menu-content">
                 <button type="button" hx-get="/pages/blocks/{{ block.id }}/edit"
                         hx-target="#block-{{ block.id }}" hx-swap="outerHTML">Editar</button>
@@ -21,7 +22,7 @@
     {% set comment_count = block_comment_counts.get(block.id, 0) if block_comment_counts is defined else 0 %}
     <details class="block-discussion-panel" hx-get="/comments/blocks/{{ block.id }}/discussion"
              hx-trigger="toggle once" hx-target="#block-discussion-slot-{{ block.id }}" hx-swap="innerHTML">
-        <summary id="block-comment-summary-{{ block.id }}">💬 {% if comment_count %}{{ comment_count }} comentário{% if comment_count != 1 %}s{% endif %}{% else %}Comentários{% endif %}</summary>
+        <summary id="block-comment-summary-{{ block.id }}">{{ icon("message", 14) }}<span>{% if comment_count %}{{ comment_count }} comentário{% if comment_count != 1 %}s{% endif %}{% else %}Comentários{% endif %}</span></summary>
         <div id="block-discussion-slot-{{ block.id }}" class="discussion-loading">Abra para carregar os comentários.</div>
     </details>
 </article>

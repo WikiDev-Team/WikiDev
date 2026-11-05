@@ -1,11 +1,8 @@
 {% set lang = block.language or "plaintext" %}
-
+{% set lang_labels = {"python": "Python", "c": "C", "cpp": "C++", "java": "Java", "javascript": "JavaScript", "typescript": "TypeScript", "go": "Go", "rust": "Rust", "sql": "SQL", "bash": "Bash", "xml": "HTML", "css": "CSS", "json": "JSON", "plaintext": "Texto"} %}
 <div class="code-block-wrapper">
     <div class="code-block-header">
-        <span class="code-language-label">
-            {{ lang }}
-        </span>
+        <span class="code-language-label">{{ lang_labels.get(lang, lang) }}</span>
     </div>
-
 	<pre class="code-block"><code class="language-{{ lang }}">{{ block.content }}</code></pre>
 </div>

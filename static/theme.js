@@ -20,15 +20,6 @@ function applyTheme(theme) {
   });
 }
 
-// Função para abrir e fechar a barra lateral
-function toggleSidebar() {
-    const sidebar = document.getElementById("sidebar");
-
-    if (sidebar) {
-        sidebar.classList.toggle("collapsed");
-    }
-}
-
 // Função para alternar entre claro e escuro
 function toggleTheme() {
   const currentTheme = document.body.classList.contains("light-theme")

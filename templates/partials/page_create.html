@@ -15,7 +15,7 @@
             <label><span>Quem pode ver</span><select name="visibility" data-page-visibility><option value="private" selected>Somente eu</option><option value="friends">Todos os meus amigos</option><option value="public">Todos os usuários</option><option value="custom">Amigos específicos</option></select></label>
             <label><span>Quem pode editar</span><select name="edit_policy" data-page-edit-policy><option value="owner" selected>Somente eu</option><option value="viewers">Todos que podem ver</option><option value="custom">Amigos selecionados</option></select></label>
             <label><span>Pasta</span><select name="folder_id"><option value="">Sem pasta</option>{% for folder in owned_folders %}<option value="{{ folder.id }}" {% if selected_folder_id == folder.id %}selected{% endif %}>{{ folder.name }}</option>{% endfor %}</select></label>
-            <label><span>IDs de tags</span><input type="text" name="tag_ids" placeholder="Ex.: 1, 4, 7"></label>
+            <label><span>Tags</span><input type="text" name="tags" placeholder="Ex.: python, fastapi, sql" maxlength="300"><small class="field-hint">Separe por vírgula. Tags novas são criadas automaticamente.</small></label>
         </div>
 
         <fieldset
