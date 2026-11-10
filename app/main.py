@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from html import escape
 
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 from fastapi import Depends, FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -43,10 +43,27 @@ from .routers.tags import router as tags_router
 from .routers.tags import tag_by_slug
 from .routers.users import router as users_router
 from .templates import templates
+from .web_security import SECURITY_HEADERS, UNSAFE_METHODS, csrf_rejection, is_same_origin_request
 from .wiki import page_tags_counts, tag_panel_context
 
 app = FastAPI(title="WikiDev API", version="1.1.0")
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    """Recusa POST/PUT/PATCH/DELETE de outros sites e adiciona cabeçalhos de segurança."""
+    if request.method in UNSAFE_METHODS:
+        base_host = urlsplit(get_settings().app_base_url).netloc.lower()
+        if not is_same_origin_request(request, {base_host}):
+            response = csrf_rejection()
+        else:
+            response = await call_next(request)
+    else:
+        response = await call_next(request)
+    for header, value in SECURITY_HEADERS.items():
+        response.headers.setdefault(header, value)
+    return response
 
 
 @app.exception_handler(RequestValidationError)
